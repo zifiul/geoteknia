@@ -1,0 +1,58 @@
+schema: spec-driven
+
+# Contexto del proyecto (se inyecta en TODOS los artefactos; mantener conciso).
+context: |
+  Proyecto: Geoteknia. Web B2B de captación de leads para una ingeniería geotécnica española.
+  Idioma: TODA la documentación, comentarios, textos de usuario, mensajes de commit y artefactos OpenSpec se escriben en español.
+
+  Arquitectura: monolito modular Next.js full-stack (un solo despliegue, fronteras de dominio en /lib).
+  Stack:
+  - Next.js 15 App Router + React 19 + TypeScript estricto.
+  - Backend: Route Handlers en app/api/**/route.ts y Server Actions; lógica de negocio en /lib.
+  - ORM/BD: Prisma sobre PostgreSQL gestionado en Neon, región EU (RGPD).
+  - Validación runtime: Zod, compartida entre frontend y backend.
+  - Auth: Auth.js v5 (credenciales + TOTP 2FA + RBAC + audit log) para /admin.
+  - IA: SDK oficial de Anthropic (Claude) solo server-side; clave nunca en cliente.
+  - Email: Resend + React Email. Anti-spam: Cloudflare Turnstile.
+  - Infra: Vercel + Neon + Cloudflare. Testing: Vitest (unidad/integración) + Playwright (E2E) + Lighthouse CI (gate CWV).
+
+  Prioridades de producto que toda decisión debe proteger:
+  1. SEO/ISR: SSG + ISR on-demand, JSON-LD, sitemap, Core Web Vitals en verde; publicar contenido sin redeploy.
+  2. Captación y medición de leads cualificados por servicio, zona, canal y origen.
+  3. RGPD/LOPDGDD y seguridad de /admin (RBAC, 2FA, argon2, auditoría, Consent Mode v2).
+
+  Restricciones no obvias:
+  - No enviar PII de contacts/leads/projects a prompts de Claude ni guardarla en ai_generations.
+  - Datos siempre en región EU.
+  - Modelo de datos: id UUID, tablas/columnas en snake_case (@@map/@map), soft delete selectivo (deleted_at), tablas append-only sin deleted_at.
+  - /admin con noindex y aislado del frontal público.
+  - Contenido IA (YMYL) requiere flujo editorial: borrador_ia -> en_revision -> aprobado -> publicado.
+
+  Documentación de referencia (no duplicar, referenciar):
+  - docs/technical/backend-standards.md, frontend-standards.md, data-model.md, api-spec.yml.
+  - docs/functional/arquitectura-stack-web-b2b-geoteknia.md.
+  - docs/technical/openspec-tasks-mandatory-steps.md define los pasos obligatorios de tasks.md.
+
+# Reglas por artefacto (solo se inyectan en el artefacto cuyo ID coincide).
+rules:
+  proposal:
+    - Escribir en español, indicando intención, alcance e impacto.
+    - Incluir una sección "Fuera de alcance" para evitar scope creep.
+    - Vincular la propuesta con el ticket de /tickets correspondiente si existe.
+    - Señalar impacto en SEO/ISR, RGPD/PII o seguridad de /admin cuando aplique.
+  specs:
+    - Escribir delta specs en español usando ADDED/MODIFIED/REMOVED/RENAMED.
+    - Redactar escenarios en formato Given/When/Then concretos y verificables.
+    - Reutilizar enums, bloques y entidades de docs/technical/data-model.md antes de inventar nuevos.
+    - Referenciar requisitos existentes en vez de duplicarlos.
+  design:
+    - Escribir en español y respetar el monolito modular: lógica en /lib, no en route.ts ni componentes.
+    - Justificar Route Handler vs Server Action y el uso de Server vs Client Components.
+    - Documentar validación Zod, manejo de errores, transacciones Prisma y puntos de revalidación ISR.
+    - Detallar control de PII, RBAC/2FA y coste/uso de IA cuando el cambio los toque.
+  tasks:
+    - Seguir docs/technical/openspec-tasks-mandatory-steps.md de forma obligatoria.
+    - El paso 0 debe crear la rama feature/<area>-<ticket-id>-<slug> o feature/<change-name>.
+    - Incluir pasos obligatorios: revisar/actualizar tests, ejecutar tests + verificar BD, curl de endpoints, E2E Playwright MCP si aplica y actualizar documentación.
+    - Marcar los pasos de ejecución manual con "(OBLIGATORIO - AGENTE DEBE EJECUTAR)"; el agente nunca delega pruebas al usuario.
+    - Exigir restauración del estado de BD tras operaciones CREATE/UPDATE/DELETE y guardar informes en openspec/changes/<change-name>/reports/.

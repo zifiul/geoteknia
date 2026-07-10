@@ -8,6 +8,35 @@
 5. [Historias de usuario](#5-historias-de-usuario)
 6. [Tickets de trabajo](#6-tickets-de-trabajo)
 7. [Pull requests](#7-pull-requests)
+8. [Documentación de referencia](#documentación-de-referencia)
+
+---
+
+## Documentación de referencia
+
+Este README es el **informe de entrega del proyecto**. La fuente de verdad canónica vive en los documentos siguientes; si hay discrepancia, prevalecen ellos.
+
+### Documentación funcional (`docs/functional/`)
+
+| Documento | Contenido |
+|---|---|
+| [`prd-web-b2b-geoteknia.md`](docs/functional/prd-web-b2b-geoteknia.md) | PRD completo: requisitos, personas, OKRs, historias de usuario |
+| [`mvp-web-b2b-geoteknia.md`](docs/functional/mvp-web-b2b-geoteknia.md) | Alcance del MVP, priorización y Definition of Done |
+| [`arquitectura-stack-web-b2b-geoteknia.md`](docs/functional/arquitectura-stack-web-b2b-geoteknia.md) | Decisiones de arquitectura, stack y riesgos |
+| [`modelo-datos-web-b2b-geoteknia.md`](docs/functional/modelo-datos-web-b2b-geoteknia.md) | Modelo de datos conceptual (entidades, bloques, relaciones) |
+
+### Documentación técnica (`docs/technical/`)
+
+| Documento | Contenido |
+|---|---|
+| [`base-standards.md`](docs/technical/base-standards.md) | Estándares transversales del proyecto |
+| [`backend-standards.md`](docs/technical/backend-standards.md) | Route Handlers, Prisma, Auth.js, IA server-side |
+| [`frontend-standards.md`](docs/technical/frontend-standards.md) | App Router, SEO, JSON-LD, formularios, `/admin` |
+| [`data-model.md`](docs/technical/data-model.md) | Modelo relacional Prisma (implementación) |
+| [`api-spec.yml`](docs/technical/api-spec.yml) | Contratos OpenAPI de la API |
+| [`development_guide.md`](docs/technical/development_guide.md) | Guía de instalación y puesta en marcha en local |
+| [`documentation-standards.md`](docs/technical/documentation-standards.md) | Normas de mantenimiento de documentación |
+| [`openspec-tasks-mandatory-steps.md`](docs/technical/openspec-tasks-mandatory-steps.md) | Pasos obligatorios en tareas OpenSpec |
 
 ---
 
@@ -34,6 +63,8 @@ https://github.com/zifiul/finalproject-alp
 ---
 
 ## 1. Descripción general del producto
+
+> **Fuente de verdad:** [`docs/functional/prd-web-b2b-geoteknia.md`](docs/functional/prd-web-b2b-geoteknia.md), [`docs/functional/mvp-web-b2b-geoteknia.md`](docs/functional/mvp-web-b2b-geoteknia.md)
 
 ### **1.1. Objetivo:**
 
@@ -62,11 +93,14 @@ Geoteknia es una plataforma web B2B diseñada para convertir la presencia digita
 > Proporciona imágenes y/o videotutorial mostrando la experiencia del usuario desde que aterriza en la aplicación, pasando por todas las funcionalidades principales.
 
 ### **1.4. Instrucciones de instalación:**
-> Documenta de manera precisa las instrucciones para instalar y poner en marcha el proyecto en local (librerías, backend, frontend, servidor, base de datos, migraciones y semillas de datos, etc.)
+
+> Ver [`docs/technical/development_guide.md`](docs/technical/development_guide.md) y el contexto de stack en [`docs/technical/base-standards.md`](docs/technical/base-standards.md) §2.
 
 ---
 
 ## 2. Arquitectura del Sistema
+
+> **Fuente de verdad:** [`docs/functional/arquitectura-stack-web-b2b-geoteknia.md`](docs/functional/arquitectura-stack-web-b2b-geoteknia.md), [`docs/technical/backend-standards.md`](docs/technical/backend-standards.md), [`docs/technical/frontend-standards.md`](docs/technical/frontend-standards.md)
 
 ### **2.1. Diagrama de arquitectura:**
 
@@ -245,6 +279,8 @@ Editor aprueba contenido en /admin
 ---
 
 ## 3. Modelo de Datos
+
+> **Fuente de verdad:** [`docs/functional/modelo-datos-web-b2b-geoteknia.md`](docs/functional/modelo-datos-web-b2b-geoteknia.md) (modelo conceptual), [`docs/technical/data-model.md`](docs/technical/data-model.md) (modelo relacional Prisma)
 
 ### **3.1. Diagrama del modelo de datos:**
 
@@ -863,6 +899,8 @@ Ledger de consumo de tokens y coste estimado por generación. Separado de `ai_ge
 
 ## 4. Especificación de la API
 
+> **Fuente de verdad:** [`docs/technical/api-spec.yml`](docs/technical/api-spec.yml)
+
 La API de Geoteknia se expone mediante **Route Handlers de Next.js 15** (`app/api/**/route.ts`) sobre la capa de dominio en `/lib`, con validación de entrada con **Zod** y persistencia con **Prisma + PostgreSQL (Neon)**. Se documentan los **3 endpoints más representativos del valor del producto**:
 
 1. **`POST /api/leads`** — Alta de un lead (público + Turnstile). Es el corazón del producto: convierte tráfico en oportunidad comercial y crea automáticamente la ficha de proyecto (RF-02/RF-18).
@@ -1410,6 +1448,8 @@ Content-Type: application/json
 
 ## 5. Historias de Usuario
 
+> **Fuente de verdad:** [`docs/functional/prd-web-b2b-geoteknia.md`](docs/functional/prd-web-b2b-geoteknia.md) (requisitos e historias de usuario)
+
 **Historia de Usuario 1**
 
 > **US-01 — P1 (Arquitecto técnico).** Como **arquitecto técnico**, quiero **solicitar un presupuesto de estudio geotécnico desde la landing del servicio con el formulario multi-paso pre-rellenado con el servicio y la provincia desde los que llego**, para **completar la solicitud en menos de 3 pasos sin reintroducir datos ya implícitos en la página de aterrizaje**.
@@ -1440,6 +1480,8 @@ Content-Type: application/json
 ---
 
 ## 6. Tickets de Trabajo
+
+> **Backlog completo:** `tickets/backend/`, `tickets/frontend/`, `tickets/db/`. Los ejemplos siguientes son representativos; el detalle de cada ticket vive en su fichero Markdown correspondiente.
 
 ### Ticket 1 — Backend
 
