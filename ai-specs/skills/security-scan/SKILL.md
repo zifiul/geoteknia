@@ -17,22 +17,27 @@ Se escanea el **diff de la feature branch contra la rama base** (no todo el repo
 
 ### 1. SAST (análisis estático)
 
-- **Herramienta preferida:** Semgrep (`semgrep --config auto` sobre los ficheros del diff, o los rulesets `p/typescript`, `p/react`, `p/owasp-top-ten` si están disponibles).
-- **Fallback sin Semgrep instalado:** revisión estática dirigida del diff buscando los patrones prohibidos por `secure-coding`: `$queryRawUnsafe`, interpolación en `$queryRaw`, `dangerouslySetInnerHTML`, `eval`/`new Function`, secretos hardcodeados, módulos sensibles sin `import 'server-only'`, handlers sin validación Zod ni authz. Documenta en el informe que se usó el fallback manual.
+- **Invocación uniforme:** `npm run security:sast` (alias legacy: `npm run security:semgrep`). Equivalente bash: `bash scripts/semgrep-scan.sh [base]`.
+- **Herramienta:** Semgrep en `tools/semgrep-venv/` (`p/typescript`, `p/react`, `p/owasp-top-ten`) sobre ficheros `.ts/.tsx/.js` del diff `base..HEAD`.
+- **Fallback sin Semgrep instalado:** `npm run security:install-semgrep` primero; si falla, revisión estática dirigida del diff buscando los patrones prohibidos por `secure-coding`: `$queryRawUnsafe`, interpolación en `$queryRaw`, `dangerouslySetInnerHTML`, `eval`/`new Function`, secretos hardcodeados, módulos sensibles sin `import 'server-only'`, handlers sin validación Zod ni authz. Documenta en el informe que se usó el fallback manual.
 
 ### 2. SCA (dependencias)
 
-- `npm audit --json` (o el gestor del proyecto). Registra vulnerabilidades por severidad y si existe fix disponible.
+- **Invocación uniforme:** `npm run security:sca` (salida legible) o `npm run security:sca:json` (para el informe). Equivalente bash: `bash scripts/security-audit.sh [--json]`.
+- Registra vulnerabilidades por severidad y si existe fix disponible.
 - Dependencias nuevas introducidas por la US: verifica que son necesarias, mantenidas y sin advisories abiertos.
 
 ### 3. Detección de secretos
 
-- **Herramienta preferida:** gitleaks (`gitleaks detect --source . --log-opts "<base>..HEAD"`) sobre los commits de la branch.
+- **Invocación uniforme:** `npm run security:secrets` (alias legacy: `npm run security:gitleaks`). Equivalente bash: `bash scripts/gitleaks-detect.sh [base]`.
+- **Herramienta:** gitleaks en `tools/gitleaks/` sobre commits `base..HEAD` con `.gitleaks.toml`.
 - **Fallback:** búsqueda dirigida en el diff de patrones de alta señal (claves `sk-`/`AKIA`/`ghp_`, `BEGIN PRIVATE KEY`, asignaciones sospechosas a `password|secret|token|apiKey` con literales largos, ficheros `.env*` añadidos al índice). Documenta el fallback.
 
 ### 4. DAST ligero (endpoints nuevos/modificados)
 
-Con el servidor local levantado y usando el contrato congelado (schemas Zod + `api-spec.yml`) como guía, lanza `curl` maliciosos contra cada endpoint de la US:
+- **Invocación uniforme:** `npm run security:dast` (requiere servidor: `npm run dev`). Equivalente bash: `bash scripts/security-dast.sh [base] [url]`.
+- Si no hay Route Handlers en el diff, el script responde `omitido` (exit 0). Si el servidor no está levantado, `NO EJECUTADO` (exit 0): documentar en el informe, no declarar LIMPIO.
+- Con servidor y endpoints en el diff, lanza `curl` maliciosos contra cada path derivado de `app/api/**/route.ts`:
 
 - Sin autenticación y con rol insuficiente → espera 401/403.
 - Payload malformado, claves extra, tipos incorrectos → espera 400 con formato unificado.
@@ -42,6 +47,11 @@ Con el servidor local levantado y usando el contrato congelado (schemas Zod + `a
 - Verifica que ningún error expone stack, SQL o rutas internas.
 
 Restaura la BD si alguna petición llegó a escribir (skill `db-state-verify`).
+
+### Orquestador (los cuatro chequeos)
+
+- **Invocación uniforme:** `npm run security:scan` — ejecuta SAST → SCA → Secretos → DAST y muestra resumen. Equivalente bash: `bash scripts/security-scan.sh [base]`.
+- **Instalar herramientas:** `npm run security:install` (Semgrep + gitleaks en `tools/`).
 
 ## Informe: `reports/security.md`
 

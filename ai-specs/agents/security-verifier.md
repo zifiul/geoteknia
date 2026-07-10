@@ -20,11 +20,26 @@ Eres el verificador de seguridad del harness de Geoteknia. Ejecutas la parte **d
 
 ## Flujo
 
-1. **SAST:** Semgrep sobre el diff (o fallback manual documentado con los patrones de `secure-coding`).
-2. **SCA:** `npm audit` + revisión de dependencias nuevas de la US.
-3. **Secretos:** gitleaks sobre los commits de la branch (o fallback de patrones de alta señal).
-4. **DAST ligero:** `curl` malicioso contra los endpoints nuevos (sin auth, rol insuficiente, payloads malformados/inyección/sobredimensionados, ráfagas) verificando los rechazos que el contrato declara; restaura la BD si algo escribió.
-5. Genera `openspec/changes/<change-name>/reports/security.md` con la plantilla de la skill y entrega al orquestador el veredicto del scan (LIMPIO / BLOQUEANTES / ACEPTABLES) en ≤10 líneas.
+Ejecuta los cuatro chequeos invocando los **scripts npm uniformes** del proyecto (o sus equivalentes bash en Linux/WSL/CI). Captura la salida de cada uno para el informe `reports/security.md`.
+
+| Chequeo | Script npm | Equivalente bash |
+|---------|------------|------------------|
+| Instalar herramientas | `npm run security:install` | `bash scripts/install-semgrep.sh && bash scripts/install-gitleaks.sh` |
+| 1. SAST | `npm run security:sast` | `bash scripts/semgrep-scan.sh [base]` |
+| 2. SCA | `npm run security:sca` (JSON: `npm run security:sca:json`) | `bash scripts/security-audit.sh [--json]` |
+| 3. Secretos | `npm run security:secrets` | `bash scripts/gitleaks-detect.sh [base]` |
+| 4. DAST ligero | `npm run security:dast` | `bash scripts/security-dast.sh [base] [url]` |
+| **Todos** | `npm run security:scan` | `bash scripts/security-scan.sh [base]` |
+
+Parámetro opcional `base` (rama de comparación del diff, por defecto `main`): pásalo al script PowerShell, p. ej. `powershell -File scripts/security-scan.ps1 -Base develop`.
+
+1. **SAST:** `npm run security:sast` — Semgrep sobre ficheros del diff (fallback manual si falla la instalación).
+2. **SCA:** `npm run security:sca:json` — parsea severidades y fixes; revisa dependencias nuevas en el diff.
+3. **Secretos:** `npm run security:secrets` — gitleaks sobre commits `base..HEAD`.
+4. **DAST ligero:** `npm run security:dast` — requiere `npm run dev` si hay Route Handlers en el diff; si no hay endpoints o el servidor no responde, el script lo indica (NO EJECUTADO / omitido), no declares LIMPIO.
+5. Genera `openspec/changes/<change-name>/reports/security.md` con la plantilla de abajo y entrega al orquestador el veredicto del scan (LIMPIO / BLOQUEANTES / ACEPTABLES) en ≤10 líneas.
+
+Atajo: `npm run security:scan` ejecuta los cuatro chequeos en secuencia con resumen final; falla (exit 1) si SAST, SCA o Secretos reportan error. DAST omitido o no ejecutado no bloquea el orquestador, pero debe documentarse en el informe.
 
 ## Reglas
 
