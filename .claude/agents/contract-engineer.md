@@ -1,0 +1,1 @@
+../../ai-specs/agents/contract-engineer.md
