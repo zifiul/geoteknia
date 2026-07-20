@@ -3,6 +3,35 @@
     "linear": {
       "command": "npx",
       "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"]
+    },
+    "figma": {
+      "url": "https://mcp.figma.com/mcp"
+    },
+    "stitch": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "dotenv-cli",
+        "-e",
+        ".env",
+        "--",
+        "npx",
+        "-y",
+        "@_davideast/stitch-mcp",
+        "proxy"
+      ]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": ["-y", "shadcn@latest", "mcp"]
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest", "--isolated=true"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
     }
   }
 }
