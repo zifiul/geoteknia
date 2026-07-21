@@ -40,9 +40,9 @@ Las carpetas `lib/leads/`, `lib/projects/`, `lib/content/`, `lib/ia/`, `lib/auth
 - **THEN** existen las seis carpetas de dominio con su `index.ts` de barril
 
 ### Requirement: Variables de entorno documentadas sin valores reales
-El repositorio SHALL contener `.env.example` con todas las variables requeridas del proyecto (`DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NODE_ENV`) documentadas y sin valores reales.
+El repositorio SHALL contener `.env.example` con todas las variables requeridas del proyecto (`DATABASE_URL`, `DIRECT_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NODE_ENV`) documentadas y sin valores reales.
 
 #### Scenario: .env.example completo y sin secretos
 - **WHEN** se revisa `.env.example`
-- **THEN** aparecen las ocho variables con comentario descriptivo y valores de ejemplo/placeholder, y ningún valor es un secreto real
+- **THEN** aparecen las nueve variables con comentario descriptivo y valores de ejemplo/placeholder, y ningún valor es un secreto real
 

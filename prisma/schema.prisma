@@ -1,12 +1,70 @@
-// Schema mínimo de bootstrap (GTK-21): sin modelos.
-// Los modelos del dominio llegan con el ticket del modelo de datos
-// siguiendo docs/technical/data-model.md.
+// Fundación del esquema Prisma (GTK-6): enums transversales y convención de bloques.
+// Los modelos del dominio llegan en tickets DB siguientes según docs/technical/data-model.md.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
+
+/// Flujo editorial RF-20/21: transiciones permitidas borrador_ia -> en_revision -> aprobado -> publicado
+/// (+ rechazado, despublicado). El enum no impone el orden; lo valida la lógica de /lib/.
+enum WorkflowStatus {
+  borrador_ia
+  en_revision
+  aprobado
+  publicado
+  rechazado
+  despublicado
+}
+
+/// Tipo Schema.org para datos estructurados (Bloque SEO, RNF-SEO)
+enum SchemaType {
+  Service
+  Article
+  CreativeWork
+  Person
+  Organization
+  FAQPage
+  LocalBusiness
+  BreadcrumbList
+}
+
+/// Modelo de Claude por defecto (RF-19 / RNF-IA). @map preserva el identificador real de la API.
+enum AiModel {
+  claude_sonnet_4_6 @map("claude-sonnet-4-6")
+  claude_opus_4_8   @map("claude-opus-4-8")
+}
+
+// --- Bloque AUDIT (todas las entidades excepto append-only) ---
+// id           String    @id @default(uuid()) @db.Uuid
+// createdAt    DateTime  @default(now()) @map("created_at")
+// updatedAt    DateTime  @updatedAt @map("updated_at")
+// deletedAt    DateTime? @map("deleted_at")
+// createdById  String?   @map("created_by_id") @db.Uuid
+// updatedById  String?   @map("updated_by_id") @db.Uuid
+
+// --- Bloque SEO (contenido publicable) ---
+// slug            String     @unique
+// metaTitle       String?    @map("meta_title") @db.VarChar(60)
+// metaDescription String?    @map("meta_description") @db.VarChar(155)
+// canonicalUrl    String?    @map("canonical_url")
+// schemaType      SchemaType @map("schema_type")
+// noindex         Boolean    @default(false)
+// ogImageId       String?    @map("og_image_id") @db.Uuid
+// h1              String?
+
+// --- Bloque EDITORIAL (RF-19/20/21) ---
+// workflowStatus     WorkflowStatus @default(borrador_ia) @map("workflow_status")
+// isAiAssisted       Boolean        @default(false) @map("is_ai_assisted")
+// authorId           String?        @map("author_id") @db.Uuid
+// reviewedById       String?        @map("reviewed_by_id") @db.Uuid
+// approvedById       String?        @map("approved_by_id") @db.Uuid
+// approvedAt         DateTime?      @map("approved_at")
+// publishedAt        DateTime?      @map("published_at")
+// scheduledPublishAt DateTime?      @map("scheduled_publish_at")
+// currentVersion     Int            @default(1) @map("current_version")
