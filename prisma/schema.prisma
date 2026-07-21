@@ -1,0 +1,12 @@
+// Schema mínimo de bootstrap (GTK-21): sin modelos.
+// Los modelos del dominio llegan con el ticket del modelo de datos
+// siguiendo docs/technical/data-model.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

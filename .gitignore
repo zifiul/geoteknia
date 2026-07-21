@@ -1,0 +1,30 @@
+# Dependencias
+/node_modules
+
+# Next.js
+/.next/
+/out/
+next-env.d.ts
+
+# Producción
+/build
+
+# Variables de entorno (SEC-2): nunca versionar secretos.
+# Solo .env.example (sin valores reales) se versiona.
+.env
+.env.*
+!.env.example
+
+# Testing
+/coverage
+/playwright-report/
+/test-results/
+
+# Herramientas de seguridad (binarios/venvs locales; ver npm run security:install-*)
+/tools/gitleaks/gitleaks.exe
+/tools/gitleaks/gitleaks
+/tools/semgrep-venv/
+
+# Misc
+*.tsbuildinfo
+.DS_Store

@@ -1,0 +1,28 @@
+# Configuración de gitleaks para Geoteknia (fase 5b del harness — skill security-scan).
+# Documentación: https://github.com/gitleaks/gitleaks
+
+title = "Geoteknia gitleaks"
+
+[extend]
+# Reglas por defecto de la comunidad (AWS, GitHub, Anthropic, etc.)
+useDefault = true
+
+[allowlist]
+description = "Placeholders de .env.example y artefactos generados — sin secretos reales"
+paths = [
+  '''\.env\.example$''',
+  '''node_modules''',
+  '''\.next/''',
+  '''/coverage/''',
+  '''playwright-report/''',
+  '''test-results/''',
+  '''tools/gitleaks/''',
+]
+# Patrones de ejemplo documentados en .env.example (SEC-2)
+regexes = [
+  '''cambiar-por-secreto-aleatorio''',
+  '''sk-ant-\.\.\.''',
+  '''re_\.\.\.''',
+  '''usuario:password''',
+  '''0x\.\.\.''',
+]
