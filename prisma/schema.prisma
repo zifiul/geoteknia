@@ -1,5 +1,6 @@
 // Fundación del esquema Prisma (GTK-6): enums transversales y convención de bloques.
 // RBAC, usuarios, sesiones y auditoría (GTK-7).
+// Activos multimedia y galería polimórfica (GTK-9).
 // Los modelos restantes del dominio llegan en tickets DB siguientes según docs/technical/data-model.md.
 
 generator client {
@@ -60,6 +61,13 @@ enum AuditAction {
   role_change
   ai_generate
   export
+}
+
+/// Tipo de activo multimedia (GTK-9 / RF-13)
+enum AssetType {
+  image
+  pdf
+  document
 }
 
 model Role {
@@ -163,6 +171,43 @@ model AuditLog {
   @@index([action])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+model MediaAsset {
+  id                    String         @id @default(uuid()) @db.Uuid
+  fileUrl               String         @map("file_url")
+  assetType             AssetType      @map("asset_type")
+  mimeType              String?        @map("mime_type")
+  altText               String?        @map("alt_text")
+  title                 String?
+  width                 Int?
+  height                Int?
+  fileSizeKb            Int?           @map("file_size_kb")
+  includeInImageSitemap Boolean        @default(true) @map("include_in_image_sitemap")
+  contentMedia          ContentMedia[]
+  createdAt             DateTime       @default(now()) @map("created_at")
+  updatedAt             DateTime       @updatedAt @map("updated_at")
+  deletedAt             DateTime?      @map("deleted_at")
+  createdById           String?        @map("created_by_id") @db.Uuid
+  updatedById           String?        @map("updated_by_id") @db.Uuid
+
+  @@index([assetType])
+  @@index([includeInImageSitemap])
+  @@map("media_assets")
+}
+
+/// Relación polimórfica: content_type + content_id apuntan a entidades de contenido
+/// sin FK relacional dura (Prisma no soporta polimorfismo nativo). Integridad en /lib/.
+model ContentMedia {
+  id           String     @id @default(uuid()) @db.Uuid
+  mediaAssetId String     @map("media_asset_id") @db.Uuid
+  mediaAsset   MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+  contentType  String     @map("content_type")
+  contentId    String     @map("content_id") @db.Uuid
+  order        Int        @default(0)
+
+  @@index([contentType, contentId])
+  @@map("content_media")
 }
 
 // --- Bloque AUDIT (todas las entidades excepto append-only) ---
