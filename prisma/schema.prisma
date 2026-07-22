@@ -72,6 +72,25 @@ enum AssetType {
   document
 }
 
+/// Tipo de página para la cual se generan prompts (GTK-16 / RF-19)
+enum PromptPageType {
+  service
+  geo_zone
+  service_zone
+  case_study
+  blog
+  faq
+  meta
+}
+
+/// Estado de una invocación a Claude (GTK-16 / RF-19)
+enum AiGenerationStatus {
+  success
+  error
+  partial
+  retrying
+}
+
 /// Departamento de contacto para CTAs click-to-call/WhatsApp (GTK-11 / RF-08)
 enum ContactDepartment {
   presupuestos
@@ -289,6 +308,122 @@ model ContactChannel {
 
   @@index([department])
   @@map("contact_channels")
+}
+
+/// Plantillas de prompts parametrizadas por tipo de página (GTK-16 / RF-19)
+model PromptTemplate {
+  id              String         @id @default(uuid()) @db.Uuid
+  name            String
+  pageType        PromptPageType @map("page_type")
+  templateBody    String         @map("template_body") @db.Text /// con placeholders {{key}}
+  inputSchema     Json           @map("input_schema") /// inputs requeridos del editor
+  defaultModel    AiModel        @map("default_model")
+  cacheablePrefix String?        @map("cacheable_prefix") @db.Text /// bloque estático para prompt caching
+  version         Int
+  isActive        Boolean        @default(true) @map("is_active")
+  generations     AiGeneration[]
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  deletedAt       DateTime?      @map("deleted_at")
+  createdById     String?        @map("created_by_id") @db.Uuid
+  updatedById     String?        @map("updated_by_id") @db.Uuid
+
+  @@index([pageType])
+  @@index([isActive])
+  @@map("prompt_templates")
+}
+
+/// Registro de invocaciones a Claude con inputs, outputs, estado y reintentos (GTK-16 / RF-19)
+model AiGeneration {
+  id                  String             @id @default(uuid()) @db.Uuid
+  promptTemplateId    String             @map("prompt_template_id") @db.Uuid
+  promptTemplate      PromptTemplate     @relation(fields: [promptTemplateId], references: [id], onDelete: Restrict)
+  targetContentType   String?            @map("target_content_type")
+  targetContentId     String?            @map("target_content_id") @db.Uuid
+  requestedById       String             @map("requested_by_id") @db.Uuid
+  model               AiModel
+  inputParams         Json               @map("input_params") /// valores del editor (sin PII)
+  renderedPrompt      String?            @map("rendered_prompt") @db.Text
+  outputText          String?            @map("output_text") @db.Text
+  outputStructured    Json?              @map("output_structured") /// H1/H2-H3/meta/schema/links
+  status              AiGenerationStatus
+  errorMessage        String?            @map("error_message") @db.Text
+  retryCount          Int                @default(0) @map("retry_count")
+  latencyMs           Int?               @map("latency_ms")
+  isSectionRegeneration Boolean          @default(false) @map("is_section_regeneration")
+  parentGenerationId  String?            @map("parent_generation_id") @db.Uuid
+  parentGeneration    AiGeneration?      @relation("GenerationLineage", fields: [parentGenerationId], references: [id], onDelete: SetNull)
+  childGenerations    AiGeneration[]     @relation("GenerationLineage")
+  tokenUsage          AiTokenUsage?
+  contentRevisions    ContentRevision[]
+  createdAt           DateTime           @default(now()) @map("created_at")
+  deletedAt           DateTime?          @map("deleted_at")
+
+  @@index([promptTemplateId])
+  @@index([requestedById])
+  @@index([model])
+  @@index([status])
+  @@index([createdAt])
+  @@index([targetContentType, targetContentId])
+  @@map("ai_generations")
+}
+
+/// Ledger append-only de tokens consumidos por generación (GTK-16 / RNF-IA)
+model AiTokenUsage {
+  id              String       @id @default(uuid()) @db.Uuid
+  aiGenerationId  String       @unique @map("ai_generation_id") @db.Uuid
+  aiGeneration    AiGeneration @relation(fields: [aiGenerationId], references: [id], onDelete: Cascade)
+  model           AiModel
+  inputTokens     Int          @map("input_tokens")
+  outputTokens    Int          @map("output_tokens")
+  cacheReadTokens Int?         @map("cache_read_tokens")
+  cacheWriteTokens Int?        @map("cache_write_tokens")
+  costEur         Decimal      @map("cost_eur") @db.Decimal(10, 4)
+  billingPeriod   String       @map("billing_period") /// YYYY-MM
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  @@index([billingPeriod])
+  @@index([model])
+  @@index([createdAt])
+  @@map("ai_token_usage")
+}
+
+/// Configuración de presupuesto mensual y alertas para IA (GTK-16 / RNF-IA)
+model AiBudgetConfig {
+  id               String    @id @default(uuid()) @db.Uuid
+  billingPeriod    String?   @unique @map("billing_period") /// YYYY-MM; NULL = config global
+  monthlyBudgetEur Decimal   @map("monthly_budget_eur") @db.Decimal(10, 2)
+  alertThresholdPct Int      @map("alert_threshold_pct") /// p. ej. 80
+  modelByPageType  Json?     @map("model_by_page_type") /// override de modelo por tipo
+  notifyEmails     Json?     @map("notify_emails")
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+  createdById      String?   @map("created_by_id") @db.Uuid
+  updatedById      String?   @map("updated_by_id") @db.Uuid
+
+  @@map("ai_budget_config")
+}
+
+/// Historial append-only de versiones editoriales de contenido publicable (GTK-16 / RF-20/21)
+model ContentRevision {
+  id               String         @id @default(uuid()) @db.Uuid
+  contentType      String         @map("content_type")
+  contentId        String         @map("content_id") @db.Uuid
+  versionNumber    Int            @map("version_number")
+  bodySnapshot     Json           @map("body_snapshot") /// cuerpo + estructura
+  seoSnapshot      Json?          @map("seo_snapshot")
+  workflowStatusAt WorkflowStatus @map("workflow_status_at")
+  editorId         String         @map("editor_id") @db.Uuid
+  changeSummary    String?        @map("change_summary")
+  aiGenerationId   String?        @map("ai_generation_id") @db.Uuid
+  aiGeneration     AiGeneration?  @relation(fields: [aiGenerationId], references: [id], onDelete: SetNull)
+  createdAt        DateTime       @default(now()) @map("created_at")
+
+  @@index([contentType, contentId, versionNumber])
+  @@index([editorId])
+  @@map("content_revisions")
 }
 
 // --- Bloque AUDIT (todas las entidades excepto append-only) ---
