@@ -5,6 +5,7 @@
 // Configuración de organización y canales de contacto (GTK-11).
 // Generación de contenido IA, tokens y revisiones editoriales (GTK-16).
 // Servicios, geo-zonas, intersección servicio×zona y cobertura (GTK-18).
+// Casos de estudio, equipo técnico y maquinaria (GTK-20).
 // Los modelos restantes del dominio llegan en tickets DB siguientes según docs/technical/data-model.md.
 
 generator client {
@@ -100,6 +101,16 @@ enum ContactDepartment {
   licitaciones
 }
 
+/// Clasificación de maquinaria geotécnica (GTK-20 / RF-07)
+enum EquipmentType {
+  sonda_rotacion
+  sonda_percusion
+  mixta
+  ensayo_in_situ
+  laboratorio
+  vehiculo_especial
+}
+
 model Role {
   id          String           @id @default(uuid()) @db.Uuid
   name        RoleName         @unique
@@ -155,6 +166,7 @@ model User {
   lastLoginAt   DateTime? @map("last_login_at")
   sessions      Session[]
   auditLogs     AuditLog[]
+  teamMember    TeamMember?
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   deletedAt     DateTime? @map("deleted_at")
@@ -249,6 +261,7 @@ model Province {
   isOperational       Boolean   @default(false) @map("is_operational")
   defaultGeologyNotes String?   @map("default_geology_notes") @db.Text
   geoZones            GeoZone[]
+  caseStudies         CaseStudy[]
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
   deletedAt           DateTime? @map("deleted_at")
@@ -265,6 +278,7 @@ model WorkTypology {
   slug        String    @unique
   description String?   @db.Text
   order       Int?
+  caseStudies CaseStudy[]
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
@@ -467,8 +481,10 @@ model Service {
   createdById String?   @map("created_by_id") @db.Uuid
   updatedById String?   @map("updated_by_id") @db.Uuid
   // Relaciones
-  zoneCoverage     ServiceZoneCoverage[]
-  serviceZonePages ServiceZonePage[]
+  zoneCoverage      ServiceZoneCoverage[]
+  serviceZonePages  ServiceZonePage[]
+  caseStudies       CaseStudy[]
+  machineryServices MachineryService[]
 
   @@index([workflowStatus])
   @@index([deletedAt])
@@ -569,6 +585,164 @@ model ServiceZoneCoverage {
 
   @@id([serviceId, zoneId])
   @@map("service_zone_coverage")
+}
+
+/// Casos de estudio publicables (GTK-20 / RF-03)
+model CaseStudy {
+  id              String       @id @default(uuid()) @db.Uuid
+  title           String
+  serviceId       String       @map("service_id") @db.Uuid
+  service         Service      @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  provinceId      String       @map("province_id") @db.Uuid
+  province        Province     @relation(fields: [provinceId], references: [id], onDelete: Restrict)
+  workTypologyId  String       @map("work_typology_id") @db.Uuid
+  workTypology    WorkTypology @relation(fields: [workTypologyId], references: [id], onDelete: Restrict)
+  clientName      String?      @map("client_name")
+  clientIsPublic  Boolean      @default(false) @map("client_is_public")
+  problem         String       @db.Text
+  solution        String       @db.Text
+  boreholesCount  Int?         @map("boreholes_count")
+  metersDrilled   Decimal?     @map("meters_drilled") @db.Decimal(10, 2)
+  testsSummary    String?      @map("tests_summary") @db.Text
+  result          String?      @db.Text
+  projectYear     Int?         @map("project_year")
+  latitude        Decimal?     @db.Decimal(9, 6)
+  longitude       Decimal?     @db.Decimal(9, 6)
+  sourceProjectId String?      @map("source_project_id") @db.Uuid /// FK lógica -> projects; relación añadida en DB-11
+  // Bloque SEO
+  slug            String     @unique
+  metaTitle       String?    @map("meta_title") @db.VarChar(60)
+  metaDescription String?    @map("meta_description") @db.VarChar(155)
+  canonicalUrl    String?    @map("canonical_url")
+  schemaType      SchemaType @map("schema_type")
+  noindex         Boolean    @default(false)
+  ogImageId       String?    @map("og_image_id") @db.Uuid
+  h1              String?
+  // Bloque EDITORIAL
+  workflowStatus     WorkflowStatus @default(borrador_ia) @map("workflow_status")
+  isAiAssisted       Boolean        @default(false) @map("is_ai_assisted")
+  authorId           String?        @map("author_id") @db.Uuid
+  reviewedById       String?        @map("reviewed_by_id") @db.Uuid
+  approvedById       String?        @map("approved_by_id") @db.Uuid
+  approvedAt         DateTime?      @map("approved_at")
+  publishedAt        DateTime?      @map("published_at")
+  scheduledPublishAt DateTime?      @map("scheduled_publish_at")
+  currentVersion     Int            @default(1) @map("current_version")
+  // Bloque AUDIT
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+  // Relaciones
+  teamMembers CaseStudyTeamMember[]
+
+  @@index([serviceId])
+  @@index([provinceId])
+  @@index([workTypologyId])
+  @@index([projectYear])
+  @@index([workflowStatus])
+  @@map("case_studies")
+}
+
+/// Fichas públicas de equipo técnico (GTK-20 / RF-05)
+model TeamMember {
+  id                    String    @id @default(uuid()) @db.Uuid
+  fullName              String    @map("full_name")
+  jobTitle              String    @map("job_title")
+  qualification         String?
+  collegeRegistrationNo String?   @map("college_registration_no") /// nº de colegiación
+  yearsExperience       Int?      @map("years_experience")
+  specialization        String?
+  bio                   String?   @db.Text
+  publications          String?   @db.Text
+  worksFor              String?   @map("works_for")
+  alumniOf              String?   @map("alumni_of")
+  photoId               String?   @map("photo_id") @db.Uuid
+  userId                String?   @unique @map("user_id") @db.Uuid
+  user                  User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Bloque SEO (solo slug)
+  slug            String @unique
+  // Bloque EDITORIAL
+  workflowStatus     WorkflowStatus @default(borrador_ia) @map("workflow_status")
+  isAiAssisted       Boolean        @default(false) @map("is_ai_assisted")
+  authorId           String?        @map("author_id") @db.Uuid
+  reviewedById       String?        @map("reviewed_by_id") @db.Uuid
+  approvedById       String?        @map("approved_by_id") @db.Uuid
+  approvedAt         DateTime?      @map("approved_at")
+  publishedAt        DateTime?      @map("published_at")
+  scheduledPublishAt DateTime?      @map("scheduled_publish_at")
+  currentVersion     Int            @default(1) @map("current_version")
+  // Bloque AUDIT
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+  // Relaciones
+  caseStudies CaseStudyTeamMember[]
+
+  @@index([collegeRegistrationNo])
+  @@map("team_members")
+}
+
+/// Parque de maquinaria y equipos (GTK-20 / RF-07)
+model Machinery {
+  id            String        @id @default(uuid()) @db.Uuid
+  name          String
+  equipmentType EquipmentType @map("equipment_type")
+  model         String?
+  maxDepthM     Decimal?      @map("max_depth_m") @db.Decimal(6, 2)
+  diameters     String?
+  inSituTests   Json?         @map("in_situ_tests") /// SPT, DPSH, Lefranc, Lugeon, presiómetro
+  hasEnacLab    Boolean?      @map("has_enac_lab")
+  photoId       String?       @map("photo_id") @db.Uuid
+  // Bloque SEO (solo slug)
+  slug            String @unique
+  // Bloque EDITORIAL
+  workflowStatus     WorkflowStatus @default(borrador_ia) @map("workflow_status")
+  isAiAssisted       Boolean        @default(false) @map("is_ai_assisted")
+  authorId           String?        @map("author_id") @db.Uuid
+  reviewedById       String?        @map("reviewed_by_id") @db.Uuid
+  approvedById       String?        @map("approved_by_id") @db.Uuid
+  approvedAt         DateTime?      @map("approved_at")
+  publishedAt        DateTime?      @map("published_at")
+  scheduledPublishAt DateTime?      @map("scheduled_publish_at")
+  currentVersion     Int            @default(1) @map("current_version")
+  // Bloque AUDIT
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+  // Relaciones
+  services MachineryService[]
+
+  @@index([equipmentType])
+  @@map("machinery")
+}
+
+/// Técnicos firmantes/ejecutores de un caso (GTK-20 / RF-03/05)
+model CaseStudyTeamMember {
+  caseStudyId  String     @map("case_study_id") @db.Uuid
+  teamMemberId String     @map("team_member_id") @db.Uuid
+  role         String?
+  caseStudy    CaseStudy  @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  teamMember   TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade)
+
+  @@id([caseStudyId, teamMemberId])
+  @@map("case_study_team_members")
+}
+
+/// Maquinaria aplicable por servicio (GTK-20 / RF-07)
+model MachineryService {
+  machineryId String    @map("machinery_id") @db.Uuid
+  serviceId   String    @map("service_id") @db.Uuid
+  machinery   Machinery @relation(fields: [machineryId], references: [id], onDelete: Cascade)
+  service     Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([machineryId, serviceId])
+  @@map("machinery_services")
 }
 
 // --- Bloque AUDIT (todas las entidades excepto append-only) ---
