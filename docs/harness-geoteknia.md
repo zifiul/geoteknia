@@ -10,6 +10,8 @@
 
 El harness lleva cada User Story de principio a fin con un flujo dirigido por especificación (**SDD**, vía OpenSpec/OPSX) y guiado por tests (**TDD**, vía Vitest/Playwright). El orquestador elige la siguiente US del backlog de Linear y delega cada fase en un subagente especializado, transfiriendo solo el contexto mínimo y recogiendo un resumen al finalizar.
 
+Para issues de Linear con label **`DB`** (schema Prisma, migraciones, seeds, índices) existe la **[Variante: Harness DB](#variante-harness-db)**: mismo ciclo de gates y archive, sin contrato API, frontend ni E2E.
+
 **Gates duros y secuenciales:** `SDD → Contrato → TDD-RED` (no se implementa nada sin tests en rojo).
 
 **Contrato congelado:** en Geoteknia no hay SDK generado. El contrato son los **schemas Zod compartidos** (`lib/validations/` y `lib/<dominio>/*-schemas.ts`) más `docs/technical/api-spec.yml` mantenido a mano. Una vez congelado, back y front avanzan en paralelo sin renegociar tipos.
@@ -24,7 +26,9 @@ El harness lleva cada User Story de principio a fin con un flujo dirigido por es
 
 ## Disparador
 
-> **Entrada:** *"Implementa la siguiente US"* — disparador del harness
+> **Entrada:** *"Implementa la siguiente US"* — disparador del harness completo.
+>
+> **Entrada (DB):** *"Implementa la siguiente tarea DB"* / *"Implementa GTK-N (DB)"* — variante [Harness DB](#variante-harness-db).
 
 ---
 
@@ -74,7 +78,7 @@ El harness lleva cada User Story de principio a fin con un flujo dirigido por es
 |---|---|---|
 | **Agente** | `backend-developer` (modo implementador) | `frontend-developer` (modo implementador) |
 | **Skills** | `secure-coding` | `frontend-feature`, `secure-coding` |
-| **Acción** | Implementa `/lib` + Route Handlers/Server Actions hasta poner los tests en **VERDE** (incluidos los abuse cases). Respeta capas, RBAC y audit log según `backend-standards.md`. | Construye la UI mobile-first (Atomic Design) consumiendo los schemas Zod congelados. El contrato Zod es la frontera. |
+| **Acción** | Implementa `/lib` + Route Handlers/Server Actions hasta poner los tests en **VERDE** (incluidos los abuse cases). Respeta capas, RBAC y audit log según `backend-standards.md`. | Construye la UI mobile-first (Atomic Design) consumiendo los schemas Zod congelados. El contrato Zod es la frontera. Aplica el design system de `docs/design/DESIGN.md` (tokens, atmósfera, componentes visuales de la web pública) — **no confundir** con el `design.md` OpenSpec de la fase 1. |
 | **🛡️ Shift-left** | Sin secretos en código, solo Prisma (nunca SQL crudo), `import 'server-only'`, sin PII en logs/Claude. | Sanitización de outputs, sin datos sensibles en cliente/analítica, validación servidor como fuente de verdad. |
 | **Entrega** | schemas, caso de uso, dominio, infraestructura, handler/action | páginas, componentes, hooks, formularios |
 
@@ -148,11 +152,96 @@ El harness lleva cada User Story de principio a fin con un flujo dirigido por es
 
 ---
 
+## Variante: Harness DB
+
+> Flujo adaptado para issues de Linear con label **`DB`** (schema Prisma, migraciones, seeds, índices). No sustituye el harness completo: **omite o reduce** las fases pensadas para API/UI y mantiene gates, seguridad y trazabilidad OpenSpec.
+
+### Cuándo aplicar
+
+Aplicar **Harness DB** cuando la issue seleccionada:
+
+1. Tiene label `DB` en Linear, **y**
+2. Su alcance es solo capa de datos: `prisma/schema.prisma`, migraciones, `prisma/seed.ts`, índices/SQL manual documentado, o sincronización de `docs/technical/data-model.md`.
+
+**No aplicar** (usar el harness completo) cuando el mismo change incluya Route Handlers, Server Actions, lógica de dominio en `/lib` consumible por API, o UI. En ese caso el schema va embebido en la US funcional.
+
+### Disparador
+
+> **Entrada:** *"Implementa la siguiente tarea DB"* / *"Implementa GTK-N (DB)"* — o selección en fase 0 de una issue con label `DB`.
+
+El orquestador anuncia en el plan: **variante = Harness DB**.
+
+### Mapa de fases (respecto al harness completo)
+
+| # | Fase | Harness DB | Notas |
+|---|------|------------|--------|
+| 0 | Selección | **Obligatoria** | Filtrar label `DB`. Orden por dependencias de schema (fundación → maestros → dominio → seed → índices). |
+| 1 | SDD + threat model | **Obligatoria (ligera)** | OpenSpec change por ticket. La descripción Linear suele ser la fuente; empaquetar en `proposal` / delta specs / `design` / `tasks`. Threat model centrado en PII, retención, soft-delete, región EU y acceso a datos (no superficie HTTP). |
+| 🔶 | Gate 1 | **Obligatoria** | Revisar schema propuesto, migración, RGPD e impacto en `data-model.md` **antes** de migrar Neon. |
+| 2 | Contrato Zod + API | **Omitir** | Registrar en el resumen de fase: *omitida — sin Route Handlers/Server Actions*. |
+| 3 | TDD-RED | **Condicional** | **Omitir** en SCHEMA/INDEX puro sin lógica en `/lib`. **Aplicar** (mínimo) si hay seed con reglas, helpers de migración de datos, o invariantes testeables en `/lib`. Sin abuse cases HTTP. |
+| 4a | Backend (Prisma) | **Obligatoria (núcleo)** | `schema.prisma` + migrate + seed/SQL según ticket. Agente: `backend-developer` (modo implementador). Skills: `secure-coding`, `geoteknia-domain`. |
+| 4b | Frontend | **Omitir** | Registrar omisión. |
+| 5a | QA | **Adaptada** | Obligatorios: `prisma validate`, `prisma migrate` (dev/deploy según entorno), skill `db-state-verify`. **Omitir** curl y E2E Playwright salvo que el ticket añada endpoint (entonces no es Harness DB). |
+| 5b | Security Scan | **Obligatoria (ligera)** | SAST sobre el diff, SCA si cambian deps, secretos. **Omitir** DAST/`curl` malicioso (sin endpoints nuevos). |
+| 6 | Code Review | **Obligatoria** | Checklist enfocado a schema: UUID, bloques AUDIT/SEO/EDITORIAL, PII, índices, FKs, append-only, sin SQL inseguro. Veredicto APTO/NO APTO. |
+| 7 | Docs | **Obligatoria** | Actualizar `docs/technical/data-model.md` (y estándares solo si cambia una convención). |
+| 🔶 | Gate 2 | **Obligatoria** | OK humano antes de archive/PR. |
+| 8 | Archive + PR | **Obligatoria** | Misma comprobación `require-code-review`. PR acotado a schema/migración/seed/docs. |
+
+```
+0 → 1 (SDD ligero + threat model datos) → GATE 1
+  → [2 omitida] → [3 omitida | TDD mínimo si hay lógica]
+  → 4a (Prisma) → [4b omitida]
+  → 5a (validate + migrate + db-state) ∥ 5b (scan sin DAST)
+  → 6 (Review) ∥ 7 (data-model.md)
+  → GATE 2 → 8 (Archive + PR)
+```
+
+### Selección y orden típico (label `DB`)
+
+1. Listar issues con label `DB` no completadas (`list_issues` + `label: DB`).
+2. Respetar dependencias Linear y el orden de capas del modelo:
+   - Fundación (`datasource`, enums, convención de bloques)
+   - Identidad/RBAC (referenciado por AUDIT)
+   - Maestros y media
+   - Dominio (CRM, SEO, IA, etc.)
+   - Seed de catálogos
+   - Índices avanzados / SQL manual al final
+3. Un change OpenSpec por issue (no agrupar tickets DB no relacionados sin OK humano).
+
+### Artefactos SDD mínimos
+
+En fase 1, el `spec-author` prioriza:
+
+- `proposal.md` — qué entidades/cambios y por qué (enlace Linear).
+- Delta specs de datos (requisitos del modelo) o referencia explícita a `docs/technical/data-model.md` cuando el delta sea solo materialización del modelo ya documentado.
+- `design.md` — decisiones Prisma, migración, seed; sección **threat model de datos** (PII, base legal, EU, soft-delete, append-only, sin PII en prompts).
+- `tasks.md` — pasos de `docs/technical/openspec-tasks-mandatory-steps.md` aplicables: rama, migrate, validación BD, docs. **Sin** pasos N+2 (curl) ni N+3 (E2E) salvo excepción documentada.
+
+### Criterios de aceptación típicos (fase 5a)
+
+- [ ] `prisma validate` OK.
+- [ ] `prisma migrate dev` / `migrate deploy` OK en el entorno del change.
+- [ ] Seed idempotente (si aplica) sin duplicar maestros.
+- [ ] Línea base BD capturada y restaurada (`db-state-verify`) tras pruebas con escritura.
+- [ ] Diff de schema alineado con Gate 1 y con `data-model.md` tras fase 7.
+
+### Señales de alerta (Harness DB)
+
+- Ejecutar el harness completo (contrato + TDD-RED HTTP + frontend + E2E) sobre un ticket solo SCHEMA.
+- Migrar Neon antes del Gate 1.
+- Omitir code-review o `data-model.md` porque “solo es schema”.
+- Meter lógica de API/UI en el mismo change sin cambiar a harness completo.
+- Saltar dependencias (p. ej. seed antes de las tablas, o dominio antes de enums/fundación).
+
+---
+
 ## Notas
 
-- Flujo genérico del harness (plantilla, no una US concreta).
-- **Gates duros y secuenciales:** SDD → Contrato → TDD-RED.
-- **Paralelizable:** 4a con 4b (backend con frontend), 5a con 5b (QA con security scan) y 6 con 7 (code-review con docs).
+- Flujo genérico del harness (plantilla, no una US concreta). Para issues label `DB`, ver **Variante: Harness DB**.
+- **Gates duros y secuenciales:** SDD → Contrato → TDD-RED (en Harness DB: SDD → [sin contrato] → TDD solo si hay lógica testeable).
+- **Paralelizable:** 4a con 4b (backend con frontend), 5a con 5b (QA con security scan) y 6 con 7 (code-review con docs). En Harness DB no hay 4b.
 - **Estado en disco:** backlog en Linear (fuente de verdad única, sin `_backlog.json` local), `tasks.md` y `reports/` dentro de `openspec/changes/<change-name>/` (incluye `reports/security.md`).
 - Los agentes viven en `ai-specs/agents/` (stubs en `.claude/agents/` y `.cursor/agents/`); las skills canónicas en `ai-specs/skills/` con copias sincronizadas en `.claude/skills/` y `.cursor/skills/` (skill `sync-agent-mirrors`).
 
@@ -172,3 +261,15 @@ El harness lleva cada User Story de principio a fin con un flujo dirigido por es
 | 7 | Docs | `docs-keeper` | — (paralelo con 6) |
 | 🔶 | **Gate 2** — Revisión final | humano | Parada obligatoria |
 | 8 | Archive + PR | `spec-author` | — |
+
+### Resumen Harness DB (deltas)
+
+| # | Fase | En Harness DB |
+|---|------|----------------|
+| 0 | Selección | Label `DB` + orden por capas del modelo |
+| 1 / Gate 1 | SDD | Ligero; threat model de datos |
+| 2 | Contrato | Omitida |
+| 3 | TDD-RED | Omitida o mínima (sin abuse cases HTTP) |
+| 4a / 4b | Impl | Solo 4a (Prisma); 4b omitida |
+| 5a / 5b | QA + Scan | validate/migrate/`db-state-verify`; scan sin DAST |
+| 6–8 | Review → Archive | Igual (APTO + docs `data-model.md` + gates) |

@@ -4,6 +4,40 @@
       "type": "stdio",
       "command": "npx",
       "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"]
+    },
+    "figma": {
+      "type": "http",
+      "url": "https://mcp.figma.com/mcp"
+    },
+    "stitch": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "dotenv-cli",
+        "-e",
+        ".env",
+        "--",
+        "npx",
+        "-y",
+        "@_davideast/stitch-mcp",
+        "proxy"
+      ]
+    },
+    "shadcn": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "shadcn@latest", "mcp"]
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest", "--isolated=true"]
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
     }
   }
 }

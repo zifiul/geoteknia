@@ -1,6 +1,6 @@
 ---
 name: geoteknia-context
-description: Contexto operativo del harness de Geoteknia para el orquestador - cómo leer el backlog de Linear vía MCP, seleccionar la siguiente US, ubicar el estado en disco y transferir contexto mínimo a los subagentes. Úsala al iniciar el harness ("Implementa la siguiente US") o cuando haya que decidir qué US toca.
+description: Contexto operativo del harness de Geoteknia para el orquestador - cómo leer el backlog de Linear vía MCP, seleccionar la siguiente US o tarea DB, ubicar el estado en disco y transferir contexto mínimo a los subagentes. Úsala al iniciar el harness ("Implementa la siguiente US" / "Implementa la siguiente tarea DB") o cuando haya que decidir qué issue toca.
 author: Geoteknia
 version: 1.0.0
 ---
@@ -12,7 +12,7 @@ Da al orquestador del harness el contexto mínimo del proyecto y las reglas de s
 ## Contexto del proyecto
 
 - **Producto:** web B2B de ingeniería geotécnica (Geoteknia). Monolito modular Next.js 15 + React 19 + TypeScript estricto + Prisma/Neon (EU) + Zod + Auth.js v5. Single-org: aislamiento por RBAC (`admin`, `gestor`, `editor`, `tecnico`), no multi-tenant.
-- **Flujo maestro:** `docs/harness-geoteknia.md` (fases 0-8, gates y paralelismos). Léelo si no lo tienes en contexto.
+- **Flujo maestro:** `docs/harness-geoteknia.md` (fases 0-8, gates y paralelismos). Léelo si no lo tienes en contexto. Para issues con label `DB`, aplica la sección **Variante: Harness DB** del mismo documento.
 - **Estándares:** `docs/technical/base-standards.md` (transversal), `backend-standards.md`, `frontend-standards.md`, `data-model.md`.
 - **SDD:** OpenSpec/OPSX. Los cambios viven en `openspec/changes/<change-name>/` y se archivan en `openspec/changes/archive/`.
 
@@ -20,15 +20,25 @@ Da al orquestador del harness el contexto mínimo del proyecto y las reglas de s
 
 El backlog vive en Linear, accesible por MCP (servidor `linear`, ya configurado). No existe `_backlog.json` local ni debe crearse.
 
-Para seleccionar la siguiente US:
+Para seleccionar la siguiente US (harness completo):
 
 1. Lista las issues del equipo/proyecto activo ordenadas por prioridad (`list_issues` con filtro de estado).
 2. Descarta las completadas, canceladas o ya en progreso por otro change activo.
 3. Comprueba dependencias: una US es elegible solo si todas sus issues bloqueantes (relaciones "blocked by") están completadas.
 4. Entre las elegibles, elige por este orden: criticidad/prioridad de Linear → orden de dependencias (desbloquea más trabajo) → antigüedad.
 5. Verifica que no exista ya un change OpenSpec activo para esa US (busca por identificador en `openspec/changes/`).
+6. Si la elegida tiene label `DB` y el alcance es solo schema/migración/seed/índices, anuncia **variante = Harness DB** y planifica según esa sección de `docs/harness-geoteknia.md`. Si el change también toca API/UI, usa el harness completo.
 
-Si ninguna US es elegible, informa al humano con la lista de bloqueos y detente.
+### Selección Harness DB
+
+Cuando el disparador sea *"Implementa la siguiente tarea DB"* o el humano pida explícitamente label `DB`:
+
+1. Lista issues con `label: DB` en Backlog (o estado no completado).
+2. Aplica las mismas reglas de dependencias y change activo.
+3. Entre elegibles, prioriza el orden de capas del modelo: fundación → identidad/RBAC → maestros/media → dominio → seed → índices avanzados.
+4. Planifica solo las fases de la variante Harness DB (omite 2, 4b; 3 condicional; 5a/5b adaptadas).
+
+Si ninguna US/tarea es elegible, informa al humano con la lista de bloqueos y detente.
 
 ## Estado en disco
 

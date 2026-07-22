@@ -11,6 +11,7 @@ vi.mock('server-only', () => ({}));
 
 const REQUIRED_VARS = {
   DATABASE_URL: 'postgresql://user:fake-password-123@localhost:5432/geoteknia',
+  DIRECT_URL: 'postgresql://user:fake-password-123@localhost:5432/geoteknia',
   NEXTAUTH_SECRET: 'secreto-de-prueba-nextauth',
   NEXTAUTH_URL: 'http://localhost:3000',
   ANTHROPIC_API_KEY: 'sk-ant-fake-key',
@@ -48,6 +49,7 @@ describe('lib/env.ts — validación de variables de entorno', () => {
     const { env } = await import('@/lib/env');
 
     expect(env.DATABASE_URL).toBe(REQUIRED_VARS.DATABASE_URL);
+    expect(env.DIRECT_URL).toBe(REQUIRED_VARS.DIRECT_URL);
     expect(env.NEXTAUTH_URL).toBe(REQUIRED_VARS.NEXTAUTH_URL);
     expect(env.NODE_ENV).toBe('test');
   });

@@ -4,6 +4,7 @@ import { z } from 'zod';
 // SEC-1: módulo server-only; importar desde un Client Component rompe el build.
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
+  DIRECT_URL: z.string().min(1),
   NEXTAUTH_SECRET: z.string().min(1),
   NEXTAUTH_URL: z.url(),
   ANTHROPIC_API_KEY: z.string().min(1),
