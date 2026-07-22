@@ -1,5 +1,6 @@
 // Fundación del esquema Prisma (GTK-6): enums transversales y convención de bloques.
-// Los modelos del dominio llegan en tickets DB siguientes según docs/technical/data-model.md.
+// RBAC, usuarios, sesiones y auditoría (GTK-7).
+// Los modelos restantes del dominio llegan en tickets DB siguientes según docs/technical/data-model.md.
 
 generator client {
   provider = "prisma-client-js"
@@ -38,6 +39,130 @@ enum SchemaType {
 enum AiModel {
   claude_sonnet_4_6 @map("claude-sonnet-4-6")
   claude_opus_4_8   @map("claude-opus-4-8")
+}
+
+/// RBAC del portal interno (RF-17)
+enum RoleName {
+  admin
+  gestor
+  editor
+  tecnico
+}
+
+/// Acciones registradas en audit_logs (RF-17 / RNF-ADMIN)
+enum AuditAction {
+  publish
+  approve
+  reject
+  delete
+  login
+  login_failed
+  role_change
+  ai_generate
+  export
+}
+
+model Role {
+  id          String           @id @default(uuid()) @db.Uuid
+  name        RoleName         @unique
+  label       String
+  description String?
+  users       User[]
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  deletedAt   DateTime?        @map("deleted_at")
+  createdById String?          @map("created_by_id") @db.Uuid
+  updatedById String?          @map("updated_by_id") @db.Uuid
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(uuid()) @db.Uuid
+  code        String           @unique /// p. ej. content.publish
+  module      String /// projects | content | users | ai
+  description String?
+  roles       RolePermission[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  deletedAt   DateTime?        @map("deleted_at")
+  createdById String?          @map("created_by_id") @db.Uuid
+  updatedById String?          @map("updated_by_id") @db.Uuid
+
+  @@index([module])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String     @map("role_id") @db.Uuid
+  permissionId String     @map("permission_id") @db.Uuid
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model User {
+  id            String    @id @default(uuid()) @db.Uuid
+  fullName      String    @map("full_name")
+  email         String    @unique
+  passwordHash  String    @map("password_hash") /// argon2/bcrypt (RNF-ADMIN)
+  roleId        String    @map("role_id") @db.Uuid
+  role          Role      @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  isActive      Boolean   @default(true) @map("is_active")
+  twofaEnabled  Boolean   @default(false) @map("twofa_enabled")
+  twofaSecret   String?   @map("twofa_secret") /// cifrado en reposo
+  lastLoginAt   DateTime? @map("last_login_at")
+  sessions      Session[]
+  auditLogs     AuditLog[]
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+  createdById   String?   @map("created_by_id") @db.Uuid
+  updatedById   String?   @map("updated_by_id") @db.Uuid
+
+  @@index([roleId])
+  @@index([isActive])
+  @@map("users")
+}
+
+/// Append-only operativo: sin updated_at/deleted_at (la revocación usa revoked_at)
+model Session {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique @map("token_hash")
+  ipAddress  String?   @map("ip_address")
+  userAgent  String?   @map("user_agent")
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+/// Append-only inmutable: sin updated_at/deleted_at
+model AuditLog {
+  id         String      @id @default(uuid()) @db.Uuid
+  userId     String?     @map("user_id") @db.Uuid
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     AuditAction
+  entityType String?     @map("entity_type")
+  entityId   String?     @map("entity_id") @db.Uuid
+  ipAddress  String?     @map("ip_address")
+  userAgent  String?     @map("user_agent")
+  metadata   Json? /// diff/contexto de la acción
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
 
 // --- Bloque AUDIT (todas las entidades excepto append-only) ---
