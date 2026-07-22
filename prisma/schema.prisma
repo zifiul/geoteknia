@@ -1,6 +1,7 @@
 // Fundación del esquema Prisma (GTK-6): enums transversales y convención de bloques.
 // RBAC, usuarios, sesiones y auditoría (GTK-7).
 // Activos multimedia y galería polimórfica (GTK-9).
+// Catálogos maestros provincias y tipologías de obra (GTK-10).
 // Los modelos restantes del dominio llegan en tickets DB siguientes según docs/technical/data-model.md.
 
 generator client {
@@ -208,6 +209,39 @@ model ContentMedia {
 
   @@index([contentType, contentId])
   @@map("content_media")
+}
+
+model Province {
+  id                  String    @id @default(uuid()) @db.Uuid
+  name                String
+  slug                String    @unique
+  ccaa                String /// comunidad autónoma
+  ineCode             String?   @map("ine_code") /// código INE
+  isOperational       Boolean   @default(false) @map("is_operational")
+  defaultGeologyNotes String?   @map("default_geology_notes") @db.Text
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
+  createdById         String?   @map("created_by_id") @db.Uuid
+  updatedById         String?   @map("updated_by_id") @db.Uuid
+
+  @@index([isOperational])
+  @@map("provinces")
+}
+
+model WorkTypology {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String    @unique
+  description String?   @db.Text
+  order       Int?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+
+  @@map("work_typologies")
 }
 
 // --- Bloque AUDIT (todas las entidades excepto append-only) ---
