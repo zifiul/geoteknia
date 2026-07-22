@@ -3,6 +3,8 @@
 // Activos multimedia y galería polimórfica (GTK-9).
 // Catálogos maestros provincias y tipologías de obra (GTK-10).
 // Configuración de organización y canales de contacto (GTK-11).
+// Generación de contenido IA, tokens y revisiones editoriales (GTK-16).
+// Servicios, geo-zonas, intersección servicio×zona y cobertura (GTK-18).
 // Los modelos restantes del dominio llegan en tickets DB siguientes según docs/technical/data-model.md.
 
 generator client {
@@ -246,6 +248,7 @@ model Province {
   ineCode             String?   @map("ine_code") /// código INE
   isOperational       Boolean   @default(false) @map("is_operational")
   defaultGeologyNotes String?   @map("default_geology_notes") @db.Text
+  geoZones            GeoZone[]
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
   deletedAt           DateTime? @map("deleted_at")
@@ -424,6 +427,148 @@ model ContentRevision {
   @@index([contentType, contentId, versionNumber])
   @@index([editorId])
   @@map("content_revisions")
+}
+
+/// Páginas pillar de servicios geotécnicos (GTK-18 / RF-01)
+model Service {
+  id              String    @id @default(uuid()) @db.Uuid
+  name            String
+  summary         String?   @db.Text
+  body            String    @db.Text /// cuerpo H2/H3
+  methodology     Json? /// pasos
+  applicableNorms String?   @map("applicable_norms") @db.Text
+  deliverables    Json? /// memoria, columnas litológicas...
+  heroImageId     String?   @map("hero_image_id") @db.Uuid
+  order           Int?
+  isPillar        Boolean   @default(true) @map("is_pillar")
+  // Bloque SEO
+  slug            String    @unique
+  metaTitle       String?   @map("meta_title") @db.VarChar(60)
+  metaDescription String?   @map("meta_description") @db.VarChar(155)
+  canonicalUrl    String?   @map("canonical_url")
+  schemaType      SchemaType  @map("schema_type")
+  noindex         Boolean   @default(false)
+  ogImageId       String?   @map("og_image_id") @db.Uuid
+  h1              String?
+  // Bloque EDITORIAL
+  workflowStatus     WorkflowStatus @default(borrador_ia) @map("workflow_status")
+  isAiAssisted       Boolean        @default(false) @map("is_ai_assisted")
+  authorId           String?        @map("author_id") @db.Uuid
+  reviewedById       String?        @map("reviewed_by_id") @db.Uuid
+  approvedById       String?        @map("approved_by_id") @db.Uuid
+  approvedAt         DateTime?      @map("approved_at")
+  publishedAt        DateTime?      @map("published_at")
+  scheduledPublishAt DateTime?      @map("scheduled_publish_at")
+  currentVersion     Int            @default(1) @map("current_version")
+  // Bloque AUDIT
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+  // Relaciones
+  zoneCoverage     ServiceZoneCoverage[]
+  serviceZonePages ServiceZonePage[]
+
+  @@index([workflowStatus])
+  @@index([deletedAt])
+  @@map("services")
+}
+
+/// Geo-landings por provincia (GTK-18 / RF-04)
+model GeoZone {
+  id              String   @id @default(uuid()) @db.Uuid
+  provinceId      String   @map("province_id") @db.Uuid
+  province        Province @relation(fields: [provinceId], references: [id], onDelete: Restrict)
+  name            String
+  localGeology    String   @map("local_geology") @db.Text
+  operationalBase String?  @map("operational_base") @db.Text
+  body            String   @db.Text
+  wordCount       Int?     @map("word_count") /// control de thin content
+  heroImageId     String?  @map("hero_image_id") @db.Uuid
+  // Bloque SEO
+  slug            String     @unique
+  metaTitle       String?    @map("meta_title") @db.VarChar(60)
+  metaDescription String?    @map("meta_description") @db.VarChar(155)
+  canonicalUrl    String?    @map("canonical_url")
+  schemaType      SchemaType @map("schema_type")
+  noindex         Boolean    @default(false)
+  ogImageId       String?    @map("og_image_id") @db.Uuid
+  h1              String?
+  // Bloque EDITORIAL
+  workflowStatus     WorkflowStatus @default(borrador_ia) @map("workflow_status")
+  isAiAssisted       Boolean        @default(false) @map("is_ai_assisted")
+  authorId           String?        @map("author_id") @db.Uuid
+  reviewedById       String?        @map("reviewed_by_id") @db.Uuid
+  approvedById       String?        @map("approved_by_id") @db.Uuid
+  approvedAt         DateTime?      @map("approved_at")
+  publishedAt        DateTime?      @map("published_at")
+  scheduledPublishAt DateTime?      @map("scheduled_publish_at")
+  currentVersion     Int            @default(1) @map("current_version")
+  // Bloque AUDIT
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+  // Relaciones
+  zoneCoverage     ServiceZoneCoverage[]
+  serviceZonePages ServiceZonePage[]
+
+  @@index([provinceId])
+  @@index([workflowStatus])
+  @@map("geo_zones")
+}
+
+/// Páginas de intersección servicio×zona (GTK-18 / RF-Q1 §8.3)
+model ServiceZonePage {
+  id            String  @id @default(uuid()) @db.Uuid
+  serviceId     String  @map("service_id") @db.Uuid
+  service       Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  zoneId        String  @map("zone_id") @db.Uuid
+  zone          GeoZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  targetKeyword String? @map("target_keyword")
+  body          String  @db.Text
+  // Bloque SEO
+  slug            String     @unique
+  metaTitle       String?    @map("meta_title") @db.VarChar(60)
+  metaDescription String?    @map("meta_description") @db.VarChar(155)
+  canonicalUrl    String?    @map("canonical_url")
+  schemaType      SchemaType @map("schema_type")
+  noindex         Boolean    @default(false)
+  ogImageId       String?    @map("og_image_id") @db.Uuid
+  h1              String?
+  // Bloque EDITORIAL
+  workflowStatus     WorkflowStatus @default(borrador_ia) @map("workflow_status")
+  isAiAssisted       Boolean        @default(false) @map("is_ai_assisted")
+  authorId           String?        @map("author_id") @db.Uuid
+  reviewedById       String?        @map("reviewed_by_id") @db.Uuid
+  approvedById       String?        @map("approved_by_id") @db.Uuid
+  approvedAt         DateTime?      @map("approved_at")
+  publishedAt        DateTime?      @map("published_at")
+  scheduledPublishAt DateTime?      @map("scheduled_publish_at")
+  currentVersion     Int            @default(1) @map("current_version")
+  // Bloque AUDIT
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+
+  @@unique([serviceId, zoneId])
+  @@index([workflowStatus])
+  @@map("service_zone_pages")
+}
+
+/// Cobertura M:N servicio×zona para linking interno (GTK-18 / §8.2)
+model ServiceZoneCoverage {
+  serviceId String  @map("service_id") @db.Uuid
+  zoneId    String  @map("zone_id") @db.Uuid
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  zone      GeoZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  @@id([serviceId, zoneId])
+  @@map("service_zone_coverage")
 }
 
 // --- Bloque AUDIT (todas las entidades excepto append-only) ---
