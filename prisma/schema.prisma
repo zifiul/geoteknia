@@ -6,6 +6,7 @@
 // Generación de contenido IA, tokens y revisiones editoriales (GTK-16).
 // Servicios, geo-zonas, intersección servicio×zona y cobertura (GTK-18).
 // Casos de estudio, equipo técnico y maquinaria (GTK-20).
+// FAQs, lead magnets y reglas de calculadora (GTK-15).
 // Los modelos restantes del dominio llegan en tickets DB siguientes según docs/technical/data-model.md.
 
 generator client {
@@ -99,6 +100,12 @@ enum ContactDepartment {
   presupuestos
   direccion_tecnica
   licitaciones
+}
+
+/// Alcance de un grupo de FAQs (GTK-15 / RF-16)
+enum FaqScope {
+  general
+  service
 }
 
 /// Clasificación de maquinaria geotécnica (GTK-20 / RF-07)
@@ -278,7 +285,8 @@ model WorkTypology {
   slug        String    @unique
   description String?   @db.Text
   order       Int?
-  caseStudies CaseStudy[]
+  caseStudies      CaseStudy[]
+  calculatorRules  CalculatorRule[]
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
@@ -485,6 +493,8 @@ model Service {
   serviceZonePages  ServiceZonePage[]
   caseStudies       CaseStudy[]
   machineryServices MachineryService[]
+  faqGroups         FaqGroup[]
+  leadMagnets       LeadMagnet[]
 
   @@index([workflowStatus])
   @@index([deletedAt])
@@ -743,6 +753,127 @@ model MachineryService {
 
   @@id([machineryId, serviceId])
   @@map("machinery_services")
+}
+
+/// Agrupaciones de FAQs generales o por servicio (GTK-15 / RF-16)
+model FaqGroup {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  scope     FaqScope
+  serviceId String?   @map("service_id") @db.Uuid
+  service   Service?  @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  // Bloque SEO
+  slug       String     @unique
+  schemaType SchemaType @map("schema_type")
+  // Bloque AUDIT
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+  // Relaciones
+  faqs Faq[]
+
+  @@index([serviceId])
+  @@map("faq_groups")
+}
+
+/// Preguntas y respuestas revisables (GTK-15 / RF-16)
+model Faq {
+  id              String   @id @default(uuid()) @db.Uuid
+  faqGroupId      String   @map("faq_group_id") @db.Uuid
+  faqGroup        FaqGroup @relation(fields: [faqGroupId], references: [id], onDelete: Cascade)
+  question        String
+  answer          String   @db.Text
+  internalLinkUrl String?  @map("internal_link_url")
+  order           Int?
+  // Bloque EDITORIAL
+  workflowStatus     WorkflowStatus @default(borrador_ia) @map("workflow_status")
+  isAiAssisted       Boolean        @default(false) @map("is_ai_assisted")
+  authorId           String?        @map("author_id") @db.Uuid
+  reviewedById       String?        @map("reviewed_by_id") @db.Uuid
+  approvedById       String?        @map("approved_by_id") @db.Uuid
+  approvedAt         DateTime?      @map("approved_at")
+  publishedAt        DateTime?      @map("published_at")
+  scheduledPublishAt DateTime?      @map("scheduled_publish_at")
+  currentVersion     Int            @default(1) @map("current_version")
+  // Bloque AUDIT
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+
+  @@index([faqGroupId])
+  @@index([workflowStatus])
+  @@map("faqs")
+}
+
+/// Recursos descargables gated de captación (GTK-15 / RF-11)
+model LeadMagnet {
+  id          String  @id @default(uuid()) @db.Uuid
+  title       String
+  description String? @db.Text
+  fileId      String  @map("file_id") @db.Uuid /// PDF en media_assets
+  serviceId   String? @map("service_id") @db.Uuid
+  service     Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  thankYouUrl String  @map("thank_you_url") /// URL única medible
+  isGated     Boolean @default(true) @map("is_gated")
+  // Bloque SEO
+  slug            String     @unique
+  metaTitle       String?    @map("meta_title") @db.VarChar(60)
+  metaDescription String?    @map("meta_description") @db.VarChar(155)
+  canonicalUrl    String?    @map("canonical_url")
+  schemaType      SchemaType @map("schema_type")
+  noindex         Boolean    @default(false)
+  ogImageId       String?    @map("og_image_id") @db.Uuid
+  h1              String?
+  // Bloque EDITORIAL
+  workflowStatus     WorkflowStatus @default(borrador_ia) @map("workflow_status")
+  isAiAssisted       Boolean        @default(false) @map("is_ai_assisted")
+  authorId           String?        @map("author_id") @db.Uuid
+  reviewedById       String?        @map("reviewed_by_id") @db.Uuid
+  approvedById       String?        @map("approved_by_id") @db.Uuid
+  approvedAt         DateTime?      @map("approved_at")
+  publishedAt        DateTime?      @map("published_at")
+  scheduledPublishAt DateTime?      @map("scheduled_publish_at")
+  currentVersion     Int            @default(1) @map("current_version")
+  // Bloque AUDIT
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+
+  @@index([serviceId])
+  @@map("lead_magnets")
+}
+
+/// Reglas configurables de la calculadora de alcance (GTK-15 / RF-Q1)
+model CalculatorRule {
+  id               String       @id @default(uuid()) @db.Uuid
+  workTypologyId   String       @map("work_typology_id") @db.Uuid
+  workTypology     WorkTypology @relation(fields: [workTypologyId], references: [id], onDelete: Cascade)
+  minFloors        Int?         @map("min_floors")
+  maxFloors        Int?         @map("max_floors")
+  minAreaM2        Decimal?     @map("min_area_m2") @db.Decimal(10, 2)
+  maxAreaM2        Decimal?     @map("max_area_m2") @db.Decimal(10, 2)
+  boreholesFormula Json         @map("boreholes_formula") /// regla/fórmula
+  depthEstimate    String?      @map("depth_estimate")
+  recommendedTests String?      @map("recommended_tests") @db.Text
+  cteReference     String?      @map("cte_reference") /// CTE DB-SE-C
+  isActive         Boolean      @default(true) @map("is_active")
+  // Bloque AUDIT
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+
+  @@index([workTypologyId])
+  @@index([isActive])
+  @@index([workTypologyId, isActive])
+  @@map("calculator_rules")
 }
 
 // --- Bloque AUDIT (todas las entidades excepto append-only) ---
