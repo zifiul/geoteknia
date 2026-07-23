@@ -16,7 +16,9 @@ Para issues de Linear con label **`DB`** (schema Prisma, migraciones, seeds, ín
 
 **Contrato congelado:** en Geoteknia no hay SDK generado. El contrato son los **schemas Zod compartidos** (`lib/validations/` y `lib/<dominio>/*-schemas.ts`) más `docs/technical/api-spec.yml` mantenido a mano. Una vez congelado, back y front avanzan en paralelo sin renegociar tipos.
 
-**Revisión humana:** dos paradas obligatorias (tras SDD y antes de archive/PR) más un code-review obligatorio con veredicto **APTO** que cierra el ciclo antes del PR.
+**Revisión humana:** dos paradas obligatorias (tras SDD y antes de archive) más un code-review obligatorio con veredicto **APTO** que cierra el ciclo antes de archivar.
+
+**Commit y PR manuales:** el harness **no** crea commits ni abre PRs. Tras la fase 8 (archive), el humano commitea y abre el PR cuando corresponda.
 
 **Shift-Left Security:** preventiva en las fases 1–3 (threat model en la spec, seguridad en el contrato, abuse cases en TDD), verificada automáticamente en la fase 5b (SAST/SCA/secrets/DAST ligero) y cerrada en la fase 6, cuyo veredicto APTO exige el security scan limpio. Cero paradas humanas nuevas.
 
@@ -58,7 +60,7 @@ Para issues de Linear con label **`DB`** (schema Prisma, migraciones, seeds, ín
 ### 2. Contrato *(si la US toca Route Handlers o Server Actions)* 🛡️ *api security governance*
 - **Agente:** `contract-engineer`
 - **Skills:** `api-contract-governance`
-- **Acción:** define/evoluciona los schemas Zod compartidos del cambio y actualiza `docs/technical/api-spec.yml`. Congela el contrato (commit) antes de implementar.
+- **Acción:** define/evoluciona los schemas Zod compartidos del cambio y actualiza `docs/technical/api-spec.yml`. Congela el contrato (artefactos listos en disco) antes de implementar; el commit lo hace el humano.
 - **🛡️ Shift-left:** el contrato declara para cada endpoint/acción: rol y permiso atómico RBAC requerido, rate limit, Turnstile si es público, límites de payload y formatos estrictos en los schemas. **Al congelarse el contrato, la seguridad de la API queda congelada con él.**
 - **Entrega:** schemas Zod + `api-spec.yml` **(con seguridad declarada)**, contrato congelado.
 - **Salto de fase:** si la US no toca API ni mutaciones (p. ej. contenido estático puro), se omite y se registra en el resumen de fase.
@@ -113,19 +115,20 @@ Para issues de Linear con label **`DB`** (schema Prisma, migraciones, seeds, ín
 ---
 
 > ### 🔶 GATE 2 — Revisión humana final *(parada obligatoria)*
-> El flujo **SE DETIENE**: con code-review APTO (funcional + seguridad) + validación manual, se espera el OK humano **ANTES** de archive/PR. — **humano**
+> El flujo **SE DETIENE**: con code-review APTO (funcional + seguridad) + validación manual, se espera el OK humano **ANTES** de archive. Tras archivar, el humano commitea y abre el PR por su cuenta. — **humano**
 
 ---
 
-### 8. Archive + PR
+### 8. Archive *(commit y PR manuales)*
 - **Agente:** `spec-author`
-- **Skills:** `openspec-archive-change`, `openspec-sync-specs`, `commit`
-- **Acción:** verifica el gate `require-code-review`, archiva el change, promueve las specs y abre el PR con `commit` (solo tras gate final y code-review APTO).
-- **Entrega:** change archivado, specs vivas, PR abierto.
+- **Skills:** `openspec-archive-change`, `openspec-sync-specs`
+- **Acción:** verifica el gate `require-code-review`, archiva el change y promueve las specs vivas (solo tras gate final y code-review APTO). **No** crea commits ni abre PRs.
+- **Entrega:** change archivado, specs vivas sincronizadas.
+- **Post-harness (humano):** commit de los cambios en la rama y apertura del PR a `master` cuando el humano lo decida.
 
 ---
 
-## ✅ US completada — PR a master
+## ✅ US completada — archive hecho; commit y PR a cargo del humano
 
 ---
 
@@ -147,7 +150,7 @@ Para issues de Linear con label **`DB`** (schema Prisma, migraciones, seeds, ín
 0 → 1 (SDD + threat model) → GATE 1 → 2 (contrato Zod + api-security)
   → 3 (TDD-RED + abuse cases) → 4a ∥ 4b (impl + secure-coding)
   → 5a (QA) ∥ 5b (Security Scan) → 6 (Review + security) ∥ 7 (Docs)
-  → GATE 2 → 8 (Archive + PR)
+  → GATE 2 → 8 (Archive) → [humano: commit + PR]
 ```
 
 ---
@@ -186,8 +189,8 @@ El orquestador anuncia en el plan: **variante = Harness DB**.
 | 5b | Security Scan | **Obligatoria (ligera)** | SAST sobre el diff, SCA si cambian deps, secretos. **Omitir** DAST/`curl` malicioso (sin endpoints nuevos). |
 | 6 | Code Review | **Obligatoria** | Checklist enfocado a schema: UUID, bloques AUDIT/SEO/EDITORIAL, PII, índices, FKs, append-only, sin SQL inseguro. Veredicto APTO/NO APTO. |
 | 7 | Docs | **Obligatoria** | Actualizar `docs/technical/data-model.md` (y estándares solo si cambia una convención). |
-| 🔶 | Gate 2 | **Obligatoria** | OK humano antes de archive/PR. |
-| 8 | Archive + PR | **Obligatoria** | Misma comprobación `require-code-review`. PR acotado a schema/migración/seed/docs. |
+| 🔶 | Gate 2 | **Obligatoria** | OK humano antes de archive. Commit y PR manuales tras archivar. |
+| 8 | Archive | **Obligatoria** | Misma comprobación `require-code-review`. Sin commit ni PR automáticos. |
 
 ```
 0 → 1 (SDD ligero + threat model datos) → GATE 1
@@ -195,7 +198,7 @@ El orquestador anuncia en el plan: **variante = Harness DB**.
   → 4a (Prisma) → [4b omitida]
   → 5a (validate + migrate + db-state) ∥ 5b (scan sin DAST)
   → 6 (Review) ∥ 7 (data-model.md)
-  → GATE 2 → 8 (Archive + PR)
+  → GATE 2 → 8 (Archive) → [humano: commit + PR]
 ```
 
 ### Selección y orden típico (label `DB`)
@@ -260,7 +263,7 @@ En fase 1, el `spec-author` prioriza:
 | 6 | Code Review + security 🛡️ | `code-reviewer` | Gate duro (APTO condicionado a seguridad) |
 | 7 | Docs | `docs-keeper` | — (paralelo con 6) |
 | 🔶 | **Gate 2** — Revisión final | humano | Parada obligatoria |
-| 8 | Archive + PR | `spec-author` | — |
+| 8 | Archive *(commit/PR manuales)* | `spec-author` | — |
 
 ### Resumen Harness DB (deltas)
 
