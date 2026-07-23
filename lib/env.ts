@@ -9,6 +9,8 @@ const envSchema = z.object({
   NEXTAUTH_URL: z.url(),
   ANTHROPIC_API_KEY: z.string().min(1),
   RESEND_API_KEY: z.string().min(1),
+  EMAIL_FROM: z.string().min(1),
+  EMAIL_REPLY_TO: z.email(),
   TURNSTILE_SECRET_KEY: z.string().min(1),
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().min(1),
   NODE_ENV: z.enum(['development', 'test', 'production']),

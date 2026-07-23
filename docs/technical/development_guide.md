@@ -46,7 +46,9 @@ El módulo `lib/env.ts` valida al arrancar que existan todas las variables reque
 | `NEXTAUTH_SECRET` | Firma de sesiones Auth.js. Generar con `openssl rand -base64 32`. |
 | `NEXTAUTH_URL` | URL base local: `http://localhost:3000`. |
 | `ANTHROPIC_API_KEY` | SDK de Claude (solo servidor). |
-| `RESEND_API_KEY` | Email transaccional. |
+| `RESEND_API_KEY` | Email transaccional (Resend). |
+| `EMAIL_FROM` | Remitente verificado en Resend (`Nombre <email@dominio.com>`). |
+| `EMAIL_REPLY_TO` | Dirección de respuesta para emails transaccionales. |
 | `TURNSTILE_SECRET_KEY` / `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile. |
 | `NODE_ENV` | `development` en local. |
 
