@@ -974,20 +974,22 @@ erDiagram
 - Índices de auditoría: `audit_logs.user_id`, `audit_logs(entity_type, entity_id)`, `audit_logs.action`, `audit_logs.created_at`.
 - Índices IA: `ai_generations(target_content_type, target_content_id)`, `ai_generations.status`, `ai_token_usage.billing_period`, `content_revisions(content_type, content_id, version_number)`.
 
-Índices SQL manuales recomendados:
+Índices SQL avanzados (materializados en GTK-19):
 
-- Parciales de publicación:
+- Parciales de publicación (`idx_*_published`):
   - `services(slug) WHERE workflow_status = 'publicado' AND deleted_at IS NULL`
-  - Repetir para `geo_zones`, `service_zone_pages`, `blog_posts` y `case_studies`.
-- Parciales para soft delete:
+  - `geo_zones`, `service_zone_pages` y `case_studies` con el mismo patrón.
+  - `blog_posts` — pendiente de materializar cuando exista la tabla (GTK-13).
+- Parciales soft delete (`idx_*_active`):
   - `leads(created_at) WHERE deleted_at IS NULL`
-  - Repetir para `projects` y `contacts`.
-- BRIN temporal en tablas append-only:
-  - `conversion_events(occurred_at)`
-  - `audit_logs(created_at)`
-  - `ai_token_usage(created_at)`
-  - `project_state_history(created_at)`
-- GIN opcional sobre `leads.project_data` si el reporting necesita filtrar por claves internas del JSON.
+  - `projects(created_at) WHERE deleted_at IS NULL`
+  - `contacts(created_at) WHERE deleted_at IS NULL`
+- BRIN temporal (`idx_*_brin`):
+  - `conversion_events(occurred_at)`, `audit_logs(created_at)`, `ai_token_usage(created_at)`, `project_state_history(created_at)`
+- GIN sobre JSON:
+  - `leads.project_data` con `jsonb_path_ops` (`idx_leads_project_data_gin`)
+
+Migración: `20260723150546_performance_partial_brin_gin_indexes`. En producción con datos, valorar `CREATE INDEX CONCURRENTLY` fuera de transacción Prisma.
 
 ## 8. RGPD y Seguridad de Datos
 
