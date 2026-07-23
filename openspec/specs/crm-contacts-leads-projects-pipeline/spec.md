@@ -43,6 +43,15 @@ El schema SHALL incluir `Lead` con `reference_number` único, `gdpr_consent` no 
 - **WHEN** se inspecciona el schema Prisma
 - **THEN** `Lead` declara `project Project?` y `Project.leadId` es `@unique`
 
+#### Scenario: Lead con eventos atribuibles
+
+- **WHEN** un lead tiene eventos de conversión asociados
+- **THEN** se accede vía `lead.conversionEvents`
+
+### Requirement: CRM leads con eventos de conversión
+
+El modelo `Lead` SHALL exponer la relación 1:N opcional con `ConversionEvent`.
+
 ### Requirement: Tabla project_states
 
 El schema SHALL incluir `ProjectState` con `slug` único, `order` indexado y flags `is_initial`, `is_won`, `is_lost`, `is_terminal`.
