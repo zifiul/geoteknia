@@ -17,7 +17,7 @@ El schema SHALL declarar el enum `EquipmentType` con valores `sonda_rotacion`, `
 
 ### Requirement: Tabla case_studies
 
-El schema SHALL incluir `CaseStudy` con FKs restrict a `services`, `provinces` y `work_typologies`; bloques SEO/EDITORIAL/AUDIT; columna `source_project_id` UUID nullable sin FK Prisma; índices en FKs, `project_year` y `workflow_status`.
+El schema SHALL incluir `CaseStudy` con FKs restrict a `services`, `provinces` y `work_typologies`; bloques SEO/EDITORIAL/AUDIT; relación opcional `sourceProject` a `projects` (`onDelete: SetNull`); índices en FKs, `project_year` y `workflow_status`.
 
 #### Scenario: Default editorial en caso de estudio
 
@@ -29,10 +29,10 @@ El schema SHALL incluir `CaseStudy` con FKs restrict a `services`, `provinces` y
 - **WHEN** se inspecciona la migración
 - **THEN** existe índice único btree en `case_studies.slug`
 
-#### Scenario: source_project_id sin FK dura
+#### Scenario: FK source_project_id a projects
 
-- **WHEN** se inspecciona el schema Prisma
-- **THEN** `CaseStudy.sourceProjectId` es `String? @db.Uuid` sin relación `@relation` a `projects`
+- **WHEN** se inspecciona la migración
+- **THEN** `case_studies.source_project_id` referencia `projects.id` con `ON DELETE SET NULL`
 
 ### Requirement: Tabla team_members
 

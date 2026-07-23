@@ -7,6 +7,7 @@
 // Servicios, geo-zonas, intersección servicio×zona y cobertura (GTK-18).
 // Casos de estudio, equipo técnico y maquinaria (GTK-20).
 // FAQs, lead magnets y reglas de calculadora (GTK-15).
+// CRM ligero: contactos, leads, proyectos y pipeline (GTK-12).
 // Los modelos restantes del dominio llegan en tickets DB siguientes según docs/technical/data-model.md.
 
 generator client {
@@ -118,6 +119,46 @@ enum EquipmentType {
   vehiculo_especial
 }
 
+/// Tipo de conversión comercial (GTK-12 / RF-02)
+enum LeadType {
+  presupuesto
+  licitacion
+  recurso
+  ubicacion
+}
+
+/// Canal de entrada del lead (GTK-12 / RF-08)
+enum LeadChannel {
+  formulario
+  whatsapp
+  tel
+  ubicacion
+  lead_magnet
+}
+
+/// Fuente de atribución del lead (GTK-12 / RF-15)
+enum LeadSource {
+  organico
+  sem
+  directo
+  referral
+}
+
+/// Estado de un hito del pipeline (GTK-12 / RF-18)
+enum MilestoneStatus {
+  pendiente
+  cumplido
+  retrasado
+}
+
+/// Tipo de documento privado del proyecto (GTK-12 / RF-18)
+enum ProjectDocType {
+  presupuesto
+  informe
+  contrato
+  otro
+}
+
 model Role {
   id          String           @id @default(uuid()) @db.Uuid
   name        RoleName         @unique
@@ -171,9 +212,10 @@ model User {
   twofaEnabled  Boolean   @default(false) @map("twofa_enabled")
   twofaSecret   String?   @map("twofa_secret") /// cifrado en reposo
   lastLoginAt   DateTime? @map("last_login_at")
-  sessions      Session[]
-  auditLogs     AuditLog[]
-  teamMember    TeamMember?
+  sessions          Session[]
+  auditLogs         AuditLog[]
+  teamMember        TeamMember?
+  assignedProjects  Project[]
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   deletedAt     DateTime? @map("deleted_at")
@@ -269,6 +311,9 @@ model Province {
   defaultGeologyNotes String?   @map("default_geology_notes") @db.Text
   geoZones            GeoZone[]
   caseStudies         CaseStudy[]
+  contacts            Contact[]
+  leads               Lead[]
+  projects            Project[]
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
   deletedAt           DateTime? @map("deleted_at")
@@ -287,6 +332,8 @@ model WorkTypology {
   order       Int?
   caseStudies      CaseStudy[]
   calculatorRules  CalculatorRule[]
+  leads            Lead[]
+  projects         Project[]
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
@@ -495,6 +542,8 @@ model Service {
   machineryServices MachineryService[]
   faqGroups         FaqGroup[]
   leadMagnets       LeadMagnet[]
+  leads             Lead[]
+  projects          Project[]
 
   @@index([workflowStatus])
   @@index([deletedAt])
@@ -618,7 +667,8 @@ model CaseStudy {
   projectYear     Int?         @map("project_year")
   latitude        Decimal?     @db.Decimal(9, 6)
   longitude       Decimal?     @db.Decimal(9, 6)
-  sourceProjectId String?      @map("source_project_id") @db.Uuid /// FK lógica -> projects; relación añadida en DB-11
+  sourceProjectId String?      @map("source_project_id") @db.Uuid
+  sourceProject   Project?     @relation("CaseStudySourceProject", fields: [sourceProjectId], references: [id], onDelete: SetNull)
   // Bloque SEO
   slug            String     @unique
   metaTitle       String?    @map("meta_title") @db.VarChar(60)
@@ -844,9 +894,223 @@ model LeadMagnet {
   deletedAt   DateTime? @map("deleted_at")
   createdById String?   @map("created_by_id") @db.Uuid
   updatedById String?   @map("updated_by_id") @db.Uuid
+  // Relaciones
+  leads Lead[]
 
   @@index([serviceId])
   @@map("lead_magnets")
+}
+
+/// Interlocutores deduplicados del CRM (GTK-12 / RF-18)
+model Contact {
+  id               String    @id @default(uuid()) @db.Uuid
+  fullName         String?   @map("full_name")
+  email            String?
+  phone            String?
+  company          String?
+  professionalRole String?   @map("professional_role")
+  provinceId       String?   @map("province_id") @db.Uuid
+  province         Province? @relation(fields: [provinceId], references: [id], onDelete: SetNull)
+  notes            String?   @db.Text
+  leads            Lead[]
+  projects         Project[]
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+  createdById      String?   @map("created_by_id") @db.Uuid
+  updatedById      String?   @map("updated_by_id") @db.Uuid
+
+  @@index([email])
+  @@index([phone])
+  @@map("contacts")
+}
+
+/// Conversión entrante con atribución y consentimiento (GTK-12 / RF-02/08/11/15)
+model Lead {
+  id              String        @id @default(uuid()) @db.Uuid
+  contactId       String?       @map("contact_id") @db.Uuid
+  contact         Contact?      @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  referenceNumber String        @unique @map("reference_number") /// mostrado en email RF-02
+  leadType        LeadType      @map("lead_type")
+  channel         LeadChannel
+  source          LeadSource
+  serviceId       String?       @map("service_id") @db.Uuid
+  service         Service?      @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  provinceId      String?       @map("province_id") @db.Uuid
+  province        Province?     @relation(fields: [provinceId], references: [id], onDelete: SetNull)
+  workTypologyId  String?       @map("work_typology_id") @db.Uuid
+  workTypology    WorkTypology? @relation(fields: [workTypologyId], references: [id], onDelete: SetNull)
+  projectData     Json?         @map("project_data") /// nº plantas, superficie, fase...
+  cadastralRef    String?       @map("cadastral_ref") /// RF-Q2
+  mapLat          Decimal?      @map("map_lat") @db.Decimal(9, 6)
+  mapLng          Decimal?      @map("map_lng") @db.Decimal(9, 6)
+  expedienteRef   String?       @map("expediente_ref") /// RF-15
+  estimatedValue  Decimal?      @map("estimated_value") @db.Decimal(12, 2)
+  leadMagnetId    String?       @map("lead_magnet_id") @db.Uuid
+  leadMagnet      LeadMagnet?   @relation(fields: [leadMagnetId], references: [id], onDelete: SetNull)
+  utmSource       String?       @map("utm_source")
+  utmMedium       String?       @map("utm_medium")
+  utmCampaign     String?       @map("utm_campaign")
+  gaClientId      String?       @map("ga_client_id") /// atribución GA4
+  gdprConsent     Boolean       @map("gdpr_consent") /// RNF-SEC
+  landingUrl      String?       @map("landing_url")
+  project         Project?
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  deletedAt       DateTime?     @map("deleted_at")
+  createdById     String?       @map("created_by_id") @db.Uuid
+  updatedById     String?       @map("updated_by_id") @db.Uuid
+
+  @@index([leadType])
+  @@index([channel])
+  @@index([source])
+  @@index([serviceId])
+  @@index([provinceId])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+/// Estados configurables del pipeline comercial (GTK-12 / RF-18)
+model ProjectState {
+  id          String                @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String                @unique
+  order       Int
+  isInitial   Boolean               @map("is_initial")
+  isWon       Boolean               @map("is_won")
+  isLost      Boolean               @map("is_lost")
+  isTerminal  Boolean               @map("is_terminal")
+  projects    Project[]
+  historyTo   ProjectStateHistory[] @relation("ToState")
+  historyFrom ProjectStateHistory[] @relation("FromState")
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @updatedAt @map("updated_at")
+  deletedAt   DateTime?             @map("deleted_at")
+  createdById String?               @map("created_by_id") @db.Uuid
+  updatedById String?               @map("updated_by_id") @db.Uuid
+
+  @@index([order])
+  @@map("project_states")
+}
+
+/// Ficha viva del pipeline, creada desde un lead (GTK-12 / RF-18)
+model Project {
+  id                   String                @id @default(uuid()) @db.Uuid
+  leadId               String                @unique @map("lead_id") @db.Uuid
+  lead                 Lead                  @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  contactId            String?               @map("contact_id") @db.Uuid
+  contact              Contact?              @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  title                String
+  stateId              String                @map("state_id") @db.Uuid
+  state                ProjectState          @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  assignedTechnicianId String?               @map("assigned_technician_id") @db.Uuid
+  assignedTechnician   User?                 @relation(fields: [assignedTechnicianId], references: [id], onDelete: SetNull)
+  serviceId            String?               @map("service_id") @db.Uuid
+  service              Service?              @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  provinceId           String?               @map("province_id") @db.Uuid
+  province             Province?             @relation(fields: [provinceId], references: [id], onDelete: SetNull)
+  workTypologyId       String?               @map("work_typology_id") @db.Uuid
+  workTypology         WorkTypology?         @relation(fields: [workTypologyId], references: [id], onDelete: SetNull)
+  estimatedValue       Decimal?              @map("estimated_value") @db.Decimal(12, 2)
+  firstResponseAt      DateTime?             @map("first_response_at") /// control <48 h
+  isQualified          Boolean               @default(false) @map("is_qualified")
+  expedienteRef        String?               @map("expediente_ref")
+  closedAt             DateTime?             @map("closed_at")
+  stateHistory         ProjectStateHistory[]
+  milestones           ProjectMilestone[]
+  notes                ProjectNote[]
+  documents            ProjectDocument[]
+  sourceCaseStudies    CaseStudy[]           @relation("CaseStudySourceProject")
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+  deletedAt            DateTime?             @map("deleted_at")
+  createdById          String?               @map("created_by_id") @db.Uuid
+  updatedById          String?               @map("updated_by_id") @db.Uuid
+
+  @@index([stateId])
+  @@index([assignedTechnicianId])
+  @@index([serviceId])
+  @@index([provinceId])
+  @@index([createdAt])
+  @@index([isQualified])
+  @@map("projects")
+}
+
+/// Append-only: sin updated_at/deleted_at
+model ProjectStateHistory {
+  id          String        @id @default(uuid()) @db.Uuid
+  projectId   String        @map("project_id") @db.Uuid
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fromStateId String?       @map("from_state_id") @db.Uuid
+  fromState   ProjectState? @relation("FromState", fields: [fromStateId], references: [id], onDelete: SetNull)
+  toStateId   String        @map("to_state_id") @db.Uuid
+  toState     ProjectState  @relation("ToState", fields: [toStateId], references: [id], onDelete: Restrict)
+  changedById String        @map("changed_by_id") @db.Uuid
+  note        String?       @db.Text
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  @@index([projectId])
+  @@index([toStateId])
+  @@index([createdAt])
+  @@map("project_state_history")
+}
+
+/// Hitos operativos del proyecto (GTK-12 / RF-18)
+model ProjectMilestone {
+  id          String           @id @default(uuid()) @db.Uuid
+  projectId   String           @map("project_id") @db.Uuid
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  dueDate     DateTime?        @map("due_date") @db.Date
+  completedAt DateTime?        @map("completed_at")
+  status      MilestoneStatus?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  deletedAt   DateTime?        @map("deleted_at")
+  createdById String?          @map("created_by_id") @db.Uuid
+  updatedById String?          @map("updated_by_id") @db.Uuid
+
+  @@index([projectId])
+  @@index([dueDate])
+  @@map("project_milestones")
+}
+
+/// Notas internas del proyecto (GTK-12 / RF-18)
+model ProjectNote {
+  id          String    @id @default(uuid()) @db.Uuid
+  projectId   String    @map("project_id") @db.Uuid
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authorId    String    @map("author_id") @db.Uuid
+  body        String    @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+
+  @@index([projectId])
+  @@index([createdAt])
+  @@map("project_notes")
+}
+
+/// Documentación privada del proyecto (GTK-12 / RF-18)
+model ProjectDocument {
+  id           String         @id @default(uuid()) @db.Uuid
+  projectId    String         @map("project_id") @db.Uuid
+  project      Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  mediaAssetId String?        @map("media_asset_id") @db.Uuid
+  fileUrl      String?        @map("file_url")
+  docType      ProjectDocType @map("doc_type")
+  uploadedById String         @map("uploaded_by_id") @db.Uuid
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  deletedAt    DateTime?      @map("deleted_at")
+  createdById  String?        @map("created_by_id") @db.Uuid
+  updatedById  String?        @map("updated_by_id") @db.Uuid
+
+  @@index([projectId])
+  @@index([docType])
+  @@map("project_documents")
 }
 
 /// Reglas configurables de la calculadora de alcance (GTK-15 / RF-Q1)

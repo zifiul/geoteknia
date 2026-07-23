@@ -72,6 +72,8 @@ Usado por contenido revisable y publicable.
 | `LeadType` | `presupuesto`, `licitacion`, `recurso`, `ubicacion` | Tipo de conversión comercial. |
 | `LeadChannel` | `formulario`, `whatsapp`, `tel`, `ubicacion`, `lead_magnet` | Canal de entrada. |
 | `LeadSource` | `organico`, `sem`, `directo`, `referral` | Fuente de atribución. |
+| `MilestoneStatus` | `pendiente`, `cumplido`, `retrasado` | Estado de hitos del pipeline. |
+| `ProjectDocType` | `presupuesto`, `informe`, `contrato`, `otro` | Tipo de documento privado del proyecto. |
 | `ConversionEventName` | `generate_lead`, `click_tel`, `click_whatsapp`, `click_email`, `send_location`, `calculator_use`, `resource_download`, `scroll_depth` | Eventos de medición. |
 
 ## 4. Entidades por Dominio
