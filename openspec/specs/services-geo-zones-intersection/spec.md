@@ -70,3 +70,12 @@ El modelo `Province` SHALL incluir la relación `geoZones GeoZone[]`.
 
 - **WHEN** se inspecciona el schema Prisma
 - **THEN** `Province` declara `geoZones GeoZone[]`
+
+### Requirement: Back-relation blog en Service
+
+El modelo `Service` SHALL incluir la relación `blogPostServices BlogPostService[]` para linking interno desde artículos.
+
+#### Scenario: Relación servicio a links de blog
+
+- **WHEN** se inspecciona el schema Prisma
+- **THEN** `Service` declara `blogPostServices BlogPostService[]`
