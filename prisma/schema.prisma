@@ -552,6 +552,7 @@ model Service {
   serviceZonePages  ServiceZonePage[]
   caseStudies       CaseStudy[]
   machineryServices MachineryService[]
+  blogPostServices  BlogPostService[]
   faqGroups         FaqGroup[]
   leadMagnets       LeadMagnet[]
   leads             Lead[]
@@ -753,6 +754,7 @@ model TeamMember {
   updatedById String?   @map("updated_by_id") @db.Uuid
   // Relaciones
   caseStudies CaseStudyTeamMember[]
+  blogPosts   BlogPost[]
 
   @@index([collegeRegistrationNo])
   @@map("team_members")
@@ -815,6 +817,87 @@ model MachineryService {
 
   @@id([machineryId, serviceId])
   @@map("machinery_services")
+}
+
+/// Categorías editoriales del blog (GTK-13 / RF-06)
+model BlogCategory {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String
+  description String? @db.Text
+  // Bloque SEO
+  slug            String  @unique
+  metaTitle       String? @map("meta_title") @db.VarChar(60)
+  metaDescription String? @map("meta_description") @db.VarChar(155)
+  noindex         Boolean @default(false)
+  // Bloque AUDIT
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+  // Relaciones
+  posts BlogPost[]
+
+  @@map("blog_categories")
+}
+
+/// Artículos técnicos con autoría E-E-A-T (GTK-13 / RF-06)
+model BlogPost {
+  id           String       @id @default(uuid()) @db.Uuid
+  title        String
+  categoryId   String       @map("category_id") @db.Uuid
+  category     BlogCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  teamAuthorId String       @map("team_author_id") @db.Uuid /// autoría E-E-A-T
+  teamAuthor   TeamMember   @relation(fields: [teamAuthorId], references: [id], onDelete: Restrict)
+  body         String       @db.Text
+  toc          Json? /// tabla de contenidos
+  readingMinutes Int?       @map("reading_minutes")
+  excerpt      String?      @db.Text
+  heroImageId  String?      @map("hero_image_id") @db.Uuid
+  // Bloque SEO
+  slug            String     @unique
+  metaTitle       String?    @map("meta_title") @db.VarChar(60)
+  metaDescription String?    @map("meta_description") @db.VarChar(155)
+  canonicalUrl    String?    @map("canonical_url")
+  schemaType      SchemaType @map("schema_type")
+  noindex         Boolean    @default(false)
+  ogImageId       String?    @map("og_image_id") @db.Uuid
+  h1              String?
+  // Bloque EDITORIAL
+  workflowStatus     WorkflowStatus @default(borrador_ia) @map("workflow_status")
+  isAiAssisted       Boolean        @default(false) @map("is_ai_assisted")
+  authorId           String?        @map("author_id") @db.Uuid
+  reviewedById       String?        @map("reviewed_by_id") @db.Uuid
+  approvedById       String?        @map("approved_by_id") @db.Uuid
+  approvedAt         DateTime?      @map("approved_at")
+  publishedAt        DateTime?      @map("published_at")
+  scheduledPublishAt DateTime?      @map("scheduled_publish_at")
+  currentVersion     Int            @default(1) @map("current_version")
+  // Bloque AUDIT
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+  // Relaciones
+  services BlogPostService[]
+
+  @@index([categoryId])
+  @@index([teamAuthorId])
+  @@index([publishedAt])
+  @@index([workflowStatus])
+  @@map("blog_posts")
+}
+
+/// Linking interno artículo→servicio pillar (GTK-13 / §8.2)
+model BlogPostService {
+  blogPostId String   @map("blog_post_id") @db.Uuid
+  serviceId  String   @map("service_id") @db.Uuid
+  blogPost   BlogPost @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  service    Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([blogPostId, serviceId])
+  @@map("blog_post_services")
 }
 
 /// Agrupaciones de FAQs generales o por servicio (GTK-15 / RF-16)

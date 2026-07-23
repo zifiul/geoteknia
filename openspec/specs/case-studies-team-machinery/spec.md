@@ -77,12 +77,17 @@ El schema SHALL incluir `MachineryService` como puente M:N con PK compuesta `(ma
 
 ### Requirement: Back-relations
 
-El schema SHALL incluir `caseStudies` en `Service`, `Province` y `WorkTypology`; `machineryServices` en `Service`; `teamMember` opcional en `User`.
+El schema SHALL incluir `caseStudies` en `Service`, `Province` y `WorkTypology`; `machineryServices` en `Service`; `teamMember` opcional en `User`; `blogPosts` en `TeamMember`.
 
 #### Scenario: Relación servicio a casos
 
 - **WHEN** se inspecciona el schema Prisma
 - **THEN** `Service` declara `caseStudies CaseStudy[]` y `machineryServices MachineryService[]`
+
+#### Scenario: Relación equipo a artículos de blog
+
+- **WHEN** se inspecciona el schema Prisma
+- **THEN** `TeamMember` declara `blogPosts BlogPost[]`
 
 #### Scenario: Relación usuario a ficha de equipo
 
