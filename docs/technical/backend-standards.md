@@ -574,10 +574,13 @@ Cada evento debe incluir como mínimo:
 
 ### 11.1 Resend y React Email
 
-- Las plantillas viven en un módulo dedicado, por ejemplo `lib/email/templates`.
+- Las plantillas viven en `lib/email/templates/` (p. ej. `lead-confirmation-email.tsx`; helpers sin JSX en `lead-confirmation.ts`).
+- El wrapper del proveedor está en `lib/email/client.ts` (`sendEmail`).
+- La función de dominio de confirmación de lead es `sendLeadConfirmation` en `lib/email/send-lead-confirmation.ts` (GTK-27; consumida por GTK-28).
 - Las plantillas deben ser tipadas.
 - No construir HTML de email concatenando strings.
-- Registrar intentos, errores y proveedor cuando el email sea crítico para conversión.
+- Registrar intentos, errores y proveedor cuando el email sea crítico para conversión (solo `referenceNumber` + id Resend en logs, sin PII del cuerpo).
+- Variables de entorno: `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO` (validadas en `lib/env.ts`).
 
 ### 11.2 Casos mínimos
 

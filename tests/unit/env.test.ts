@@ -16,6 +16,8 @@ const REQUIRED_VARS = {
   NEXTAUTH_URL: 'http://localhost:3000',
   ANTHROPIC_API_KEY: 'sk-ant-fake-key',
   RESEND_API_KEY: 're_fake_key',
+  EMAIL_FROM: 'Geoteknia <noreply@test.geoteknia.com>',
+  EMAIL_REPLY_TO: 'presupuestos@test.geoteknia.com',
   TURNSTILE_SECRET_KEY: 'turnstile-secret-fake',
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'turnstile-site-fake',
   NODE_ENV: 'test',
