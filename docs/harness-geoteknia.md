@@ -10,6 +10,8 @@
 
 El harness lleva cada User Story de principio a fin con un flujo dirigido por especificación (**SDD**, vía OpenSpec/OPSX) y guiado por tests (**TDD**, vía Vitest/Playwright). El orquestador elige la siguiente US del backlog de Linear y delega cada fase en un subagente especializado, transfiriendo solo el contexto mínimo y recogiendo un resumen al finalizar.
 
+**Rama primero:** antes de crear o modificar **cualquier archivo** del repositorio (artefactos OpenSpec, código, tests o docs), el agente debe crear y verificar una rama de feature (`feature/<area>-<ticket-id>-<slug>`). Detalle en [Prerrequisito operativo — Rama de feature](#prerrequisito-operativo--rama-de-feature-obligatorio).
+
 Para issues de Linear con label **`DB`** (schema Prisma, migraciones, seeds, índices) existe la **[Variante: Harness DB](#variante-harness-db)**: mismo ciclo de gates y archive, sin contrato API, frontend ni E2E.
 
 **Gates duros y secuenciales:** `SDD → Contrato → TDD-RED` (no se implementa nada sin tests en rojo).
@@ -34,6 +36,18 @@ Para issues de Linear con label **`DB`** (schema Prisma, migraciones, seeds, ín
 
 ---
 
+## Prerrequisito operativo — Rama de feature (obligatorio)
+
+> **Primer paso de todo change:** crear la rama de trabajo **antes** de tocar archivos. Aplica al harness completo y a la [Variante Harness DB](#variante-harness-db).
+
+1. Crear la rama `feature/<area>-<ticket-id>-<slug>` (o `feature/<change-name>` si no hay ticket) desde `main` o la rama base acordada.
+2. Verificar la rama activa (`git branch --show-current`) y el estado del working tree (`git status`).
+3. Confirmar que no se pisa ni revierte trabajo no relacionado del usuario.
+
+Este paso es el **Step 0** de `tasks.md` (convención en `docs/technical/openspec-tasks-mandatory-steps.md` §4). Lo ejecuta el `spec-author` al inicio de la fase 1 (SDD), **antes** de redactar `proposal.md`, delta specs, `design.md` o cualquier otro cambio en disco. Ninguna fase posterior puede empezar sin rama verificada.
+
+---
+
 ## Flujo de fases
 
 ### 0. Selección de US
@@ -45,7 +59,7 @@ Para issues de Linear con label **`DB`** (schema Prisma, migraciones, seeds, ín
 ### 1. SDD — Abrir change OpenSpec 🛡️ *threat modeling*
 - **Agente:** `spec-author`
 - **Skills:** `openspec-propose`, `geoteknia-domain`, `us-traceability`, **`threat-modeling`**, `using-git-worktrees`
-- **Acción:** crea feature branch (Step 0). Redacta `proposal.md`, delta specs y `tasks.md` con los pasos obligatorios de `docs/technical/openspec-tasks-mandatory-steps.md`. Valida con `openspec validate --strict`.
+- **Acción:** **Step 0 — rama primero:** crear y verificar la feature branch (ver [Prerrequisito operativo](#prerrequisito-operativo--rama-de-feature-obligatorio)); solo entonces redactar `proposal.md`, delta specs y `tasks.md` con los pasos obligatorios de `docs/technical/openspec-tasks-mandatory-steps.md`. Valida con `openspec validate --strict`.
 - **🛡️ Shift-left:** `design.md` incluye una sección obligatoria de **threat model** de la US: superficie de ataque, actores, datos sensibles (PII/RGPD), y requisitos de seguridad expresados como criterios de aceptación (authz por permiso atómico RBAC, validación Zod de inputs, rate limits, Turnstile).
 - **Entrega:** branch, `proposal.md`, delta specs, `design.md` **(+ threat model)**, `tasks.md`.
 
@@ -179,7 +193,7 @@ El orquestador anuncia en el plan: **variante = Harness DB**.
 | # | Fase | Harness DB | Notas |
 |---|------|------------|--------|
 | 0 | Selección | **Obligatoria** | Filtrar label `DB`. Orden por dependencias de schema (fundación → maestros → dominio → seed → índices). |
-| 1 | SDD + threat model | **Obligatoria (ligera)** | OpenSpec change por ticket. La descripción Linear suele ser la fuente; empaquetar en `proposal` / delta specs / `design` / `tasks`. Threat model centrado en PII, retención, soft-delete, región EU y acceso a datos (no superficie HTTP). |
+| 1 | SDD + threat model | **Obligatoria (ligera)** | **Step 0 — rama primero** (mismo [prerrequisito operativo](#prerrequisito-operativo--rama-de-feature-obligatorio)). OpenSpec change por ticket. La descripción Linear suele ser la fuente; empaquetar en `proposal` / delta specs / `design` / `tasks`. Threat model centrado en PII, retención, soft-delete, región EU y acceso a datos (no superficie HTTP). |
 | 🔶 | Gate 1 | **Obligatoria** | Revisar schema propuesto, migración, RGPD e impacto en `data-model.md` **antes** de migrar Neon. |
 | 2 | Contrato Zod + API | **Omitir** | Registrar en el resumen de fase: *omitida — sin Route Handlers/Server Actions*. |
 | 3 | TDD-RED | **Condicional** | **Omitir** en SCHEMA/INDEX puro sin lógica en `/lib`. **Aplicar** (mínimo) si hay seed con reglas, helpers de migración de datos, o invariantes testeables en `/lib`. Sin abuse cases HTTP. |
