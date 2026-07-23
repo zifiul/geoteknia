@@ -6,6 +6,7 @@
 // Generación de contenido IA, tokens y revisiones editoriales (GTK-16).
 // Servicios, geo-zonas, intersección servicio×zona y cobertura (GTK-18).
 // Casos de estudio, equipo técnico y maquinaria (GTK-20).
+// Acreditaciones y soporte de licitaciones (GTK-8).
 // FAQs, lead magnets y reglas de calculadora (GTK-15).
 // CRM ligero: contactos, leads, proyectos y pipeline (GTK-12).
 // Los modelos restantes del dominio llegan en tickets DB siguientes según docs/technical/data-model.md.
@@ -107,6 +108,25 @@ enum ContactDepartment {
 enum FaqScope {
   general
   service
+}
+
+/// Tipo de credencial corporativa (GTK-8 / RF-12)
+enum CredentialType {
+  enac
+  iso
+  registro_ministerio
+  clasificacion_contratista
+  seguro_rc
+  asociacion
+}
+
+/// Tipo de organismo contratante público (GTK-8 / RF-15)
+enum OrganismType {
+  ministerio
+  confederacion
+  puerto
+  ayuntamiento
+  otro
 }
 
 /// Clasificación de maquinaria geotécnica (GTK-20 / RF-07)
@@ -708,7 +728,8 @@ model CaseStudy {
   createdById String?   @map("created_by_id") @db.Uuid
   updatedById String?   @map("updated_by_id") @db.Uuid
   // Relaciones
-  teamMembers CaseStudyTeamMember[]
+  teamMembers              CaseStudyTeamMember[]
+  publicOrganismExperience PublicOrganismExperience[]
 
   @@index([serviceId])
   @@index([provinceId])
@@ -817,6 +838,77 @@ model MachineryService {
 
   @@id([machineryId, serviceId])
   @@map("machinery_services")
+}
+
+/// Certificaciones y registros de solvencia (GTK-8 / RF-12)
+model Accreditation {
+  id                 String         @id @default(uuid()) @db.Uuid
+  name               String
+  credentialType     CredentialType @map("credential_type")
+  issuer             String?
+  registrationNumber String?        @map("registration_number")
+  logoId             String?        @map("logo_id") @db.Uuid
+  verificationUrl    String?        @map("verification_url")
+  documentId         String?        @map("document_id") @db.Uuid /// PDF
+  validUntil         DateTime?      @map("valid_until") @db.Date
+  // Bloque EDITORIAL
+  workflowStatus     WorkflowStatus @default(borrador_ia) @map("workflow_status")
+  isAiAssisted       Boolean        @default(false) @map("is_ai_assisted")
+  authorId           String?        @map("author_id") @db.Uuid
+  reviewedById       String?        @map("reviewed_by_id") @db.Uuid
+  approvedById       String?        @map("approved_by_id") @db.Uuid
+  approvedAt         DateTime?      @map("approved_at")
+  publishedAt        DateTime?      @map("published_at")
+  scheduledPublishAt DateTime?      @map("scheduled_publish_at")
+  currentVersion     Int            @default(1) @map("current_version")
+  // Bloque AUDIT
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+
+  @@index([credentialType])
+  @@map("accreditations")
+}
+
+/// Clasificación de contratista por grupo/subgrupo (GTK-8 / RF-15)
+model ContractorClassification {
+  id           String    @id @default(uuid()) @db.Uuid
+  groupCode    String    @map("group_code")
+  subgroupCode String    @map("subgroup_code")
+  category     String?   /// importe/categoría
+  description  String?   @db.Text
+  order        Int?
+  // Bloque AUDIT
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+
+  @@index([groupCode, subgroupCode])
+  @@map("contractor_classifications")
+}
+
+/// Experiencia acreditada con organismos públicos (GTK-8 / RF-15)
+model PublicOrganismExperience {
+  id            String        @id @default(uuid()) @db.Uuid
+  organismName  String        @map("organism_name")
+  organismType  OrganismType? @map("organism_type")
+  description   String?       @db.Text
+  relatedCaseId String?       @map("related_case_id") @db.Uuid
+  relatedCase   CaseStudy?    @relation(fields: [relatedCaseId], references: [id], onDelete: SetNull)
+  wasUte        Boolean?      @map("was_ute") /// ejecutado en UTE
+  // Bloque AUDIT
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdById String?   @map("created_by_id") @db.Uuid
+  updatedById String?   @map("updated_by_id") @db.Uuid
+
+  @@index([organismType])
+  @@map("public_organism_experience")
 }
 
 /// Categorías editoriales del blog (GTK-13 / RF-06)
