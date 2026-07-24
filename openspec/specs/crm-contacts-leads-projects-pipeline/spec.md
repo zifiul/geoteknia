@@ -147,3 +147,17 @@ El pipeline de captación SHALL usar un helper compartido `upsertContact` que de
 
 - **WHEN** se crea project desde lead `ubicacion` sin `service_id`
 - **THEN** el título comienza con el prefijo `Ubicación` y sigue siendo NOT NULL
+
+### Requirement: Expediente e importe en proyecto desde lead
+
+`createProjectFromLead` SHALL aceptar opcionalmente `expedienteRef` y `estimatedValue` y persistirlos en `projects.expediente_ref` y `projects.estimated_value` cuando se proporcionen, sin alterar el comportamiento de captación presupuesto/ubicación cuando no se pasan.
+
+#### Scenario: Proyecto con expediente e importe
+
+- **WHEN** el caso de uso invoca `createProjectFromLead` con `expedienteRef` e `estimatedValue`
+- **THEN** el registro `project` creado incluye esos valores en las columnas correspondientes
+
+#### Scenario: Proyecto presupuesto sin campos nuevos
+
+- **WHEN** `createBudgetLead` invoca `createProjectFromLead` sin `expedienteRef` ni `estimatedValue`
+- **THEN** el proyecto se crea igual que antes (campos null)

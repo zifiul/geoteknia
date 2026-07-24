@@ -51,3 +51,8 @@ Además de la ingesta HTTP de GTK-32, el sistema SHALL permitir registrar `conve
 
 - **WHEN** `createLocationLead` completa el commit con éxito
 - **THEN** se invoca `recordConversionEvent` con evento `send_location` de forma best-effort; un fallo del registro no revierte el lead ni cambia el `201`
+
+#### Scenario: generate_lead tras licitación
+
+- **WHEN** `createTenderLead` completa el commit con éxito
+- **THEN** se invoca `recordConversionEvent` con `eventName=generate_lead`, `leadType=licitacion` y `value` igual al importe estimado si se aportó; un fallo del registro no revierte el lead ni cambia el `201`

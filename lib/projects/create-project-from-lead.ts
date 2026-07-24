@@ -1,6 +1,7 @@
 import 'server-only';
 
-import type { Lead, Prisma, Service, Province, WorkTypology } from '@prisma/client';
+import type { Prisma, Service, Province } from '@prisma/client';
+import { Prisma as PrismaRuntime } from '@prisma/client';
 
 import { db } from '@/lib/db';
 
@@ -11,6 +12,8 @@ export type CreateProjectFromLeadInput = {
   province: Province | null;
   initialStateId: string;
   titlePrefix?: string;
+  expedienteRef?: string | null;
+  estimatedValue?: number | null;
 };
 
 export function buildProjectTitle(
@@ -42,6 +45,11 @@ export async function createProjectFromLead(
       title,
       serviceId: input.service?.id ?? null,
       provinceId: input.province?.id ?? null,
+      expedienteRef: input.expedienteRef ?? null,
+      estimatedValue:
+        input.estimatedValue !== undefined && input.estimatedValue !== null
+          ? new PrismaRuntime.Decimal(input.estimatedValue)
+          : null,
     },
   });
 }
