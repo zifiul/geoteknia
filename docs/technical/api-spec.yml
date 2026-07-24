@@ -29,8 +29,83 @@ tags:
     description: >
       Captación pública de leads cualificados (GTK-28+). Turnstile + rate limit en
       endpoints de formulario.
+  - name: Analytics
+    description: >
+      Ingesta pública de eventos de conversión (`conversion_events`, GTK-32).
+      Sin Turnstile; rate limit por eventos; compatible con sendBeacon.
 
 paths:
+  /api/eventos:
+    post:
+      tags: [Analytics]
+      operationId: ingestConversionEvents
+      summary: Ingesta de eventos de conversión (espejo GTM/GA4)
+      description: >
+        Endpoint público fire-and-forget para la capa dataLayer/GTM y beacons
+        (`navigator.sendBeacon` / `fetch` keepalive). Valida con `ingestSchema`
+        (`lib/analytics/schema.ts`): un evento suelto o `{ events: [...] }` (1–50).
+        Rate limit `RATE_LIMIT_PUBLIC_PER_MIN` con clave `eventos:{ip}` contando
+        **eventos** (un lote de N consume N). Persistencia append-only;
+        `occurred_at` lo fija el servidor; `page_url` se sanea a origin+pathname;
+        `lead_id` inexistente se degrada a null (anti-enumeración).
+        Parseo tolerante al `Content-Type` (acepta `application/json` y
+        `text/plain` con cuerpo JSON).
+      security: []
+      x-geoteknia-authz:
+        rbac: público
+        permiso: ninguno
+        rateLimit: RATE_LIMIT_PUBLIC_PER_MIN (clave eventos:{ip}; cuenta eventos)
+        turnstile: false
+        pii:
+          entrada: sin PII directa; sessionId/gaClientId pseudónimos; pageUrl saneada
+          salida: solo recorded (conteo); sin cuerpo de evento
+        contentTypes:
+          - application/json
+          - text/plain
+        maxBatchSize: 50
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversionEventIngest'
+          text/plain:
+            schema:
+              type: string
+              description: >
+                Cuerpo JSON serializado (sendBeacon). Mismo contrato que
+                application/json tras JSON.parse.
+      responses:
+        '202':
+          description: Eventos aceptados para persistencia append-only.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversionEventsAcceptedEnvelope'
+        '400':
+          description: >
+            Validación Zod (enum, claves extra, lote > 50, tipos) o JSON inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit de eventos excedido.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Error interno inesperado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+
   /api/leads/presupuesto:
     post:
       tags: [Leads]
@@ -295,6 +370,107 @@ components:
           const: true
         data:
           $ref: '#/components/schemas/LeadCreatedData'
+
+    ConversionEventName:
+      type: string
+      enum:
+        - generate_lead
+        - click_tel
+        - click_whatsapp
+        - click_email
+        - send_location
+        - calculator_use
+        - resource_download
+        - scroll_depth
+
+    LeadType:
+      type: string
+      enum: [presupuesto, licitacion, recurso, ubicacion]
+
+    LeadSource:
+      type: string
+      enum: [organico, sem, directo, referral]
+
+    ConversionEventInput:
+      type: object
+      additionalProperties: false
+      required: [eventName]
+      properties:
+        eventName:
+          $ref: '#/components/schemas/ConversionEventName'
+        leadId:
+          type: string
+          format: uuid
+          description: Opcional; si no existe en `leads` se degrada a null.
+        serviceSlug:
+          type: string
+          maxLength: 200
+        provinceSlug:
+          type: string
+          maxLength: 200
+        leadType:
+          $ref: '#/components/schemas/LeadType'
+        source:
+          $ref: '#/components/schemas/LeadSource'
+        pageUrl:
+          type: string
+          format: uri
+          maxLength: 2048
+          description: Persistido como origin+pathname (sin query/fragment).
+        sessionId:
+          type: string
+          maxLength: 200
+        gaClientId:
+          type: string
+          maxLength: 200
+        formStep:
+          type: integer
+          minimum: 0
+          maximum: 50
+        value:
+          type: number
+          minimum: 0
+          maximum: 10000000000
+
+    ConversionEventBatch:
+      type: object
+      additionalProperties: false
+      required: [events]
+      properties:
+        events:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ConversionEventInput'
+
+    ConversionEventIngest:
+      oneOf:
+        - $ref: '#/components/schemas/ConversionEventInput'
+        - $ref: '#/components/schemas/ConversionEventBatch'
+      description: >
+        Contrato Zod `ingestSchema` (`lib/analytics/schema.ts`).
+
+    ConversionEventsAcceptedData:
+      type: object
+      additionalProperties: false
+      required: [recorded]
+      properties:
+        recorded:
+          type: integer
+          minimum: 0
+          description: Número de filas insertadas en `conversion_events`.
+
+    ConversionEventsAcceptedEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/ConversionEventsAcceptedData'
 
     BudgetLeadInput:
       type: object

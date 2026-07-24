@@ -23,25 +23,32 @@ function getStore(): Map<string, Bucket> {
 /**
  * Ventana fija por clave (MVP in-memory, por instancia/isolate).
  * Edge-compatible: sin APIs Node-only.
+ * @param cost unidades a consumir (p. ej. N eventos en un lote). Default 1.
  */
 export function checkRateLimit(
   key: string,
   limit: number,
   windowMs: number,
+  cost = 1,
 ): RateLimitResult {
+  const safeCost = Number.isFinite(cost) && cost > 0 ? Math.floor(cost) : 1;
   const now = Date.now();
   const store = getStore();
   const existing = store.get(key);
 
   if (!existing || now >= existing.resetAt) {
-    store.set(key, { count: 1, resetAt: now + windowMs });
+    if (safeCost > limit) {
+      store.set(key, { count: limit, resetAt: now + windowMs });
+      return { allowed: false, retryAfterMs: windowMs };
+    }
+    store.set(key, { count: safeCost, resetAt: now + windowMs });
     return { allowed: true };
   }
 
-  if (existing.count >= limit) {
+  if (existing.count + safeCost > limit) {
     return { allowed: false, retryAfterMs: Math.max(0, existing.resetAt - now) };
   }
 
-  existing.count += 1;
+  existing.count += safeCost;
   return { allowed: true };
 }

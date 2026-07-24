@@ -5,6 +5,7 @@ import { LeadChannel, LeadType } from '@prisma/client';
 
 import { sendLeadConfirmation } from '@/lib/email';
 import { db } from '@/lib/db';
+import { recordConversionEvent } from '@/lib/analytics/record-event';
 
 import { deriveLeadSource } from './attribution';
 import { LeadCaptureError } from './errors';
@@ -225,6 +226,26 @@ export async function createBudgetLead(
     result.serviceName,
     result.provinceName,
   );
+
+  // GTK-32: telemetría generate_lead post-commit (best-effort, no bloquea el alta).
+  const source = deriveLeadSource({
+    utmSource: input.utmSource,
+    utmMedium: input.utmMedium,
+    utmCampaign: input.utmCampaign,
+    landingUrl: input.landingUrl,
+  });
+  try {
+    await recordConversionEvent({
+      eventName: 'generate_lead',
+      leadId: result.leadId,
+      serviceSlug: input.servicio,
+      provinceSlug: input.provincia,
+      leadType: 'presupuesto',
+      source,
+    });
+  } catch {
+    // best-effort: nunca altera el resultado del alta
+  }
 
   return {
     referenceNumber: result.referenceNumber,

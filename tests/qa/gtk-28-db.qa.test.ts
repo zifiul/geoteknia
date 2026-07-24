@@ -76,6 +76,9 @@ describe('QA GTK-28 — BD presupuesto', () => {
         where: { referenceNumber },
         include: { project: true },
       });
+      if (lead) {
+        await db.conversionEvent.deleteMany({ where: { leadId: lead.id } });
+      }
       if (lead?.project) {
         await db.project.delete({ where: { id: lead.project.id } });
       }

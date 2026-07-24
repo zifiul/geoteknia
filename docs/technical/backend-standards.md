@@ -506,7 +506,7 @@ El backend debe minimizar y aislar PII:
 - **Prohibido en middleware:** importar `lib/db.ts`, `lib/env.ts` (`server-only`) o `lib/auth/config.ts` (arrastra Prisma). Umbrales de rate limit en Edge: `readRateLimitEnv()` en `lib/security/rate-limit-env.ts` (lee `process.env` sin Zod server-only).
 - **Comportamiento HTTP:** sin sesión → redirect 307 a `/admin/login` (páginas) o `401` JSON `{ success: false, error: { code: 'UNAUTHORIZED', ... } }` (rutas bajo `/api/admin`). Cabeceras `X-Robots-Tag: noindex, nofollow` y `SECURITY_HEADERS` vía `lib/security/headers.ts`.
 - **`app/robots.ts`:** `Disallow` de `/admin` (complementa cabeceras HTTP; el meta `robots` por página es defensa en profundidad opcional).
-- **Rate limiting (MVP):** primitiva `checkRateLimit(key, limit, windowMs)` en `lib/security/rate-limit.ts` (ventana en memoria por instancia/isolate; **no** compartida entre regiones/cold starts). Variables `RATE_LIMIT_LOGIN_PER_MIN` y `RATE_LIMIT_PUBLIC_PER_MIN` en `lib/env.ts` (Node). Los endpoints de login y captación pública (GTK-28+) deben importar esta primitiva, no reimplementar contadores. Upstash (`UPSTASH_REDIS_*` opcionales en env) reservado para fase 2.
+- **Rate limiting (MVP):** primitiva `checkRateLimit(key, limit, windowMs, cost?)` en `lib/security/rate-limit.ts` (ventana en memoria por instancia/isolate; **no** compartida entre regiones/cold starts; `cost` opcional para consumir N unidades — p. ej. lote de eventos en GTK-32). Variables `RATE_LIMIT_LOGIN_PER_MIN` y `RATE_LIMIT_PUBLIC_PER_MIN` en `lib/env.ts` (Node). Los endpoints de login, captación pública (GTK-28+) y `POST /api/eventos` deben importar esta primitiva, no reimplementar contadores. Upstash (`UPSTASH_REDIS_*` opcionales en env) reservado para fase 2.
 - **Logs:** eventos `401` en middleware con path e `ipHint` truncado; sin email ni PII de leads.
 - Cloudflare WAF debe proteger rutas administrativas cuando esté disponible.
 - No mezclar endpoints públicos y administrativos sin checks explícitos.
@@ -622,7 +622,7 @@ Cada lead debe guardar contexto comercial:
 
 ### 12.2 Conversion events
 
-Los eventos de conversión deben ser consistentes con el modelo:
+Los eventos de conversión deben ser consistentes con el modelo (`ConversionEventName` en Prisma) y persistirse solo con `lib/analytics/recordConversionEvent(s)` o `POST /api/eventos` (GTK-32):
 
 - `generate_lead`
 - `click_tel`
@@ -633,7 +633,7 @@ Los eventos de conversión deben ser consistentes con el modelo:
 - `resource_download`
 - `scroll_depth`
 
-No aceptar eventos arbitrarios desde cliente sin validación.
+No aceptar eventos arbitrarios desde cliente sin validación Zod (`.strict()`, enums Prisma). Append-only; telemetría siempre best-effort.
 
 ---
 

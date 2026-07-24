@@ -750,6 +750,8 @@ Documentación privada del proyecto.
 
 Registro append-only de eventos de medición y atribución interna.
 
+**Ingesta (GTK-32):** escritura solo vía `lib/analytics/recordConversionEvent(s)` (llamadores internos, p. ej. `generate_lead` post-alta de lead) o `POST /api/eventos` (beacon/GTM). `page_url` se persiste como origin+pathname; `lead_id` inexistente se degrada a `null`. Sin `update`/`delete`. Contrato: `lib/analytics/schema.ts` + `docs/technical/api-spec.yml`.
+
 | Campo | Tipo | Reglas | Descripción |
 |---|---:|---|---|
 | `id` | UUID | PK | Evento. |
@@ -759,12 +761,12 @@ Registro append-only de eventos de medición y atribución interna.
 | `province_slug` | String? | indexed with `service_slug` | Provincia desde dataLayer. |
 | `lead_type` | `LeadType`? | nullable | Tipo de lead inferido. |
 | `source` | `LeadSource`? | nullable | Fuente. |
-| `page_url` | String? | nullable | URL donde ocurre. |
+| `page_url` | String? | nullable | URL donde ocurre (sin querystring). |
 | `session_id` | String? | nullable | Sesión analítica. |
 | `ga_client_id` | String? | nullable | Cliente GA4. |
 | `form_step` | Int? | nullable | Paso del formulario. |
 | `value` | Decimal? | nullable | Valor estimado. |
-| `occurred_at` | DateTime | default now, indexed | Fecha del evento. |
+| `occurred_at` | DateTime | default now, indexed | Fecha del evento (siempre servidor). |
 
 ### 4.12 IA, Coste y Versionado Editorial
 

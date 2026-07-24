@@ -1,14 +1,21 @@
 /**
  * GTK-28 — createBudgetLead (caso de uso).
+ * GTK-32 — cableado generate_lead vía recordConversionEvent (SEC-6).
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
 const sendLeadConfirmationMock = vi.fn();
+const recordConversionEventMock = vi.fn();
 
 vi.mock('@/lib/email', () => ({
   sendLeadConfirmation: (...args: unknown[]) => sendLeadConfirmationMock(...args),
+}));
+
+vi.mock('@/lib/analytics/record-event', () => ({
+  recordConversionEvent: (...args: unknown[]) =>
+    recordConversionEventMock(...args),
 }));
 
 const transactionMock = vi.fn();
@@ -66,6 +73,8 @@ describe('createBudgetLead (GTK-28)', () => {
     vi.resetModules();
     sendLeadConfirmationMock.mockReset();
     sendLeadConfirmationMock.mockResolvedValue({ ok: true, id: 'email-1' });
+    recordConversionEventMock.mockReset();
+    recordConversionEventMock.mockResolvedValue({ id: 'evt-lead' });
     transactionMock.mockReset();
     serviceFindMock.mockReset();
     provinceFindMock.mockReset();
@@ -114,6 +123,30 @@ describe('createBudgetLead (GTK-28)', () => {
     );
   });
 
+  it('GTK-32: registra generate_lead tras el alta', async () => {
+    const { createBudgetLead } = await import('@/lib/leads/create-lead');
+    await createBudgetLead(baseInput);
+
+    expect(recordConversionEventMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventName: 'generate_lead',
+        leadId: 'lead-1',
+        serviceSlug: 'edificacion-residencial',
+        provinceSlug: 'madrid',
+        leadType: 'presupuesto',
+      }),
+    );
+  });
+
+  it('SEC-6: fallo de telemetría no rompe el alta', async () => {
+    recordConversionEventMock.mockResolvedValue(null);
+
+    const { createBudgetLead } = await import('@/lib/leads/create-lead');
+    const result = await createBudgetLead(baseInput);
+    expect(result.leadId).toBe('lead-1');
+    expect(result.referenceNumber).toMatch(/^PRE-/);
+  });
+
   it('reutiliza contacto existente por email', async () => {
     contactFindMock.mockResolvedValue({
       id: 'existing',
@@ -142,6 +175,7 @@ describe('createBudgetLead (GTK-28)', () => {
       status: 400,
     });
     expect(sendLeadConfirmationMock).not.toHaveBeenCalled();
+    expect(recordConversionEventMock).not.toHaveBeenCalled();
   });
 
   it('fallo de email no impide resultado del caso de uso', async () => {
