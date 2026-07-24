@@ -37,8 +37,77 @@ tags:
     description: >
       Calculadora pública de alcance geotécnico orientativo (GTK-33). Sin precio;
       reglas en `calculator_rules`; telemetría `calculator_use`.
+  - name: Admin IA
+    description: >
+      Endpoints autenticados del portal para generación asistida de contenido SEO
+      (GTK-38). RBAC `ai.generate`; presupuesto mensual GTK-37.
 
 paths:
+  /api/admin/ia/generar:
+    post:
+      tags: [Admin IA]
+      operationId: generateAdminSeoContent
+      summary: Generar borrador de contenido SEO asistido por Claude
+      description: >
+        Primer Route Handler bajo `/api/admin`. Orquesta plantilla activa
+        (`prompt_templates`), validación dinámica de inputs, gate de presupuesto,
+        `runGeneration` (GTK-36) y validación post-hoc Zod de la salida.
+        Persiste `ai_generations` + `ai_token_usage`; auditoría `ai_generate`
+        best-effort. No publica contenido (materialización en entidades = GTK-41).
+      security:
+        - authjsSessionCookie: []
+      x-geoteknia-authz:
+        rbac: sesión portal válida
+        permiso: ai.generate
+        rateLimit: GTK-26 (pendiente)
+        turnstile: false
+        pii:
+          entrada: parámetros SEO sin PII de CRM
+          salida: contenido estructurado no publicado automáticamente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateAdminContentInput'
+      responses:
+        '201':
+          description: Generación registrada (éxito o partial).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateAdminContentSuccessEnvelope'
+        '400':
+          description: Validación Zod, plantilla o padre de regeneración inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '401':
+          description: Sesión inválida o ausente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: Rol sin permiso `ai.generate`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Presupuesto mensual de IA superado (`BUDGET_EXCEEDED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '502':
+          description: Error no recuperable al invocar Claude.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+
   /api/calculadora:
     post:
       tags: [Calculator]
@@ -653,6 +722,79 @@ components:
           const: true
         data:
           $ref: '#/components/schemas/CalculatorEstimateData'
+
+    GenerateAdminContentInput:
+      type: object
+      additionalProperties: false
+      required: [pageType, inputs]
+      description: >
+        Espejo de `generateContentSchema` en `lib/ia/content-generation-schemas.ts`.
+      properties:
+        pageType:
+          type: string
+          enum:
+            [service, geo_zone, service_zone, case_study, blog, faq, meta]
+        templateId:
+          type: string
+          format: uuid
+        inputs:
+          type: object
+          additionalProperties: true
+        model:
+          type: string
+          enum: [claude_sonnet_4_6, claude_opus_4_8]
+        targetContentType:
+          type: string
+        targetContentId:
+          type: string
+          format: uuid
+        regenerateSection:
+          type: object
+          additionalProperties: false
+          required: [parentGenerationId, section]
+          properties:
+            parentGenerationId:
+              type: string
+              format: uuid
+            section:
+              type: string
+
+    GenerateAdminContentData:
+      type: object
+      additionalProperties: false
+      required:
+        [generationId, status, pageType, model, promptTemplateId]
+      properties:
+        generationId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [success, partial]
+        output:
+          type: object
+          nullable: true
+          additionalProperties: true
+        partialReason:
+          type: string
+        pageType:
+          type: string
+        model:
+          type: string
+        promptTemplateId:
+          type: string
+          format: uuid
+
+    GenerateAdminContentSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/GenerateAdminContentData'
 
     CalculatorNoRuleEnvelope:
       type: object

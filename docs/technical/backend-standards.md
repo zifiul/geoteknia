@@ -542,6 +542,7 @@ Reglas obligatorias:
 - Cliente SDK en `lib/ia/client.ts` (`server-only`) con `IA_MAX_RETRIES` y `IA_TIMEOUT_MS`; no reimplementar backoff manual.
 - **`runGeneration`** (`lib/ia/generate.ts`): prompt caching del `cacheablePrefix` vía `cache_control`, streaming si `max_tokens > 16384`, sin `temperature`/`top_p`/`top_k` en modelos 4.6+/Opus 4.8, degradación con `{ ok: false, status: 'error' }` y `AiGenerationError`.
 - **`computeCostEur` / `persistTokenUsage`** (`lib/ia/token-usage.ts`): única fuente de `cost_eur` (tarifas USD/M + multiplicadores de caché + `IA_USD_TO_EUR_RATE`); GTK-38 crea `ai_generations` y luego persiste uso 1:1.
+- **Endpoint admin GTK-38:** `POST /api/admin/ia/generar` (`app/api/admin/ia/generar/route.ts`) con `withRoutePermission('ai.generate')`. Orquestación en `lib/ia/content-generation.ts`; schemas en `content-generation-schemas.ts` y `output-schema.ts`; validación dinámica de inputs con `template-input-validator.ts`. Materialización en entidades de contenido diferida a GTK-41.
 
 ### 9.2 Control de coste
 
