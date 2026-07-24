@@ -1,2 +1,6 @@
-// Dominio projects: proyectos geotécnicos (GTK-21: barril vacío).
-export {};
+export {
+  buildProjectTitle,
+  createProjectFromLead,
+  findInitialProjectStateId,
+  type CreateProjectFromLeadInput,
+} from './create-project-from-lead';

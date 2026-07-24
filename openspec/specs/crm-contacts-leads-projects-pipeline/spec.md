@@ -52,6 +52,11 @@ El schema SHALL incluir `Lead` con `reference_number` único, `gdpr_consent` no 
 
 El modelo `Lead` SHALL exponer la relación 1:N opcional con `ConversionEvent`.
 
+#### Scenario: Relación en schema Prisma
+
+- **WHEN** se inspecciona el modelo `Lead` en Prisma
+- **THEN** declara `conversionEvents ConversionEvent[]`
+
 ### Requirement: Tabla project_states
 
 El schema SHALL incluir `ProjectState` con `slug` único, `order` indexado y flags `is_initial`, `is_won`, `is_lost`, `is_terminal`.
@@ -110,3 +115,17 @@ El schema SHALL incluir back-relations `contacts`, `leads`, `projects` en `Provi
 
 - **WHEN** se inspecciona el schema Prisma
 - **THEN** `Province` declara `contacts Contact[]`, `leads Lead[]` y `projects Project[]`
+
+### Requirement: Alta automática lead y proyecto vía captación pública
+
+Además del schema Prisma existente, el sistema SHALL permitir crear en runtime un par `Lead` + `Project` 1:1 desde el endpoint público de presupuesto: `lead_type=presupuesto`, `channel=formulario`, `project.state_id` apuntando al `ProjectState` con `is_initial=true` (seed `lead-nuevo`), sin insertar fila en `project_state_history` en el alta anónima.
+
+#### Scenario: Proyecto en estado inicial
+
+- **WHEN** se completa un POST de presupuesto válido
+- **THEN** existe exactamente un `projects` con `lead_id` único del lead creado y `state.slug='lead-nuevo'`
+
+#### Scenario: Deduplicación de contacto
+
+- **WHEN** ya existe un `contacts` con el mismo `email` o `phone` y `deleted_at IS NULL`
+- **THEN** el nuevo lead se asocia a ese contacto y se rellenan campos vacíos del contacto sin duplicar fila

@@ -25,8 +25,79 @@ tags:
     description: >
       Autenticación del back-office (`/admin`) vía Auth.js v5 — proveedor Credentials
       (GTK-23). Rate limiting de login planificado en GTK-26.
+  - name: Leads
+    description: >
+      Captación pública de leads cualificados (GTK-28+). Turnstile + rate limit en
+      endpoints de formulario.
 
 paths:
+  /api/leads/presupuesto:
+    post:
+      tags: [Leads]
+      operationId: createBudgetLead
+      summary: Alta de lead desde formulario de presupuesto
+      description: >
+        Endpoint público de conversión principal. Valida con `budgetLeadSchema`
+        (`lib/leads/schema.ts`), verifica Cloudflare Turnstile, aplica rate limit
+        `RATE_LIMIT_PUBLIC_PER_MIN` y crea contacto (dedupe), lead y proyecto en
+        transacción atómica. Email de confirmación post-commit (GTK-27).
+      security: []
+      x-geoteknia-authz:
+        rbac: público
+        permiso: ninguno
+        rateLimit: RATE_LIMIT_PUBLIC_PER_MIN (clave leads-presupuesto:{ip})
+        turnstile: true
+        pii:
+          entrada: nombre, email, teléfono, empresa (HTTPS)
+          salida: solo referenceNumber; sin PII en cuerpo de éxito
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetLeadInput'
+      responses:
+        '201':
+          description: Lead y proyecto creados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadCreatedSuccessEnvelope'
+        '400':
+          description: Validación Zod, consentimiento o slug de catálogo inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: Token Turnstile inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit excedido.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '502':
+          description: Turnstile siteverify no disponible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Error interno o generación de referencia fallida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+
   /api/auth/csrf:
     get:
       tags: [Portal Auth]
@@ -203,6 +274,100 @@ components:
           const: false
         error:
           $ref: '#/components/schemas/ApiErrorBody'
+
+    LeadCreatedData:
+      type: object
+      additionalProperties: false
+      required: [referenceNumber]
+      properties:
+        referenceNumber:
+          type: string
+          maxLength: 50
+          example: PRE-20260724-7K3M
+
+    LeadCreatedSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/LeadCreatedData'
+
+    BudgetLeadInput:
+      type: object
+      additionalProperties: false
+      required:
+        - servicio
+        - provincia
+        - nombre
+        - email
+        - telefono
+        - rol
+        - gdprConsent
+        - turnstileToken
+      properties:
+        servicio:
+          type: string
+          minLength: 1
+          description: Slug de `services.slug`
+        provincia:
+          type: string
+          minLength: 1
+          description: Slug de `provinces.slug`
+        tipoObra:
+          type: string
+          description: Slug opcional de `work_typologies.slug`
+        plantas:
+          type: integer
+          minimum: 1
+        superficie:
+          type: number
+          exclusiveMinimum: 0
+        fase:
+          type: string
+        nombre:
+          type: string
+          minLength: 2
+          maxLength: 200
+        empresa:
+          type: string
+          maxLength: 200
+        email:
+          type: string
+          format: email
+        telefono:
+          type: string
+          minLength: 9
+          maxLength: 20
+        rol:
+          type: string
+          enum:
+            - propiedad
+            - promotor
+            - constructor
+            - arquitecto
+            - ingenieria
+            - otro
+        gdprConsent:
+          type: boolean
+          const: true
+        turnstileToken:
+          type: string
+          minLength: 1
+        utmSource:
+          type: string
+        utmMedium:
+          type: string
+        utmCampaign:
+          type: string
+        gaClientId:
+          type: string
+        landingUrl:
+          type: string
+          format: uri
 
     LoginInput:
       type: object
