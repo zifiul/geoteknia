@@ -301,7 +301,7 @@ POST /api/ubicacion-parcela
 POST /api/lead-magnets
 POST /api/licitaciones
 POST /api/conversion-events
-POST /api/calculator/alcance
+POST /api/calculadora
 POST /api/revalidate
 ```
 

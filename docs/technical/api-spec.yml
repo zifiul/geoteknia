@@ -33,8 +33,76 @@ tags:
     description: >
       Ingesta pública de eventos de conversión (`conversion_events`, GTK-32).
       Sin Turnstile; rate limit por eventos; compatible con sendBeacon.
+  - name: Calculator
+    description: >
+      Calculadora pública de alcance geotécnico orientativo (GTK-33). Sin precio;
+      reglas en `calculator_rules`; telemetría `calculator_use`.
 
 paths:
+  /api/calculadora:
+    post:
+      tags: [Calculator]
+      operationId: estimateGeotechnicalScope
+      summary: Estimación orientativa de alcance geotécnico (sin precio)
+      description: >
+        Endpoint público que estima sondeos, profundidad y ensayos según reglas
+        activas en `calculator_rules` (`lib/calculator/schema.ts`,
+        motor puro `estimate`). Valida tipología y provincia por slug; la
+        provincia no altera el cálculo (solo prefill y atribución). Sin regla
+        aplicable → `422 NO_APPLICABLE_RULE` con `data.prefill` para el CTA de
+        presupuesto (GTK-28). Rate limit `RATE_LIMIT_PUBLIC_PER_MIN` con clave
+        `calculadora:{ip}`. Emite `calculator_use` best-effort solo en 200.
+      security: []
+      x-geoteknia-authz:
+        rbac: público
+        permiso: ninguno
+        rateLimit: RATE_LIMIT_PUBLIC_PER_MIN (clave calculadora:{ip})
+        turnstile: false
+        pii:
+          entrada: sin PII (tipología, plantas, superficie, provincia slug)
+          salida: alcance técnico sin precio; prefill para formulario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculatorInput'
+      responses:
+        '200':
+          description: Estimación calculada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculatorEstimateSuccessEnvelope'
+        '400':
+          description: Validación Zod o slug de catálogo inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '422':
+          description: Sin regla aplicable; incluye prefill para conversión.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculatorNoRuleEnvelope'
+        '429':
+          description: Rate limit excedido.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Regla mal configurada u error interno.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+
   /api/eventos:
     post:
       tags: [Analytics]
@@ -509,6 +577,108 @@ components:
           const: true
         data:
           $ref: '#/components/schemas/LeadCreatedData'
+
+    CalculatorInput:
+      type: object
+      additionalProperties: false
+      required: [tipoObra, plantas, superficie, provincia]
+      properties:
+        tipoObra:
+          type: string
+          minLength: 1
+          description: Slug de `work_typologies.slug`
+        plantas:
+          type: integer
+          minimum: 1
+          maximum: 200
+        superficie:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1000000
+        provincia:
+          type: string
+          minLength: 1
+          description: Slug de `provinces.slug` (prefill/atribución; no altera cálculo)
+
+    CalculatorPrefill:
+      type: object
+      additionalProperties: false
+      required: [servicio, provincia, tipoObra, plantas, superficie]
+      properties:
+        servicio:
+          type: 'null'
+          description: GTK-28 exige servicio; el frontal mapea tipología→servicio
+        provincia:
+          type: string
+        tipoObra:
+          type: string
+        plantas:
+          type: integer
+        superficie:
+          type: number
+
+    CalculatorEstimateData:
+      type: object
+      additionalProperties: false
+      required:
+        - boreholes
+        - depthEstimate
+        - recommendedTests
+        - cteReference
+        - prefill
+      properties:
+        boreholes:
+          type: integer
+          minimum: 1
+          description: Nº orientativo de sondeos (ceil, mínimo 1). Sin precio.
+        depthEstimate:
+          type: string
+          nullable: true
+        recommendedTests:
+          type: string
+          nullable: true
+        cteReference:
+          type: string
+          nullable: true
+        prefill:
+          $ref: '#/components/schemas/CalculatorPrefill'
+
+    CalculatorEstimateSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/CalculatorEstimateData'
+
+    CalculatorNoRuleEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, error, data]
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              const: NO_APPLICABLE_RULE
+            message:
+              type: string
+        data:
+          type: object
+          additionalProperties: false
+          required: [prefill]
+          properties:
+            prefill:
+              $ref: '#/components/schemas/CalculatorPrefill'
 
     ConversionEventName:
       type: string
