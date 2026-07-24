@@ -3,9 +3,7 @@
 ## Purpose
 
 Validación tipada y server-only de variables de entorno requeridas por el monolito Geoteknia (`lib/env.ts`).
-
 ## Requirements
-
 ### Requirement: Validación Zod de variables de entorno en lib/env.ts
 
 El módulo `lib/env.ts` SHALL validar con un schema Zod todas las variables de entorno requeridas (`DATABASE_URL`, `DIRECT_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NODE_ENV`) y SHALL exponer un objeto `env` tipado.
@@ -28,3 +26,18 @@ El módulo `lib/env.ts` SHALL marcarse con `import 'server-only'` de modo que su
 
 - **WHEN** un Client Component (`'use client'`) importa `lib/env.ts` y se compila el proyecto
 - **THEN** la compilación falla por la restricción `server-only`
+
+### Requirement: SESSION_TTL_MINUTES en el schema de entorno
+
+El módulo `lib/env.ts` SHALL validar `SESSION_TTL_MINUTES` como entero positivo (`z.coerce.number().int().positive()`) y exponerlo en el objeto `env` tipado junto al resto de variables ya requeridas (`NEXTAUTH_SECRET`, `NEXTAUTH_URL`, etc.).
+
+#### Scenario: TTL presente y positivo
+
+- **WHEN** `SESSION_TTL_MINUTES` está definido como entero positivo y se importa `lib/env.ts`
+- **THEN** `env.SESSION_TTL_MINUTES` es ese número tipado
+
+#### Scenario: TTL ausente o no positivo
+
+- **WHEN** falta `SESSION_TTL_MINUTES` o su valor no es un entero positivo
+- **THEN** el módulo lanza un error que identifica `SESSION_TTL_MINUTES` por nombre, sin filtrar valores de secretos
+

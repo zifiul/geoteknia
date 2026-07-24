@@ -21,6 +21,7 @@ const REQUIRED_VARS = {
   TURNSTILE_SECRET_KEY: 'turnstile-secret-fake',
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'turnstile-site-fake',
   NODE_ENV: 'test',
+  SESSION_TTL_MINUTES: '480',
 } as const;
 
 const originalEnv = { ...process.env };
