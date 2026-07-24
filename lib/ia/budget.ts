@@ -7,7 +7,10 @@ import { db } from '@/lib/db';
 import { sendEmail } from '@/lib/email';
 
 import type { UpdateBudgetConfigInput } from './budget-config-schema';
+import { currentBillingPeriodUtc } from './billing-period';
 import { BudgetExceededError } from './errors';
+
+export { currentBillingPeriodUtc } from './billing-period';
 
 export type BudgetConfigSnapshot = {
   billingPeriod: string | null;
@@ -17,12 +20,6 @@ export type BudgetConfigSnapshot = {
   notifyEmails: string[] | null;
   isActive: boolean;
 };
-
-export function currentBillingPeriodUtc(date = new Date()): string {
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
-}
 
 function toNumber(value: Prisma.Decimal | number): number {
   return typeof value === 'number' ? value : value.toNumber();

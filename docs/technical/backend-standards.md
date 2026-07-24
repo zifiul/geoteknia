@@ -539,6 +539,9 @@ Reglas obligatorias:
 - El contenido generado entra como borrador, nunca se publica automáticamente.
 - Toda salida estructurada se valida con Zod antes de persistir.
 - Usar `claude-sonnet-4-6` por defecto y reservar `claude-opus-4-8` para piezas pillar o casos justificados.
+- Cliente SDK en `lib/ia/client.ts` (`server-only`) con `IA_MAX_RETRIES` y `IA_TIMEOUT_MS`; no reimplementar backoff manual.
+- **`runGeneration`** (`lib/ia/generate.ts`): prompt caching del `cacheablePrefix` vía `cache_control`, streaming si `max_tokens > 16384`, sin `temperature`/`top_p`/`top_k` en modelos 4.6+/Opus 4.8, degradación con `{ ok: false, status: 'error' }` y `AiGenerationError`.
+- **`computeCostEur` / `persistTokenUsage`** (`lib/ia/token-usage.ts`): única fuente de `cost_eur` (tarifas USD/M + multiplicadores de caché + `IA_USD_TO_EUR_RATE`); GTK-38 crea `ai_generations` y luego persiste uso 1:1.
 
 ### 9.2 Control de coste
 
@@ -546,10 +549,9 @@ Reglas obligatorias:
 - Aplicar límite mensual configurable en `ai_budget_config` (global o override por `billing_period` UTC `YYYY-MM`).
 - **`assertWithinBudget(period?)`** (`lib/ia/budget.ts`): invocar **antes** de cada llamada a Claude (GTK-38). Usa `period ?? currentBillingPeriodUtc()`. Si hay config activa y `getCurrentSpend(period) >= monthlyBudgetEur`, lanza `BudgetExceededError` (`code: BUDGET_EXCEEDED`, HTTP **429**). Sin config activa: **fail-open** (permite + `console.warn` estructurado sin PII).
 - **`checkThresholdAndNotify(period?)`**: tras registrar uso, si el gasto supera `alert_threshold_pct`, envía email a `notify_emails` como máximo **una vez por periodo** (tabla `ai_budget_alerts`). Fallo de email no bloquea generación.
-- Límite **soft** bajo concurrencia (TOCTOU aceptado en MVP); el ledger `ai_token_usage` sigue siendo la fuente de verdad del gasto real.
+- Límite **soft** bajo concurrencia (TOCTOU aceptado en MVP); el ledger `ai_token_usage` sigue siendo la fuente de verdad del gasto real (`cost_eur` calculado en GTK-36).
 - Configuración admin: permiso `ai.configure`; reporte de coste: `ai.read` (admin en matriz actual). Cambios de presupuesto: `audit_logs` con acción `ai_config_update` (mustAudit).
-- Usar retries con backoff y timeouts en la integración Claude (GTK-38).
-- No reintentar indefinidamente.
+- Retries y timeout: configuración del SDK Anthropic en `lib/ia/client.ts` (GTK-36); GTK-38 invoca `runGeneration` tras `assertWithinBudget`.
 
 ### 9.3 Seguridad editorial
 

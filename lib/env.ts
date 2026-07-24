@@ -1,4 +1,5 @@
 import 'server-only';
+import { AiModel } from '@prisma/client';
 import { z } from 'zod';
 
 // SEC-1: módulo server-only; importar desde un Client Component rompe el build.
@@ -25,6 +26,14 @@ const envSchema = z.object({
   MEDIA_STORAGE_BASE_URL: z.url(),
   /** Presupuesto mensual IA por defecto para seed (GTK-37, opcional). */
   IA_DEFAULT_MONTHLY_BUDGET_EUR: z.coerce.number().positive().optional(),
+  /** Modelo Claude por defecto (GTK-36). */
+  IA_DEFAULT_MODEL: z.nativeEnum(AiModel).default(AiModel.claude_sonnet_4_6),
+  /** Reintentos del SDK Anthropic (GTK-36). */
+  IA_MAX_RETRIES: z.coerce.number().int().min(0).default(2),
+  /** Timeout por petición Anthropic en ms (GTK-36). */
+  IA_TIMEOUT_MS: z.coerce.number().int().positive().default(600_000),
+  /** Factor USD→EUR para coste estimado (GTK-36). */
+  IA_USD_TO_EUR_RATE: z.coerce.number().positive().default(0.92),
 });
 
 const parsed = envSchema.safeParse(process.env);
