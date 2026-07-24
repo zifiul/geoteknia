@@ -28,3 +28,6 @@ next-env.d.ts
 # Misc
 *.tsbuildinfo
 .DS_Store
+
+# CodeGraph (índice local, se regenera con `codegraph init`)
+/.codegraph/

@@ -27,8 +27,10 @@ describe('lib/auth/permissions — matriz RBAC canónica (GTK-17)', () => {
     expect(codes).toContain('content.publish');
   });
 
-  it('tecnico tiene únicamente projects.read', () => {
-    expect(resolvePermissionCodesForRole('tecnico')).toEqual(['projects.read']);
+  it('tecnico tiene projects.read y projects.update', () => {
+    expect(resolvePermissionCodesForRole('tecnico').sort()).toEqual(
+      ['projects.read', 'projects.update'].sort(),
+    );
   });
 
   it('pasa la validación de integridad de la matriz', () => {

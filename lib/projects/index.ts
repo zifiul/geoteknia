@@ -4,7 +4,35 @@ export {
   findInitialProjectStateId,
   type CreateProjectFromLeadInput,
 } from './create-project-from-lead';
-export { ProjectNotFoundError } from './errors';
+export { assignProjectTechnician } from './assign';
+export {
+  attachProjectDocument,
+  deleteProjectDocument,
+} from './documents';
+export {
+  InvalidTransitionError,
+  ProjectNotFoundError,
+  ProjectValidationError,
+} from './errors';
+export { maybeSetFirstResponseAt } from './first-response';
+export {
+  completeProjectMilestone,
+  createProjectMilestone,
+} from './milestones';
+export { createProjectNote, deleteProjectNote } from './notes';
+export {
+  assignTechnicianSchema,
+  attachDocumentSchema,
+  changeStateSchema,
+  createMilestoneSchema,
+  createNoteSchema,
+  type AssignTechnicianInput,
+  type AttachDocumentInput,
+  type ChangeStateInput,
+  type CreateMilestoneInput,
+  type CreateNoteInput,
+} from './project-mutation-schemas';
+export { changeProjectState } from './transitions';
 export { getPipelineMetrics, type PipelineMetrics } from './metrics';
 export {
   parseProjectFiltersFromSearchParams,
