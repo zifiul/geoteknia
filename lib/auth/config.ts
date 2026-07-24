@@ -35,6 +35,7 @@ declare module 'next-auth' {
       email: string;
       roleId: string;
       roleName: RoleName;
+      sessionTokenHash?: string;
     };
   }
 
@@ -215,6 +216,7 @@ export const authConfig = {
         email: (token.email as string | undefined) ?? session.user?.email ?? '',
         roleId: token.roleId as string,
         roleName: token.roleName as RoleName,
+        sessionTokenHash: token.sessionTokenHash as string,
         emailVerified: null,
       };
       return session;
