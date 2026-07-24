@@ -68,6 +68,11 @@ export const METADATA_WHITELIST: Record<AuditAction, readonly string[]> = {
     'contentType',
     'entityType',
   ],
+  ai_config_update: [
+    ...COMMON_METADATA_KEYS,
+    'previousBudget',
+    'newBudget',
+  ],
 };
 
 const SENSITIVE_KEY_PATTERN =

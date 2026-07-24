@@ -1195,6 +1195,30 @@ components:
         - SEC-4 requiere password + TOTP válido
         - SEC-5 audit role_change con metadata.event 2fa_disabled en TX
         - SEC-2 sin password ni totp en respuesta ni logs
+    updateBudgetConfigAction:
+      module: app/(admin)/ia/presupuesto/actions.ts
+      inputSchema: updateBudgetConfigSchema
+      resultSchema: iaActionResultBudgetConfig
+      authz:
+        rbac: sesión portal válida
+        permiso: ai.configure
+        nota: Solo admin en matriz RBAC actual.
+      rateLimit: GTK-26 (pendiente)
+      seguridad:
+        - SEC-1 sin ai.configure → FORBIDDEN
+        - SEC-3 validación Zod (modelByPageType, emails, periodo YYYY-MM)
+        - SEC-4 audit ai_config_update mustAudit (previousBudget/newBudget, sin emails)
+    loadCostReportAction:
+      module: app/(admin)/ia/presupuesto/actions.ts
+      inputSchema: ninguno
+      resultSchema: iaActionResultCostReport
+      authz:
+        rbac: sesión portal válida
+        permiso: ai.read
+      rateLimit: ninguno
+      seguridad:
+        - SEC-2 sin ai.read → FORBIDDEN
+        - SEC-4 solo agregados de coste, sin PII
 
   x-geoteknia-portalPages:
     /perfil/seguridad:
@@ -1212,3 +1236,14 @@ components:
       nota: >
         No es Route Handler HTTP; las mutaciones usan los mismos contratos que
         `x-geoteknia-serverActions` arriba. Sin cambios de schema Prisma (GTK-7).
+    /ia/presupuesto:
+      summary: Reporte de coste IA y configuración de presupuesto (GTK-37)
+      module: app/(admin)/ia/presupuesto/page.tsx
+      authz:
+        rbac: sesión portal válida
+        permiso: ai.read (lectura); mutación vía updateBudgetConfigAction (ai.configure)
+      seo:
+        robots: noindex, nofollow
+      serverActions:
+        - updateBudgetConfigAction
+        - loadCostReportAction

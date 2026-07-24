@@ -66,7 +66,7 @@ Usado por contenido revisable y publicable.
 | `SchemaType` | `Service`, `Article`, `CreativeWork`, `Person`, `Organization`, `FAQPage`, `LocalBusiness`, `BreadcrumbList` | Datos estructurados SEO. |
 | `AiModel` | `claude-sonnet-4-6`, `claude-opus-4-8` | Modelo usado en generación IA. |
 | `RoleName` | `admin`, `gestor`, `editor`, `tecnico` | RBAC del portal interno. |
-| `AuditAction` | `publish`, `approve`, `reject`, `delete`, `login`, `login_failed`, `role_change`, `ai_generate`, `export`, `state_change`, `assign`, `content_update` | Auditoría inmutable. `state_change`/`assign` (GTK-35) CRM; `content_update` (GTK-41) edición CMS. |
+| `AuditAction` | `publish`, `approve`, `reject`, `delete`, `login`, `login_failed`, `role_change`, `ai_generate`, `export`, `state_change`, `assign`, `content_update`, `ai_config_update` | Auditoría inmutable. `state_change`/`assign` (GTK-35) CRM; `content_update` (GTK-41) edición CMS; `ai_config_update` (GTK-37) presupuesto IA. |
 | `AssetType` | `image`, `pdf`, `document` | Tipo de activo multimedia. |
 | `EquipmentType` | `sonda_rotacion`, `sonda_percusion`, `mixta`, `ensayo_in_situ`, `laboratorio`, `vehiculo_especial` | Clasificación de maquinaria. |
 | `LeadType` | `presupuesto`, `licitacion`, `recurso`, `ubicacion` | Tipo de conversión comercial. |
@@ -845,6 +845,15 @@ Configuración de presupuesto y alertas IA.
 | `notify_emails` | Json? | nullable | Destinatarios. |
 | `is_active` | Boolean | default true | Configuración vigente. |
 | AUDIT | mixed | required | Trazabilidad. |
+
+#### `ai_budget_alerts`
+
+Marcador durable de alerta de umbral enviada por periodo (GTK-37). Una fila por `billing_period` (`YYYY-MM`).
+
+| Campo | Tipo | Reglas | Descripción |
+|---|---:|---|---|
+| `billing_period` | String | PK | Periodo UTC alertado. |
+| `sent_at` | DateTime | default now | Momento del primer envío. |
 
 #### `content_revisions`
 

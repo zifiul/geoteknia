@@ -479,9 +479,18 @@ async function seedAiBudgetConfig(db: PrismaClient): Promise<void> {
     where: { billingPeriod: null },
   });
 
+  const defaultBudgetEur = (() => {
+    const raw = process.env.IA_DEFAULT_MONTHLY_BUDGET_EUR;
+    if (raw === undefined || raw === '') {
+      return 500;
+    }
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 500;
+  })();
+
   const data = {
     billingPeriod: null,
-    monthlyBudgetEur: 500,
+    monthlyBudgetEur: defaultBudgetEur,
     alertThresholdPct: 80,
     modelByPageType: {
       service: 'claude-sonnet-4-6',

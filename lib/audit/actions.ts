@@ -14,6 +14,7 @@ export const AUDIT_ACTION_VALUES = [
   'state_change',
   'assign',
   'content_update',
+  'ai_config_update',
 ] as const satisfies readonly AuditAction[];
 
 export type AuditActionValue = (typeof AUDIT_ACTION_VALUES)[number];
@@ -30,6 +31,7 @@ export const MUST_AUDIT_ACTIONS = new Set<AuditAction>([
   AuditAction.state_change,
   AuditAction.assign,
   AuditAction.content_update,
+  AuditAction.ai_config_update,
 ]);
 
 /** Acciones informativas: best-effort — no bloquean la acción de negocio. */

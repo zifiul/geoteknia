@@ -543,9 +543,12 @@ Reglas obligatorias:
 ### 9.2 Control de coste
 
 - Registrar tokens de entrada, salida y caché cuando el proveedor los exponga.
-- Aplicar límite mensual configurable.
-- Rechazar o degradar generaciones cuando se supere el presupuesto.
-- Usar retries con backoff y timeouts.
+- Aplicar límite mensual configurable en `ai_budget_config` (global o override por `billing_period` UTC `YYYY-MM`).
+- **`assertWithinBudget(period?)`** (`lib/ia/budget.ts`): invocar **antes** de cada llamada a Claude (GTK-38). Usa `period ?? currentBillingPeriodUtc()`. Si hay config activa y `getCurrentSpend(period) >= monthlyBudgetEur`, lanza `BudgetExceededError` (`code: BUDGET_EXCEEDED`, HTTP **429**). Sin config activa: **fail-open** (permite + `console.warn` estructurado sin PII).
+- **`checkThresholdAndNotify(period?)`**: tras registrar uso, si el gasto supera `alert_threshold_pct`, envía email a `notify_emails` como máximo **una vez por periodo** (tabla `ai_budget_alerts`). Fallo de email no bloquea generación.
+- Límite **soft** bajo concurrencia (TOCTOU aceptado en MVP); el ledger `ai_token_usage` sigue siendo la fuente de verdad del gasto real.
+- Configuración admin: permiso `ai.configure`; reporte de coste: `ai.read` (admin en matriz actual). Cambios de presupuesto: `audit_logs` con acción `ai_config_update` (mustAudit).
+- Usar retries con backoff y timeouts en la integración Claude (GTK-38).
 - No reintentar indefinidamente.
 
 ### 9.3 Seguridad editorial

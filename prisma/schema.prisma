@@ -72,6 +72,7 @@ enum AuditAction {
   state_change
   assign
   content_update
+  ai_config_update
 }
 
 /// Tipo de activo multimedia (GTK-9 / RF-13)
@@ -511,6 +512,14 @@ model AiBudgetConfig {
   updatedById      String?   @map("updated_by_id") @db.Uuid
 
   @@map("ai_budget_config")
+}
+
+/// Marcador durable de alerta de presupuesto IA enviada por periodo (GTK-37)
+model AiBudgetAlert {
+  billingPeriod String   @id @map("billing_period") /// YYYY-MM
+  sentAt        DateTime @default(now()) @map("sent_at")
+
+  @@map("ai_budget_alerts")
 }
 
 /// Historial append-only de versiones editoriales de contenido publicable (GTK-16 / RF-20/21)

@@ -23,6 +23,8 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
   /** Base pública para URLs de media_assets (GTK-41). */
   MEDIA_STORAGE_BASE_URL: z.url(),
+  /** Presupuesto mensual IA por defecto para seed (GTK-37, opcional). */
+  IA_DEFAULT_MONTHLY_BUDGET_EUR: z.coerce.number().positive().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
