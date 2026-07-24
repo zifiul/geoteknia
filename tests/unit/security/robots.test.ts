@@ -1,12 +1,17 @@
 /**
- * GTK-26 — robots.txt excluye /admin.
+ * GTK-26 / GTK-42 — robots.txt excluye /admin y referencia sitemap.
  */
-import { describe, expect, it } from 'vitest';
-
-import robots from '@/app/robots';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 describe('app/robots.ts', () => {
-  it('incluye Disallow para el prefijo /admin', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it('incluye Disallow para el prefijo /admin', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://geoteknia.es');
+    const robots = (await import('@/app/robots')).default;
     const route = robots();
     const rawRules = route.rules;
     const rules = Array.isArray(rawRules)

@@ -14,6 +14,8 @@ const envSchema = z.object({
   EMAIL_REPLY_TO: z.email(),
   TURNSTILE_SECRET_KEY: z.string().min(1),
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().min(1),
+  /** URL canónica del sitio público (sitemap, robots, OG). */
+  NEXT_PUBLIC_SITE_URL: z.url(),
   NODE_ENV: z.enum(['development', 'test', 'production']),
   SESSION_TTL_MINUTES: z.coerce.number().int().positive(),
   /** 32 bytes en hexadecimal (64 caracteres) para AES-256-GCM de twofa_secret. */

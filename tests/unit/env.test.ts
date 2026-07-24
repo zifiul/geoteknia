@@ -20,6 +20,7 @@ const REQUIRED_VARS = {
   EMAIL_REPLY_TO: 'presupuestos@test.geoteknia.com',
   TURNSTILE_SECRET_KEY: 'turnstile-secret-fake',
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'turnstile-site-fake',
+  NEXT_PUBLIC_SITE_URL: 'http://localhost:3000',
   NODE_ENV: 'test',
   SESSION_TTL_MINUTES: '480',
   TWOFA_ENCRYPTION_KEY:

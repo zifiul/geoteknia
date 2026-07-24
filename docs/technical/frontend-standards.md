@@ -237,7 +237,7 @@ Cada página indexable debe definir:
 - Alternativas solo si existe multidioma real.
 - `robots` con `noindex` cuando aplique.
 
-Usar helpers centralizados en `/lib/seo` para evitar divergencias.
+Usar helpers centralizados en `/lib/seo` para evitar divergencias. Las rutas de silo públicas deben construirse con `buildSiloUrl` / `buildSiloPath` (`lib/seo/silo-urls.ts`, GTK-42), alineadas con el sitemap.
 
 ### 6.2 JSON-LD
 

@@ -329,6 +329,7 @@ Las Server Actions deben validar permisos y entradas igual que un endpoint HTTP.
 
 - **Grafo único:** `lib/content/workflow.ts` — `EDITORIAL_TRANSITIONS`, `assertTransition`, `applyEditorialTransition`. Consumido por GTK-39 (transiciones + auditoría) y GTK-40 (efectos `published_at`/ISR sin duplicar el grafo).
 - **Registro polimórfico:** `lib/content/workflow-registry.ts` — `content_type` → carga/actualización y snapshots body/SEO por entidad (`service`, `geo_zone`, `service_zone_page`, `case_study`, `blog_post`, `faq`). Integridad sin FK en `content_revisions` validada en dominio.
+- **URLs públicas (GTK-42):** `lib/seo/silo-urls.ts` — `buildSiloUrl` / `buildSiloPath` centralizan patrones `/servicios`, `/zonas`, `/proyectos`, `/blog`, `/equipo`, `/maquinaria`, `/faqs`. El frontend público y el sitemap deben importar estas funciones, no duplicar strings de ruta. Revalidación: `SITEMAP_CACHE_TAG` en `lib/seo/sitemap-config.ts` para `revalidateTag` (GTK-40).
 - **Versionado:** `lib/content/revisions.ts` — `createRevision` append-only; solo cuando cambia cuerpo/SEO; `version_number = current_version + 1`.
 - **Server Actions:** `app/(admin)/contenido/[type]/[id]/actions.ts` — `requirePermission` + `runContentAction`; `content.update` (submit/approve/reject/regenerar); `content.publish` (publicar/despublicar). Contrato Zod: `lib/content/schemas/workflow.ts`.
 - **YMYL:** `requiresTechnicalVerification` en el resultado de submit/aprobar; sin `published_at` ni revalidación del frontal en este ticket.
