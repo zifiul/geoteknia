@@ -325,7 +325,15 @@ Las Server Actions deben validar permisos y entradas igual que un endpoint HTTP.
 - **Media:** `MEDIA_STORAGE_BASE_URL` en `lib/env.ts`; registro de `file_url` (sin upload de binarios en GTK-41); `alt_text` obligatorio en imágenes vía Zod.
 - **Respuesta de acciones:** `runContentAction` / `ContentActionResult` (códigos alineados con CRM GTK-35).
 
-### 5.3 Respuestas HTTP
+#### Flujo editorial y versionado (GTK-39)
+
+- **Grafo único:** `lib/content/workflow.ts` — `EDITORIAL_TRANSITIONS`, `assertTransition`, `applyEditorialTransition`. Consumido por GTK-39 (transiciones + auditoría) y GTK-40 (efectos `published_at`/ISR sin duplicar el grafo).
+- **Registro polimórfico:** `lib/content/workflow-registry.ts` — `content_type` → carga/actualización y snapshots body/SEO por entidad (`service`, `geo_zone`, `service_zone_page`, `case_study`, `blog_post`, `faq`). Integridad sin FK en `content_revisions` validada en dominio.
+- **Versionado:** `lib/content/revisions.ts` — `createRevision` append-only; solo cuando cambia cuerpo/SEO; `version_number = current_version + 1`.
+- **Server Actions:** `app/(admin)/contenido/[type]/[id]/actions.ts` — `requirePermission` + `runContentAction`; `content.update` (submit/approve/reject/regenerar); `content.publish` (publicar/despublicar). Contrato Zod: `lib/content/schemas/workflow.ts`.
+- **YMYL:** `requiresTechnicalVerification` en el resultado de submit/aprobar; sin `published_at` ni revalidación del frontal en este ticket.
+- **Auditoría:** `approve` / `reject` / `publish` (mustAudit); `content_update` para submit, despublicar y regenerar.
+
 
 Todas las respuestas JSON deben ser consistentes.
 
