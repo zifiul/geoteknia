@@ -31,6 +31,7 @@ export const METADATA_WHITELIST: Record<AuditAction, readonly string[]> = {
     'entitySlug',
     'reason',
     'softDelete',
+    'docType',
   ],
   login: [...COMMON_METADATA_KEYS, 'method', 'roleName'],
   login_failed: [...COMMON_METADATA_KEYS, 'method', 'attemptReason'],
@@ -54,6 +55,12 @@ export const METADATA_WHITELIST: Record<AuditAction, readonly string[]> = {
     'recordCount',
     'filterIds',
   ],
+  state_change: [
+    ...COMMON_METADATA_KEYS,
+    'fromState',
+    'toState',
+  ],
+  assign: [...COMMON_METADATA_KEYS, 'technicianId'],
 };
 
 const SENSITIVE_KEY_PATTERN =

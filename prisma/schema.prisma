@@ -69,6 +69,8 @@ enum AuditAction {
   role_change
   ai_generate
   export
+  state_change
+  assign
 }
 
 /// Tipo de activo multimedia (GTK-9 / RF-13)

@@ -11,6 +11,8 @@ export const AUDIT_ACTION_VALUES = [
   'role_change',
   'ai_generate',
   'export',
+  'state_change',
+  'assign',
 ] as const satisfies readonly AuditAction[];
 
 export type AuditActionValue = (typeof AUDIT_ACTION_VALUES)[number];
@@ -24,6 +26,8 @@ export const MUST_AUDIT_ACTIONS = new Set<AuditAction>([
   AuditAction.publish,
   AuditAction.approve,
   AuditAction.role_change,
+  AuditAction.state_change,
+  AuditAction.assign,
 ]);
 
 /** Acciones informativas: best-effort — no bloquean la acción de negocio. */

@@ -62,7 +62,7 @@ export const ROLE_PERMISSION_RULES: Readonly<Record<RoleName, readonly string[]>
   admin: ['*'],
   gestor: ['projects.*'],
   editor: ['content.*', 'ai.generate'],
-  tecnico: ['projects.read'],
+  tecnico: ['projects.read', 'projects.update'],
 };
 
 const PERMISSION_CODES = new Set(PERMISSIONS.map((p) => p.code));
@@ -117,7 +117,9 @@ export function assertRbacMatrixIntegrity(): void {
     throw new Error('editor debe incluir ai.generate');
   }
 
-  if (resolvePermissionCodesForRole('tecnico').join(',') !== 'projects.read') {
-    throw new Error('tecnico solo debe tener projects.read');
+  const tecnicoCodes = resolvePermissionCodesForRole('tecnico').sort();
+  const expectedTecnico = ['projects.read', 'projects.update'].sort();
+  if (tecnicoCodes.join(',') !== expectedTecnico.join(',')) {
+    throw new Error('tecnico solo debe tener projects.read y projects.update');
   }
 }

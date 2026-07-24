@@ -169,7 +169,7 @@ describe('withRoutePermission (GTK-25 / SEC-4, SEC-5)', () => {
   });
 
   it('devuelve 403 sin invocar el handler cuando no tiene permiso', async () => {
-    getPortalSession.mockResolvedValue(makeUser('tecnico'));
+    getPortalSession.mockResolvedValue(makeUser('editor'));
     const handler = vi.fn();
     const wrapped = withRoutePermission('projects.update', handler);
 
@@ -180,7 +180,7 @@ describe('withRoutePermission (GTK-25 / SEC-4, SEC-5)', () => {
   });
 
   it('SEC-5: el cuerpo de error no revela si el recurso existe', async () => {
-    getPortalSession.mockResolvedValue(makeUser('tecnico'));
+    getPortalSession.mockResolvedValue(makeUser('editor'));
     const handler = vi.fn();
     const wrapped = withRoutePermission('projects.update', handler);
 

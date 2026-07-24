@@ -3,7 +3,11 @@
     "linear": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.linear.app/mcp"]
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.linear.app/mcp"
+      ]
     },
     "figma": {
       "type": "http",
@@ -27,17 +31,36 @@
     "shadcn": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "shadcn@latest", "mcp"]
+      "args": [
+        "-y",
+        "shadcn@latest",
+        "mcp"
+      ]
     },
     "chrome-devtools": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "chrome-devtools-mcp@latest", "--isolated=true"]
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--isolated=true"
+      ]
     },
     "playwright": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"]
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
+    },
+    "codegraph": {
+      "type": "stdio",
+      "command": "codegraph",
+      "args": [
+        "serve",
+        "--mcp"
+      ]
     }
   }
 }
