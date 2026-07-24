@@ -316,6 +316,15 @@ Usar Server Actions cuando:
 
 Las Server Actions deben validar permisos y entradas igual que un endpoint HTTP.
 
+#### CRUD de contenido CMS (GTK-41)
+
+- **Dominio:** `lib/content/**` (server-only): schemas compartidos en `lib/content/schemas/` (`seoBlockSchema`, `editorialCrudBlockSchema`, `media`), errores tipados (`ContentNotFoundError`, `ContentConflictError`, `ContentValidationError`), slugs (`slugify`, `ensureUniqueSlug`) y un módulo por agregado (servicios, geo-zonas, blog, FAQs, etc.).
+- **Mutaciones admin:** `app/(admin)/contenido/actions.ts` — `withPermission('content.create'|'content.update'|'content.delete'|'content.read')` para contenido editorial; `withAdmin()` (rol `admin` explícito) para `organization_profile`, `contact_channels` y `calculator_rules`.
+- **Editorial:** el CRUD **no** publica: los schemas de entrada rechazan `workflow_status` `publicado`/`aprobado`; creación en `borrador_ia` con `is_ai_assisted` para marcar origen manual.
+- **Auditoría:** `content_update` y `delete` (soft) en la misma transacción Prisma que la mutación; metadata whitelist (`entitySlug`, `contentType`) sin cuerpos SEO.
+- **Media:** `MEDIA_STORAGE_BASE_URL` en `lib/env.ts`; registro de `file_url` (sin upload de binarios en GTK-41); `alt_text` obligatorio en imágenes vía Zod.
+- **Respuesta de acciones:** `runContentAction` / `ContentActionResult` (códigos alineados con CRM GTK-35).
+
 ### 5.3 Respuestas HTTP
 
 Todas las respuestas JSON deben ser consistentes.
@@ -499,6 +508,7 @@ El backend debe minimizar y aislar PII:
 - **TOTP (GTK-24):** la verificación en login usa el punto de extensión `registerVerifyTotp` / `verifyTotp` en `lib/auth/totp.ts`. La implementación real (`lib/auth/totp-verifier.ts`) se registra por efecto de importación desde `lib/auth/config.ts` antes de cualquier `authorize()`. El secreto se cifra en reposo con `TWOFA_ENCRYPTION_KEY` (`lib/auth/crypto.ts`).
 - **Gestión self-service 2FA (GTK-24):** enrolamiento y desactivación vía Server Actions en `lib/auth/totp-actions.ts` (schemas en `lib/auth/totp-schemas.ts`, documentadas en `api-spec.yml` → `x-geoteknia-serverActions`). Requieren sesión portal (`getPortalSession()`); no sustituyen RBAC en otras mutaciones. UI: `app/(admin)/perfil/seguridad/`.
 - **Sub-eventos de auditoría en `role_change`:** además de cambios de rol RBAC, la whitelist de `METADATA_WHITELIST.role_change` admite `event` (p. ej. `2fa_enabled`, `2fa_disabled`) para distinguir activación/desactivación de 2FA sin ampliar el enum `AuditAction`.
+- **Edición CMS (GTK-41):** mutaciones de contenido en `/admin` registran `AuditAction.content_update` o `delete` (soft) con metadata acotada; el rol `tecnico` no tiene permisos `content.*` (matriz en `lib/auth/permissions.ts`).
 
 ### 8.4 Aislamiento de `/admin` (GTK-26)
 

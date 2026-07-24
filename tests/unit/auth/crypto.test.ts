@@ -32,6 +32,7 @@ describe('lib/auth/crypto (GTK-24)', () => {
       'NEXT_PUBLIC_TURNSTILE_SITE_KEY',
       'NODE_ENV',
       'SESSION_TTL_MINUTES',
+      'MEDIA_STORAGE_BASE_URL',
     ] as const;
     for (const key of envKeys) {
       if (key === 'NODE_ENV') {
@@ -47,6 +48,7 @@ describe('lib/auth/crypto (GTK-24)', () => {
     }
     process.env.NEXTAUTH_URL = 'http://localhost:3000';
     process.env.EMAIL_REPLY_TO = 'a@b.co';
+    process.env.MEDIA_STORAGE_BASE_URL = 'https://cdn.test.geoteknia.com/media';
     return import('@/lib/auth/crypto');
   }
 

@@ -21,6 +21,8 @@ const envSchema = z.object({
   RATE_LIMIT_PUBLIC_PER_MIN: z.coerce.number().int().positive().default(20),
   UPSTASH_REDIS_REST_URL: z.string().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
+  /** Base pública para URLs de media_assets (GTK-41). */
+  MEDIA_STORAGE_BASE_URL: z.url(),
 });
 
 const parsed = envSchema.safeParse(process.env);

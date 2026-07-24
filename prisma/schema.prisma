@@ -71,6 +71,7 @@ enum AuditAction {
   export
   state_change
   assign
+  content_update
 }
 
 /// Tipo de activo multimedia (GTK-9 / RF-13)
