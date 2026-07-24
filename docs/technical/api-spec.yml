@@ -1,0 +1,298 @@
+openapi: 3.1.0
+info:
+  title: Geoteknia API
+  version: 1.0.0
+  description: >
+    Contrato HTTP del monolito Geoteknia (Next.js 15 App Router). Los schemas de
+    entrada ejecutables viven en `lib/**/**/*-schemas.ts` (Zod). Esta especificación
+    se mantiene a mano y debe permanecer coherente con esos schemas.
+
+    **Auth.js v5:** las rutas bajo `/api/auth/*` las gestiona NextAuth; no usan el
+    envelope JSON `success`/`error` del resto de la API salvo cuando se solicita
+    `json=true` en el callback de credenciales.
+
+servers:
+  - url: https://geoteknia.es
+    description: Producción
+  - url: http://localhost:3000
+    description: Desarrollo local
+
+tags:
+  - name: Portal Auth
+    description: >
+      Autenticación del back-office (`/admin`) vía Auth.js v5 — proveedor Credentials
+      (GTK-23). Rate limiting de login planificado en GTK-26.
+
+paths:
+  /api/auth/csrf:
+    get:
+      tags: [Portal Auth]
+      operationId: authGetCsrf
+      summary: Obtener token CSRF para login Auth.js
+      description: >
+        Endpoint público requerido antes de `POST /api/auth/callback/credentials`.
+        No requiere sesión ni RBAC. Rate limit de login (GTK-26) aplica al flujo
+        completo de autenticación, no aislado en esta ruta.
+      security: []
+      x-geoteknia-authz:
+        rbac: público
+        permiso: ninguno
+        rateLimit: hereda limitador de login (GTK-26, pendiente)
+        turnstile: false
+      responses:
+        '200':
+          description: Token CSRF para el siguiente POST de credenciales.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthCsrfResponse'
+        '500':
+          description: Error interno de Auth.js.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthJsErrorResponse'
+
+  /api/auth/callback/credentials:
+    post:
+      tags: [Portal Auth]
+      operationId: authCredentialsCallback
+      summary: Callback de login con email y contraseña
+      description: >
+        Valida credenciales (argon2id), emite cookie de sesión JWT y crea espejo
+        en tabla `sessions`. Entrada validada con el mismo contrato Zod que
+        `credentialsCallbackBodySchema` (`lib/auth/login-schemas.ts`). Fallos de
+        credenciales devuelven mensaje genérico (SEC-1). Usuario inactivo, email
+        inexistente y contraseña incorrecta son indistinguibles para el cliente.
+      security: []
+      x-geoteknia-authz:
+        rbac: público
+        permiso: ninguno
+        rateLimit: GTK-26 (429 esperado cuando exista; no implementado en GTK-23)
+        turnstile: false
+        pii:
+          entrada: email, password (HTTPS); nunca persistir password en claro
+          salida: cookie de sesión; sin hash ni password en cuerpo
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CredentialsCallbackForm'
+      responses:
+        '200':
+          description: >
+            Login correcto. Con `json=true` puede devolver JSON de sesión; sin él,
+            redirección según Auth.js (`callbackUrl` / `pages.signIn`).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/AuthSessionResponse'
+                  - $ref: '#/components/schemas/AuthJsErrorResponse'
+        '302':
+          description: Redirección tras login (modo no-JSON).
+        '401':
+          description: Credenciales inválidas o login rechazado (mensaje genérico).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthJsErrorResponse'
+        '403':
+          description: >
+            Auth.js puede usar 403 en algunos flujos; para credenciales inválidas
+            tratar como equivalente opaco a 401 (SEC-1).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthJsErrorResponse'
+        '429':
+          description: Rate limit de login (GTK-26).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Error interno.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthJsErrorResponse'
+
+  /api/auth/session:
+    get:
+      tags: [Portal Auth]
+      operationId: authGetSession
+      summary: Consultar sesión Auth.js actual
+      description: >
+        Devuelve la sesión asociada a la cookie o `null` si no hay sesión válida
+        (incluye espejo revocado/expirado en BD — GTK-23).
+      security:
+        - authjsSessionCookie: []
+      x-geoteknia-authz:
+        rbac: sesión Auth.js (cualquier rol interno autenticado o anónimo sin sesión)
+        permiso: ninguno
+        rateLimit: estándar
+        turnstile: false
+      responses:
+        '200':
+          description: Sesión activa o vacía.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionResponse'
+
+  /api/auth/signout:
+    post:
+      tags: [Portal Auth]
+      operationId: authSignOut
+      summary: Cerrar sesión Auth.js
+      description: Invalida la cookie de sesión en el cliente (revocación en BD en tickets posteriores si aplica).
+      security:
+        - authjsSessionCookie: []
+      x-geoteknia-authz:
+        rbac: sesión Auth.js
+        permiso: ninguno
+        rateLimit: estándar
+        turnstile: false
+      responses:
+        '200':
+          description: Sesión cerrada.
+        '302':
+          description: Redirección post-logout según configuración Auth.js.
+
+components:
+  securitySchemes:
+    authjsSessionCookie:
+      type: apiKey
+      in: cookie
+      name: authjs.session-token
+      description: >
+        Nombre de cookie según configuración Auth.js v5 en producción; puede variar
+        con prefijo `__Secure-` en HTTPS.
+
+  schemas:
+    ApiErrorBody:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          examples: [VALIDATION_ERROR, INVALID_CREDENTIALS, RATE_LIMITED]
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    ApiErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          $ref: '#/components/schemas/ApiErrorBody'
+
+    LoginInput:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: Normalizado trim + lowercase en servidor.
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+        totp:
+          type: string
+          pattern: '^\\d{6}$'
+          description: Segundo factor (GTK-24); opcional hasta integración TOTP.
+
+    CredentialsCallbackForm:
+      allOf:
+        - $ref: '#/components/schemas/LoginInput'
+        - type: object
+          additionalProperties: false
+          required: [csrfToken]
+          properties:
+            csrfToken:
+              type: string
+              minLength: 1
+              maxLength: 512
+            callbackUrl:
+              type: string
+              maxLength: 2048
+            json:
+              type: string
+              enum: ['true', 'false']
+
+    AuthCsrfResponse:
+      type: object
+      additionalProperties: false
+      required: [csrfToken]
+      properties:
+        csrfToken:
+          type: string
+
+    AuthSessionUser:
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        roleId:
+          type: string
+          format: uuid
+        roleName:
+          type: string
+          enum: [admin, gestor, editor, tecnico]
+
+    AuthSessionResponse:
+      type: object
+      additionalProperties: true
+      properties:
+        user:
+          $ref: '#/components/schemas/AuthSessionUser'
+        expires:
+          type: string
+          format: date-time
+
+    AuthJsErrorResponse:
+      type: object
+      description: Formato de error Auth.js (puede incluir `url` para redirección).
+      additionalProperties: true
+      properties:
+        error:
+          type: string
+          description: Código/mensaje Auth.js; credenciales inválidas sin detalle de campo.
+        url:
+          type: string
+
+  x-geoteknia-serverActions:
+    loginAction:
+      module: lib/auth/login-action.ts
+      inputSchema: loginInputSchema
+      resultSchema: loginActionResultSchema
+      authz:
+        rbac: público
+        permiso: ninguno
+        nota: Emite sesión; no requiere sesión previa.
+      rateLimit: GTK-26 (429 → código RATE_LIMITED en resultSchema)
+      seguridad:
+        - SEC-1 mensaje genérico INVALID_CREDENTIALS
+        - SEC-6 validación Zod antes de signIn
+        - SEC-2 sin password en respuesta ni logs

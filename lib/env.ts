@@ -14,6 +14,7 @@ const envSchema = z.object({
   TURNSTILE_SECRET_KEY: z.string().min(1),
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().min(1),
   NODE_ENV: z.enum(['development', 'test', 'production']),
+  SESSION_TTL_MINUTES: z.coerce.number().int().positive(),
 });
 
 const parsed = envSchema.safeParse(process.env);
