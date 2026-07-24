@@ -41,3 +41,17 @@ El módulo `lib/env.ts` SHALL validar `SESSION_TTL_MINUTES` como entero positivo
 - **WHEN** falta `SESSION_TTL_MINUTES` o su valor no es un entero positivo
 - **THEN** el módulo lanza un error que identifica `SESSION_TTL_MINUTES` por nombre, sin filtrar valores de secretos
 
+### Requirement: Clave de cifrado TOTP
+
+El sistema SHALL validar `TWOFA_ENCRYPTION_KEY` en `lib/env.ts` como cadena hexadecimal de exactamente 64 caracteres (32 bytes) para cifrado AES-256-GCM de `twofa_secret`.
+
+#### Scenario: Clave válida
+
+- **WHEN** `TWOFA_ENCRYPTION_KEY` tiene 64 caracteres hexadecimales
+- **THEN** el módulo `env` exporta el valor tipado sin error
+
+#### Scenario: Clave ausente o mal formada
+
+- **WHEN** falta la variable o no cumple longitud/formato
+- **THEN** el arranque falla con mensaje que enumera el nombre de la variable sin volcar valores
+

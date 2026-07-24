@@ -161,8 +161,8 @@ Usuarios internos con credenciales, 2FA y rol.
 | `password_hash` | String | required | Hash argon2/bcrypt. |
 | `role_id` | UUID | FK restrict, indexed | Rol asignado. |
 | `is_active` | Boolean | default true, indexed | Control de acceso. |
-| `twofa_enabled` | Boolean | default false | 2FA TOTP activo. |
-| `twofa_secret` | String? | encrypted at rest | Secreto TOTP cifrado. |
+| `twofa_enabled` | Boolean | default false | 2FA TOTP activo; solo pasa a `true` tras confirmación con código válido (GTK-24). |
+| `twofa_secret` | String? | encrypted at rest | Secreto TOTP cifrado en aplicación (AES-256-GCM, `lib/auth/crypto.ts`; clave `TWOFA_ENCRYPTION_KEY`). |
 | `last_login_at` | DateTime? | nullable | Último login correcto. |
 | AUDIT | mixed | required | Trazabilidad. |
 
@@ -998,7 +998,7 @@ Migración: `20260723150546_performance_partial_brin_gin_indexes`. En producció
 - **Soft delete RGPD**: `contacts`, `leads` y `projects` incluyen `deleted_at` para derecho de supresión sin romper referencias operativas.
 - **Append-only sin mutación**: `audit_logs`, `conversion_events`, `project_state_history`, `ai_token_usage` y `content_revisions` preservan trazabilidad y no tienen `updated_at`/`deleted_at`.
 - **Consentimiento obligatorio**: `leads.gdpr_consent` es no nullable.
-- **Credenciales protegidas**: `users.password_hash` se guarda hasheado; `users.twofa_secret` debe cifrarse en reposo.
+- **Credenciales protegidas**: `users.password_hash` se guarda hasheado (argon2id); `users.twofa_secret` se cifra en reposo con AES-256-GCM en aplicación (GTK-24, ver `lib/auth/crypto.ts` y `TWOFA_ENCRYPTION_KEY` en `lib/env.ts`).
 - **Documentos privados**: `project_documents` puede apuntar a `media_assets` o `file_url`, pero su visibilidad debe quedar restringida al portal interno.
 
 ## 9. Seeds Iniciales

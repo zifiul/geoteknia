@@ -495,6 +495,9 @@ El backend debe minimizar y aislar PII:
 - `can(user, permissionCode)` resuelve el permiso **en memoria** contra `resolvePermissionCodesForRole` (`lib/auth/permissions.ts`); no consulta `role_permissions` en runtime — esa tabla es solo la materialización vía seed de la matriz de código.
 - La autorización obtiene la sesión con `getPortalSession()` (`lib/auth/session.ts`), que sí comprueba el espejo de sesión en BD (revocación/expiración). **Nunca** usar `getServerSession()` (solo valida el JWT) para decidir acceso.
 - El rol `tecnico` exige además `assertOwnership()` sobre recursos con `assigned_technician_id`; toda denegación (permiso o pertenencia) responde con el mismo `ForbiddenError` genérico, sin filtrar si el recurso existe.
+- **TOTP (GTK-24):** la verificación en login usa el punto de extensión `registerVerifyTotp` / `verifyTotp` en `lib/auth/totp.ts`. La implementación real (`lib/auth/totp-verifier.ts`) se registra por efecto de importación desde `lib/auth/config.ts` antes de cualquier `authorize()`. El secreto se cifra en reposo con `TWOFA_ENCRYPTION_KEY` (`lib/auth/crypto.ts`).
+- **Gestión self-service 2FA (GTK-24):** enrolamiento y desactivación vía Server Actions en `lib/auth/totp-actions.ts` (schemas en `lib/auth/totp-schemas.ts`, documentadas en `api-spec.yml` → `x-geoteknia-serverActions`). Requieren sesión portal (`getPortalSession()`); no sustituyen RBAC en otras mutaciones. UI: `app/(admin)/perfil/seguridad/`.
+- **Sub-eventos de auditoría en `role_change`:** además de cambios de rol RBAC, la whitelist de `METADATA_WHITELIST.role_change` admite `event` (p. ej. `2fa_enabled`, `2fa_disabled`) para distinguir activación/desactivación de 2FA sin ampliar el enum `AuditAction`.
 
 ### 8.4 Aislamiento de `/admin`
 

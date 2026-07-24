@@ -9,6 +9,18 @@ import { isMustAuditAction, MUST_AUDIT_ACTIONS } from '@/lib/audit/actions';
 import { extractRequestAuditContext } from '@/lib/audit/request-context';
 
 describe('lib/audit/sanitize — GTK-22', () => {
+  it('conserva event en role_change para sub-eventos 2FA (GTK-24)', () => {
+    const result = sanitizeAuditMetadata(AuditAction.role_change, {
+      targetUserId: '11111111-1111-4111-8111-111111111111',
+      event: '2fa_enabled',
+    });
+
+    expect(result).toEqual({
+      targetUserId: '11111111-1111-4111-8111-111111111111',
+      event: '2fa_enabled',
+    });
+  });
+
   it('conserva solo claves en whitelist por acción', () => {
     const result = sanitizeAuditMetadata(AuditAction.role_change, {
       targetUserId: '11111111-1111-4111-8111-111111111111',

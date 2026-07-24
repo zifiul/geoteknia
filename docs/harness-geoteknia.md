@@ -14,6 +14,8 @@ El harness lleva cada User Story de principio a fin con un flujo dirigido por es
 
 Para issues de Linear con label **`DB`** (schema Prisma, migraciones, seeds, índices) existe la **[Variante: Harness DB](#variante-harness-db)**: mismo ciclo de gates y archive, sin contrato API, frontend ni E2E.
 
+Para issues con label **`Backend`**, el harness completo sigue aplicando salvo en QA: **no** se ejecuta el paso N+3 (E2E con Playwright MCP). Ver [Regla QA — label `Backend`](#regla-qa--label-backend).
+
 **Gates duros y secuenciales:** `SDD → Contrato → TDD-RED` (no se implementa nada sin tests en rojo).
 
 **Contrato congelado:** en Geoteknia no hay SDK generado. El contrato son los **schemas Zod compartidos** (`lib/validations/` y `lib/<dominio>/*-schemas.ts`) más `docs/technical/api-spec.yml` mantenido a mano. Una vez congelado, back y front avanzan en paralelo sin renegociar tipos.
@@ -53,7 +55,7 @@ Este paso es el **Step 0** de `tasks.md` (convención en `docs/technical/openspe
 ### 0. Selección de US
 - **Agente:** `harness-orchestrator`
 - **Skills:** `geoteknia-context`, `openspec-workflow`
-- **Acción:** lee el backlog de Linear a través del MCP y elige la primera US no completada cuyas dependencias estén hechas (orden por dependencias y criticidad).
+- **Acción:** lee el backlog de Linear a través del MCP y elige la primera US no completada cuyas dependencias estén hechas (orden por dependencias y criticidad). Si la issue tiene label `Backend`, anunciar en el plan que la fase 5a **omite E2E Playwright** (regla [label `Backend`](#regla-qa--label-backend)).
 - **Entrega:** US seleccionada, plan de fases (`TodoWrite`).
 
 ### 1. SDD — Abrir change OpenSpec 🛡️ *threat modeling*
@@ -106,10 +108,12 @@ Este paso es el **Step 0** de `tasks.md` (convención en `docs/technical/openspe
 |---|---|---|
 | **Agente** | `qa-verifier` | `security-verifier` |
 | **Skills** | `qa-mandatory-steps`, `db-state-verify` | `security-scan` |
-| **Acción** | Unit + verificación de BD (Neon), pruebas con `curl` y E2E con Playwright MCP. Genera reports en la carpeta del change. | SAST sobre el diff (Semgrep), SCA de dependencias (`npm audit`), detección de secretos (gitleaks) y DAST ligero con `curl` malicioso contra los endpoints nuevos usando el contrato. |
-| **Entrega** | reports unit-db, curl y e2e; BD restaurada | `reports/security.md` con hallazgos clasificados por severidad |
+| **Acción** | Unit + verificación de BD (Neon); `curl` si hay Route Handlers/endpoints; E2E con Playwright MCP **solo** si hay flujo de usuario en el change **y** la issue **no** tiene label `Backend` (ver [regla QA Backend](#regla-qa--label-backend)). Genera reports en la carpeta del change. | SAST sobre el diff (Semgrep), SCA de dependencias (`npm audit`), detección de secretos (gitleaks) y DAST ligero con `curl` malicioso contra los endpoints nuevos usando el contrato. |
+| **Entrega** | reports unit-db, curl (si aplica) y e2e (si aplica); BD restaurada | `reports/security.md` con hallazgos clasificados por severidad |
 
 > Ambas subfases corren **en paralelo**. La 5b es automatizada y barata: no introduce paradas humanas.
+
+> **Label `Backend`:** omitir siempre el paso N+3 (Playwright). La verificación del flujo en navegador queda para la US de frontend o full-stack que consuma el contrato.
 
 ### 6. Code Review — GATE DURO *(obligatorio)* 🛡️ *absorbe el veredicto de seguridad*
 - **Agente:** `code-reviewer`
@@ -166,6 +170,37 @@ Este paso es el **Step 0** de `tasks.md` (convención en `docs/technical/openspe
   → 5a (QA) ∥ 5b (Security Scan) → 6 (Review + security) ∥ 7 (Docs)
   → GATE 2 → 8 (Archive) → [humano: commit + PR]
 ```
+
+---
+
+## Regla QA — label `Backend`
+
+> Aplica a issues de Linear con label **`Backend`** que siguen el harness completo (no la [Variante Harness DB](#variante-harness-db)).
+
+### Cuándo aplica
+
+Cuando la issue seleccionada en Linear lleva el label **`Backend`** (servicios en `/lib`, Route Handlers, Server Actions, auth, email, auditoría, etc.), la fase **5a** debe ejecutar:
+
+| Paso | Obligatorio en label `Backend` |
+|------|--------------------------------|
+| N+1 — Vitest + verificación BD (`db-state-verify`) | **Sí** |
+| N+2 — `curl` contra endpoints del change | **Sí**, si el ticket crea o modifica Route Handlers, webhooks o API |
+| N+3 — E2E Playwright MCP | **No — omitir siempre** |
+
+### Qué documentar
+
+En `tasks.md` y en el informe de fase 5a:
+
+- Marcar explícitamente *E2E omitido — issue label `Backend`*.
+- Si el comportamiento tiene recorrido de usuario, indicar la **US de Linear** (p. ej. frontend) que cubrirá el E2E del flujo integrado.
+
+La omisión de E2E **no** exime de TDD-RED (Vitest), `curl` cuando hay API, ni del security scan (5b).
+
+### Señales de alerta
+
+- Ejecutar Playwright en un ticket solo `Backend` “porque el harness lo pide”.
+- Marcar N+3 completado sin informe E2E cuando el label es `Backend`.
+- Incluir UI en el mismo change con label `Backend` sin acordar con el humano qué US lleva el E2E (preferir ticket `Frontend` o full-stack para flujos visibles).
 
 ---
 
@@ -256,7 +291,7 @@ En fase 1, el `spec-author` prioriza:
 
 ## Notas
 
-- Flujo genérico del harness (plantilla, no una US concreta). Para issues label `DB`, ver **Variante: Harness DB**.
+- Flujo genérico del harness (plantilla, no una US concreta). Para issues label `DB`, ver **Variante: Harness DB**. Para label `Backend`, ver **Regla QA — label `Backend`** (sin E2E).
 - **Gates duros y secuenciales:** SDD → Contrato → TDD-RED (en Harness DB: SDD → [sin contrato] → TDD solo si hay lógica testeable).
 - **Paralelizable:** 4a con 4b (backend con frontend), 5a con 5b (QA con security scan) y 6 con 7 (code-review con docs). En Harness DB no hay 4b.
 - **Estado en disco:** backlog en Linear (fuente de verdad única, sin `_backlog.json` local), `tasks.md` y `reports/` dentro de `openspec/changes/<change-name>/` (incluye `reports/security.md`).

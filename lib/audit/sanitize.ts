@@ -39,6 +39,7 @@ export const METADATA_WHITELIST: Record<AuditAction, readonly string[]> = {
     'targetUserId',
     'previousRole',
     'newRole',
+    'event',
   ],
   ai_generate: [
     ...COMMON_METADATA_KEYS,
