@@ -468,7 +468,7 @@ await prisma.$transaction(async (tx) => {
 - Nunca commitear `.env`, secretos, dumps con PII ni claves de proveedores.
 - Validar variables de entorno al arrancar.
 - Mantener claves de Anthropic, Resend, Auth.js, Neon y Turnstile solo en servidor.
-- Aplicar rate limiting en endpoints públicos de captación.
+- Aplicar rate limiting en endpoints públicos de captación con `checkRateLimit` (`lib/security/rate-limit.ts`; umbrales `RATE_LIMIT_*` en `lib/env.ts`).
 - Proteger formularios públicos con Turnstile cuando sean susceptibles de spam.
 - Sanitizar HTML y contenido generado por IA antes de publicarlo.
 
@@ -499,9 +499,15 @@ El backend debe minimizar y aislar PII:
 - **Gestión self-service 2FA (GTK-24):** enrolamiento y desactivación vía Server Actions en `lib/auth/totp-actions.ts` (schemas en `lib/auth/totp-schemas.ts`, documentadas en `api-spec.yml` → `x-geoteknia-serverActions`). Requieren sesión portal (`getPortalSession()`); no sustituyen RBAC en otras mutaciones. UI: `app/(admin)/perfil/seguridad/`.
 - **Sub-eventos de auditoría en `role_change`:** además de cambios de rol RBAC, la whitelist de `METADATA_WHITELIST.role_change` admite `event` (p. ej. `2fa_enabled`, `2fa_disabled`) para distinguir activación/desactivación de 2FA sin ampliar el enum `AuditAction`.
 
-### 8.4 Aislamiento de `/admin`
+### 8.4 Aislamiento de `/admin` (GTK-26)
 
-- `/admin` debe tener `noindex` y bloqueo en robots.
+- **`middleware.ts` (Edge Runtime):** matcher `/admin/:path*` y `/api/admin/:path*`. Comprueba solo JWT de sesión vía `auth()` de `lib/auth/auth-edge.ts` (config Auth.js mínima, **sin** Prisma ni `import 'server-only'`). No consulta `sessions` en BD.
+- **Capa autoritativa (Node.js):** Server Components, Server Actions y Route Handlers de `/admin` deben seguir usando `getPortalSession()` / `requireSession()` (`lib/auth/session.ts`), que valida revocación y expiración en la tabla `sessions`. El middleware **no sustituye** esta capa: un JWT aún válido puede pasar el middleware mientras la sesión esté revocada en BD hasta que el handler Node rechace el acceso.
+- **Prohibido en middleware:** importar `lib/db.ts`, `lib/env.ts` (`server-only`) o `lib/auth/config.ts` (arrastra Prisma). Umbrales de rate limit en Edge: `readRateLimitEnv()` en `lib/security/rate-limit-env.ts` (lee `process.env` sin Zod server-only).
+- **Comportamiento HTTP:** sin sesión → redirect 307 a `/admin/login` (páginas) o `401` JSON `{ success: false, error: { code: 'UNAUTHORIZED', ... } }` (rutas bajo `/api/admin`). Cabeceras `X-Robots-Tag: noindex, nofollow` y `SECURITY_HEADERS` vía `lib/security/headers.ts`.
+- **`app/robots.ts`:** `Disallow` de `/admin` (complementa cabeceras HTTP; el meta `robots` por página es defensa en profundidad opcional).
+- **Rate limiting (MVP):** primitiva `checkRateLimit(key, limit, windowMs)` en `lib/security/rate-limit.ts` (ventana en memoria por instancia/isolate; **no** compartida entre regiones/cold starts). Variables `RATE_LIMIT_LOGIN_PER_MIN` y `RATE_LIMIT_PUBLIC_PER_MIN` en `lib/env.ts` (Node). Los endpoints de login y captación pública (GTK-28+) deben importar esta primitiva, no reimplementar contadores. Upstash (`UPSTASH_REDIS_*` opcionales en env) reservado para fase 2.
+- **Logs:** eventos `401` en middleware con path e `ipHint` truncado; sin email ni PII de leads.
 - Cloudflare WAF debe proteger rutas administrativas cuando esté disponible.
 - No mezclar endpoints públicos y administrativos sin checks explícitos.
 - Evitar que errores del admin filtren información operativa al público.

@@ -100,3 +100,38 @@ describe('lib/env.ts — validación de variables de entorno', () => {
     expect(error?.message).not.toContain(REQUIRED_VARS.TURNSTILE_SECRET_KEY);
   });
 });
+
+describe('lib/env.ts — GTK-26 rate limit', () => {
+  it('expone RATE_LIMIT_LOGIN_PER_MIN y RATE_LIMIT_PUBLIC_PER_MIN con defaults 5 y 20', async () => {
+    setEnv(REQUIRED_VARS);
+
+    const { env } = await import('@/lib/env');
+
+    expect(env.RATE_LIMIT_LOGIN_PER_MIN).toBe(5);
+    expect(env.RATE_LIMIT_PUBLIC_PER_MIN).toBe(20);
+  });
+
+  it('parsea umbrales personalizados cuando están definidos', async () => {
+    setEnv({
+      ...REQUIRED_VARS,
+      RATE_LIMIT_LOGIN_PER_MIN: '10',
+      RATE_LIMIT_PUBLIC_PER_MIN: '30',
+    });
+
+    const { env } = await import('@/lib/env');
+
+    expect(env.RATE_LIMIT_LOGIN_PER_MIN).toBe(10);
+    expect(env.RATE_LIMIT_PUBLIC_PER_MIN).toBe(30);
+  });
+
+  it('Upstash opcional: arranque sin UPSTASH_REDIS_REST_URL ni TOKEN', async () => {
+    setEnv(REQUIRED_VARS);
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    const { env } = await import('@/lib/env');
+
+    expect(env.UPSTASH_REDIS_REST_URL).toBeUndefined();
+    expect(env.UPSTASH_REDIS_REST_TOKEN).toBeUndefined();
+  });
+});

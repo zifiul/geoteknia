@@ -17,6 +17,10 @@ const envSchema = z.object({
   SESSION_TTL_MINUTES: z.coerce.number().int().positive(),
   /** 32 bytes en hexadecimal (64 caracteres) para AES-256-GCM de twofa_secret. */
   TWOFA_ENCRYPTION_KEY: z.string().length(64).regex(/^[0-9a-fA-F]+$/),
+  RATE_LIMIT_LOGIN_PER_MIN: z.coerce.number().int().positive().default(5),
+  RATE_LIMIT_PUBLIC_PER_MIN: z.coerce.number().int().positive().default(20),
+  UPSTASH_REDIS_REST_URL: z.string().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
