@@ -242,6 +242,76 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
 
+  /api/leads/licitacion:
+    post:
+      tags: [Leads]
+      operationId: createTenderLead
+      summary: Lead de licitación con referencia de expediente
+      description: >
+        Endpoint público (GTK-31). Valida con `tenderLeadSchema`
+        (`lib/leads/schema.ts`): contacto corporativo más `expedienteRef` o
+        `plataformaUrl`. Turnstile, rate limit `RATE_LIMIT_PUBLIC_PER_MIN` (clave
+        `leads-licitacion:{ip}`). Crea contacto (dedupe), lead (`licitacion`) y
+        proyecto con `expediente_ref`/`estimated_value` cuando aplica. Email de
+        confirmación con fallbacks; evento `generate_lead` / `licitacion`
+        post-commit (best-effort).
+      security: []
+      x-geoteknia-authz:
+        rbac: público
+        permiso: ninguno
+        rateLimit: RATE_LIMIT_PUBLIC_PER_MIN (clave leads-licitacion:{ip})
+        turnstile: true
+        pii:
+          entrada: contacto corporativo y datos de expediente (HTTPS)
+          salida: solo referenceNumber; sin PII en cuerpo de éxito
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenderLeadInput'
+      responses:
+        '201':
+          description: Lead y proyecto creados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadCreatedSuccessEnvelope'
+        '400':
+          description: Validación Zod, expediente/plataforma o slug de provincia inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: Token Turnstile inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit excedido.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '502':
+          description: Turnstile siteverify no disponible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Error interno o generación de referencia fallida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+
   /api/auth/csrf:
     get:
       tags: [Portal Auth]
@@ -668,6 +738,70 @@ components:
       description: >
         Debe indicarse `cadastralRef` o el par `mapLat`+`mapLng`, y al menos
         `email` o `telefono` (validación `superRefine` en Zod).
+
+    TenderLeadInput:
+      type: object
+      additionalProperties: false
+      required:
+        - nombre
+        - empresa
+        - email
+        - gdprConsent
+        - turnstileToken
+      properties:
+        nombre:
+          type: string
+          minLength: 2
+          maxLength: 200
+        empresa:
+          type: string
+          minLength: 1
+          maxLength: 200
+        email:
+          type: string
+          format: email
+        telefono:
+          type: string
+          minLength: 9
+          maxLength: 20
+        organismo:
+          type: string
+          maxLength: 200
+        expedienteRef:
+          type: string
+          maxLength: 200
+        plataformaUrl:
+          type: string
+          format: uri
+        importeEstimado:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 10000000000
+        esUte:
+          type: boolean
+        provincia:
+          type: string
+          minLength: 1
+          description: Slug opcional de `provinces.slug`
+        gdprConsent:
+          type: boolean
+          const: true
+        turnstileToken:
+          type: string
+          minLength: 1
+        utmSource:
+          type: string
+        utmMedium:
+          type: string
+        utmCampaign:
+          type: string
+        gaClientId:
+          type: string
+        landingUrl:
+          type: string
+          format: uri
+      description: >
+        Debe indicarse `expedienteRef` o `plataformaUrl` (validación `superRefine` en Zod).
 
     LoginInput:
       type: object

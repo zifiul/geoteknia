@@ -99,6 +99,39 @@ export const locationLeadSchema = z
     }
   });
 
+export const tenderLeadSchema = z
+  .object({
+    nombre: z.string().trim().min(2).max(200),
+    empresa: z.string().trim().min(1).max(200),
+    email: emailField,
+    telefono: phoneField.optional(),
+    organismo: z.string().trim().max(200).optional(),
+    expedienteRef: z.string().trim().max(200).optional(),
+    plataformaUrl: z.string().trim().url().optional(),
+    importeEstimado: z.coerce.number().positive().max(1e10).optional(),
+    esUte: z.boolean().optional(),
+    provincia: z.string().trim().min(1).optional(),
+    gdprConsent: z.literal(true),
+    turnstileToken: z.string().min(1),
+    utmSource: z.string().trim().max(200).optional(),
+    utmMedium: z.string().trim().max(200).optional(),
+    utmCampaign: z.string().trim().max(200).optional(),
+    gaClientId: z.string().trim().max(200).optional(),
+    landingUrl: z.string().trim().url().optional(),
+  })
+  .strict()
+  .superRefine((data, ctx) => {
+    if (!data.expedienteRef && !data.plataformaUrl) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['expedienteRef'],
+        message:
+          'Indica la referencia de expediente o el enlace a la plataforma de contratación',
+      });
+    }
+  });
+
 export type BudgetLeadInput = z.infer<typeof budgetLeadSchema>;
 export type ContactBaseInput = z.infer<typeof contactBaseSchema>;
 export type LocationLeadInput = z.infer<typeof locationLeadSchema>;
+export type TenderLeadInput = z.infer<typeof tenderLeadSchema>;

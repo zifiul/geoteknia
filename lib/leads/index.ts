@@ -2,12 +2,14 @@ export {
   budgetLeadSchema,
   contactBaseSchema,
   locationLeadSchema,
+  tenderLeadSchema,
   professionalRoleSchema,
   emailField,
   phoneField,
   type BudgetLeadInput,
   type ContactBaseInput,
   type LocationLeadInput,
+  type TenderLeadInput,
 } from './schema';
 export { deriveLeadSource } from './attribution';
 export {
@@ -22,3 +24,7 @@ export {
   createLocationLead,
   type CreateLocationLeadResult,
 } from './create-location-lead';
+export {
+  createTenderLead,
+  type CreateTenderLeadResult,
+} from './create-tender-lead';
