@@ -11,6 +11,9 @@ info:
     envelope JSON `success`/`error` del resto de la API salvo cuando se solicita
     `json=true` en el callback de credenciales.
 
+    **Portal (GTK-24):** páginas internas documentadas en `x-geoteknia-portalPages`;
+    mutaciones vía Server Actions en `x-geoteknia-serverActions`.
+
 servers:
   - url: https://geoteknia.es
     description: Producción
@@ -64,6 +67,8 @@ paths:
         `credentialsCallbackBodySchema` (`lib/auth/login-schemas.ts`). Fallos de
         credenciales devuelven mensaje genérico (SEC-1). Usuario inactivo, email
         inexistente y contraseña incorrecta son indistinguibles para el cliente.
+        Si `twofa_enabled=true`, el campo `totp` es obligatorio y debe ser válido
+        (GTK-24); sin verificador registrado el login falla (fail-closed).
       security: []
       x-geoteknia-authz:
         rbac: público
@@ -71,8 +76,8 @@ paths:
         rateLimit: GTK-26 (429 esperado cuando exista; no implementado en GTK-23)
         turnstile: false
         pii:
-          entrada: email, password (HTTPS); nunca persistir password en claro
-          salida: cookie de sesión; sin hash ni password en cuerpo
+          entrada: email, password, totp opcional u obligatorio si 2FA (HTTPS)
+          salida: cookie de sesión; sin hash, password ni secreto TOTP en cuerpo
       requestBody:
         required: true
         content:
@@ -216,7 +221,95 @@ components:
         totp:
           type: string
           pattern: '^\\d{6}$'
-          description: Segundo factor (GTK-24); opcional hasta integración TOTP.
+          description: >
+            Segundo factor TOTP (GTK-24). Opcional si el usuario no tiene 2FA activo;
+            obligatorio si `twofa_enabled=true`. Ausencia o código inválido → mismo
+            error genérico que credenciales incorrectas (SEC-1).
+
+    TotpCode:
+      type: string
+      pattern: '^\\d{6}$'
+      description: Código TOTP de 6 dígitos (`totpCodeSchema`).
+
+    ConfirmTotpActivationInput:
+      type: object
+      additionalProperties: false
+      required: [totp]
+      properties:
+        totp:
+          $ref: '#/components/schemas/TotpCode'
+
+    DisableTotpInput:
+      type: object
+      additionalProperties: false
+      required: [password, totp]
+      properties:
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+        totp:
+          $ref: '#/components/schemas/TotpCode'
+
+    TotpActionError:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum:
+            - UNAUTHORIZED
+            - VALIDATION_ERROR
+            - INVALID_TOTP
+            - FORBIDDEN
+            - CONFLICT
+        message:
+          type: string
+          maxLength: 500
+
+    TotpVoidActionResult:
+      type: object
+      additionalProperties: false
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+          enum: [true, false]
+        error:
+          $ref: '#/components/schemas/TotpActionError'
+
+    GenerateTotpSecretSuccess:
+      type: object
+      additionalProperties: false
+      required: [ok, otpauthUri, qrDataUrl]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        otpauthUri:
+          type: string
+          minLength: 10
+          maxLength: 4096
+          description: URI otpauth para enrolamiento (no incluye secreto Base32 suelto).
+        qrDataUrl:
+          type: string
+          minLength: 22
+          maxLength: 131072
+          description: Imagen QR en data-URL (solo fase de enrolamiento).
+
+    GenerateTotpSecretActionResult:
+      oneOf:
+        - $ref: '#/components/schemas/GenerateTotpSecretSuccess'
+        - type: object
+          additionalProperties: false
+          required: [ok, error]
+          properties:
+            ok:
+              type: boolean
+              enum: [false]
+            error:
+              $ref: '#/components/schemas/TotpActionError'
 
     CredentialsCallbackForm:
       allOf:
@@ -296,3 +389,57 @@ components:
         - SEC-1 mensaje genérico INVALID_CREDENTIALS
         - SEC-6 validación Zod antes de signIn
         - SEC-2 sin password en respuesta ni logs
+        - SEC-1 TOTP obligatorio cuando twofa_enabled (GTK-24)
+    generateTotpSecretAction:
+      module: lib/auth/totp-actions.ts
+      inputSchema: ninguno
+      resultSchema: generateTotpSecretActionResultSchema
+      authz:
+        rbac: sesión portal válida
+        permiso: ninguno (self-service cuenta propia)
+        nota: Requiere `getPortalSession()`; no expone secreto Base32 en claro.
+      rateLimit: GTK-26 (pendiente)
+      seguridad:
+        - SEC-6 sin sesión → UNAUTHORIZED
+        - SEC-2 respuesta solo otpauthUri + qrDataUrl durante enrolamiento
+    confirmTotpActivationAction:
+      module: lib/auth/totp-actions.ts
+      inputSchema: confirmTotpActivationInputSchema
+      resultSchema: totpVoidActionResultSchema
+      authz:
+        rbac: sesión portal válida
+        permiso: ninguno (self-service)
+      rateLimit: GTK-26 (pendiente)
+      seguridad:
+        - SEC-3 código inválido no activa twofa_enabled
+        - SEC-5 audit role_change con metadata.event 2fa_enabled en TX
+        - SEC-2 sin secreto en respuesta
+    disableTotpAction:
+      module: lib/auth/totp-actions.ts
+      inputSchema: disableTotpInputSchema
+      resultSchema: totpVoidActionResultSchema
+      authz:
+        rbac: sesión portal válida
+        permiso: ninguno (self-service)
+      rateLimit: GTK-26 (pendiente)
+      seguridad:
+        - SEC-4 requiere password + TOTP válido
+        - SEC-5 audit role_change con metadata.event 2fa_disabled en TX
+        - SEC-2 sin password ni totp en respuesta ni logs
+
+  x-geoteknia-portalPages:
+    /perfil/seguridad:
+      summary: Gestión self-service del segundo factor TOTP (portal autenticado)
+      module: app/(admin)/perfil/seguridad/page.tsx
+      authz:
+        rbac: sesión portal válida (`getPortalSession`)
+        permiso: ninguno (cuenta propia)
+      seo:
+        robots: noindex, nofollow
+      serverActions:
+        - generateTotpSecretAction
+        - confirmTotpActivationAction
+        - disableTotpAction
+      nota: >
+        No es Route Handler HTTP; las mutaciones usan los mismos contratos que
+        `x-geoteknia-serverActions` arriba. Sin cambios de schema Prisma (GTK-7).

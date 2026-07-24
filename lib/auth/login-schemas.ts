@@ -13,10 +13,12 @@ const emailField = z
 
 const passwordField = z.string().min(8).max(128);
 
-const totpField = z
+export const totpCodeSchema = z
   .string()
   .length(6)
   .regex(/^\d{6}$/, 'El código TOTP debe tener 6 dígitos');
+
+const totpField = totpCodeSchema;
 
 /** Auth.js envía `totp: ""` cuando no hay 2FA; tratarlo como ausente. */
 const optionalTotpField = z.preprocess(

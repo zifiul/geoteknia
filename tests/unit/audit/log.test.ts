@@ -99,6 +99,33 @@ describe('lib/audit/log — recordAudit (GTK-22)', () => {
     expect(auditLogCreate).not.toHaveBeenCalled();
   });
 
+  it('SEC-5 (GTK-24): persiste metadata.event en role_change para 2FA', async () => {
+    auditLogCreate.mockResolvedValue({ id: 'audit-2fa' });
+
+    const { recordAudit } = await import('@/lib/audit/log');
+
+    await recordAudit({
+      userId: '11111111-1111-4111-8111-111111111111',
+      action: AuditAction.role_change,
+      entityType: 'users',
+      entityId: '11111111-1111-4111-8111-111111111111',
+      metadata: {
+        event: '2fa_enabled',
+        targetUserId: '11111111-1111-4111-8111-111111111111',
+        twofa_secret: 'must-strip',
+      },
+    });
+
+    expect(auditLogCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        metadata: {
+          event: '2fa_enabled',
+          targetUserId: '11111111-1111-4111-8111-111111111111',
+        },
+      }),
+    });
+  });
+
   it('elimina claves sensibles de metadata antes de persistir', async () => {
     auditLogCreate.mockResolvedValue({ id: 'audit-sanitized' });
 

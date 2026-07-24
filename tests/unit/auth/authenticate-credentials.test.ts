@@ -92,6 +92,68 @@ describe('authenticateCredentials (GTK-23)', () => {
     expect(result).toMatchObject({ ok: false, reason: 'totp_unavailable' });
   });
 
+  it('GTK-24: con verificador, TOTP correcto permite login', async () => {
+    const verifyTotp = vi.fn().mockResolvedValue(true);
+
+    const result = await authenticateCredentials(
+      {
+        email: baseUser.email,
+        password: 'ValidPass1!',
+        totp: '123456',
+      },
+      {
+        findUserByEmail: vi
+          .fn()
+          .mockResolvedValue({ ...baseUser, twofaEnabled: true }),
+        verifyPassword: vi.fn().mockResolvedValue(true),
+        isTotpVerifierAvailable: () => true,
+        verifyTotp,
+      },
+    );
+
+    expect(result).toMatchObject({ ok: true });
+    expect(verifyTotp).toHaveBeenCalledWith(baseUser.id, '123456');
+  });
+
+  it('GTK-24: con verificador, TOTP ausente o incorrecto falla', async () => {
+    const withoutCode = await authenticateCredentials(
+      { email: baseUser.email, password: 'ValidPass1!' },
+      {
+        findUserByEmail: vi
+          .fn()
+          .mockResolvedValue({ ...baseUser, twofaEnabled: true }),
+        verifyPassword: vi.fn().mockResolvedValue(true),
+        isTotpVerifierAvailable: () => true,
+        verifyTotp: vi.fn(),
+      },
+    );
+
+    const wrongCode = await authenticateCredentials(
+      {
+        email: baseUser.email,
+        password: 'ValidPass1!',
+        totp: '000000',
+      },
+      {
+        findUserByEmail: vi
+          .fn()
+          .mockResolvedValue({ ...baseUser, twofaEnabled: true }),
+        verifyPassword: vi.fn().mockResolvedValue(true),
+        isTotpVerifierAvailable: () => true,
+        verifyTotp: vi.fn().mockResolvedValue(false),
+      },
+    );
+
+    expect(withoutCode).toMatchObject({
+      ok: false,
+      attemptReason: 'totp_invalid',
+    });
+    expect(wrongCode).toMatchObject({
+      ok: false,
+      attemptReason: 'totp_invalid',
+    });
+  });
+
   it('SEC-1: inactivo e inexistente comparten reason invalid_credentials', async () => {
     const inactive = await authenticateCredentials(
       { email: baseUser.email, password: 'x' },

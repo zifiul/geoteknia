@@ -15,6 +15,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().min(1),
   NODE_ENV: z.enum(['development', 'test', 'production']),
   SESSION_TTL_MINUTES: z.coerce.number().int().positive(),
+  /** 32 bytes en hexadecimal (64 caracteres) para AES-256-GCM de twofa_secret. */
+  TWOFA_ENCRYPTION_KEY: z.string().length(64).regex(/^[0-9a-fA-F]+$/),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -1,5 +1,7 @@
 import 'server-only';
 
+import '@/lib/auth/totp-verifier';
+
 import { randomUUID } from 'node:crypto';
 
 import { CredentialsSignin } from '@auth/core/errors';

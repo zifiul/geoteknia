@@ -554,6 +554,12 @@ El portal admin prioriza eficiencia y trazabilidad:
 - Evitar almacenar datos sensibles en `localStorage`.
 - Limpiar estados al cerrar sesión.
 
+### 12.4 Cuenta y segundo factor (GTK-24)
+
+- Ruta interna `app/(admin)/perfil/seguridad/`: Server Component con `metadata.robots` `noindex`, redirección si no hay sesión portal.
+- Formulario cliente (`totp-setup-form.tsx`): labels asociados, `role="alert"` en errores, `role="status"` en mensajes de éxito; QR solo durante enrolamiento (data-URL generada en servidor).
+- Copy y mensajes de error en español; no mostrar el secreto Base32 en UI (solo QR / instrucciones durante enrolamiento pendiente).
+
 ---
 
 ## 13. Testing
