@@ -491,6 +491,10 @@ El backend debe minimizar y aislar PII:
 - Acciones críticas requieren RBAC explícito en servidor, no solo ocultar UI.
 - Login, login fallido, cambio de rol, publicación, aprobación, generación IA y exportación deben generar audit log.
 - 2FA TOTP es obligatorio para perfiles con permisos sensibles.
+- Toda comprobación de autorización en Server Actions/Route Handlers usa `requirePermission`/`withPermission`/`withRoutePermission` de `lib/auth/rbac.ts` (GTK-25), nunca comprobaciones de rol ad hoc en el handler.
+- `can(user, permissionCode)` resuelve el permiso **en memoria** contra `resolvePermissionCodesForRole` (`lib/auth/permissions.ts`); no consulta `role_permissions` en runtime — esa tabla es solo la materialización vía seed de la matriz de código.
+- La autorización obtiene la sesión con `getPortalSession()` (`lib/auth/session.ts`), que sí comprueba el espejo de sesión en BD (revocación/expiración). **Nunca** usar `getServerSession()` (solo valida el JWT) para decidir acceso.
+- El rol `tecnico` exige además `assertOwnership()` sobre recursos con `assigned_technician_id`; toda denegación (permiso o pertenencia) responde con el mismo `ForbiddenError` genérico, sin filtrar si el recurso existe.
 
 ### 8.4 Aislamiento de `/admin`
 

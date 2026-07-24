@@ -92,3 +92,36 @@ export async function getServerSession(): Promise<PortalSessionPayload | null> {
     roleName: user.roleName as RoleName,
   };
 }
+
+/**
+ * Wrapper cableado de requireSession con dependencias reales: usarlo para
+ * autorización (rbac.ts). A diferencia de getServerSession(), sí comprueba
+ * el espejo de sesión en BD (revocación/expiración), no solo el JWT.
+ */
+export async function getPortalSession(): Promise<PortalSessionPayload> {
+  return requireSession({
+    getAuthSession: async () => {
+      const { auth } = await import('@/lib/auth/config');
+      const session = await auth();
+      const user = session?.user;
+
+      if (!user?.id || !user.roleId || !user.roleName || !user.sessionTokenHash) {
+        return null;
+      }
+
+      return {
+        userId: user.id,
+        roleId: user.roleId,
+        roleName: user.roleName as RoleName,
+        sessionTokenHash: user.sessionTokenHash,
+      };
+    },
+    findSessionMirror: async (tokenHash: string) => {
+      const { db } = await import('@/lib/db');
+      return db.session.findFirst({
+        where: { tokenHash },
+        select: { revokedAt: true, expiresAt: true },
+      });
+    },
+  });
+}
