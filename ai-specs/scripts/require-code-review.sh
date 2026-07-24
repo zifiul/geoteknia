@@ -22,7 +22,20 @@ CHANGE_DIR="${REPO_ROOT}/openspec/changes/${CHANGE_NAME}"
 REPORTS_DIR="${CHANGE_DIR}/reports"
 
 if [[ ! -d "${CHANGE_DIR}" ]]; then
-  echo "GATE require-code-review: FALLO — no existe el change '${CHANGE_NAME}' en openspec/changes/." >&2
+  ARCHIVE_ROOT="${REPO_ROOT}/openspec/changes/archive"
+  if [[ -d "${ARCHIVE_ROOT}" ]]; then
+    mapfile -t ARCHIVE_MATCHES < <(
+      find "${ARCHIVE_ROOT}" -maxdepth 1 -type d -name "*-${CHANGE_NAME}" | sort
+    )
+    if [[ ${#ARCHIVE_MATCHES[@]} -gt 0 ]]; then
+      CHANGE_DIR="${ARCHIVE_MATCHES[-1]}"
+      REPORTS_DIR="${CHANGE_DIR}/reports"
+    fi
+  fi
+fi
+
+if [[ ! -d "${CHANGE_DIR}" ]]; then
+  echo "GATE require-code-review: FALLO — no existe el change '${CHANGE_NAME}' en openspec/changes/ ni en archive/." >&2
   exit 1
 fi
 
@@ -43,13 +56,16 @@ fi
 # Se evalúa el informe más reciente por nombre (sort: el último de la lista).
 REPORT="${CANDIDATES[-1]}"
 
-if grep -qE '^[[:space:]]*Veredicto:[[:space:]]*NO[[:space:]]+APTO[[:space:]]*$' "${REPORT}"; then
+VERDICT_NO_APTO_RE='^[[:space:]]*(#+[[:space:]]+)?(\*\*)?Veredicto:[[:space:]]*NO[[:space:]]+APTO(\*\*)?[[:space:]]*$'
+VERDICT_APTO_RE='^[[:space:]]*(#+[[:space:]]+)?(\*\*)?Veredicto:[[:space:]]*APTO(\*\*)?[[:space:]]*$'
+
+if grep -qE "${VERDICT_NO_APTO_RE}" "${REPORT}"; then
   echo "GATE require-code-review: FALLO — veredicto NO APTO en ${REPORT}." >&2
   echo "Corrige los bloqueantes (vuelta a fase 4) y repite el review antes de archivar." >&2
   exit 1
 fi
 
-if grep -qE '^[[:space:]]*Veredicto:[[:space:]]*APTO[[:space:]]*$' "${REPORT}"; then
+if grep -qE "${VERDICT_APTO_RE}" "${REPORT}"; then
   echo "GATE require-code-review: OK — veredicto APTO en ${REPORT}."
   exit 0
 fi

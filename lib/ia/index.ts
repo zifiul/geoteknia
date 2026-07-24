@@ -38,3 +38,16 @@ export {
   persistTokenUsage,
   type NormalizedUsage,
 } from './token-usage';
+export {
+  generateContentSchema,
+  regenerateSectionSchema,
+  type GenerateContentInput,
+} from './content-generation-schemas';
+export {
+  generationOutputSchema,
+  sectionOutputSchema,
+  type GenerationOutput,
+} from './output-schema';
+export { generateContent, type GenerateContentResult } from './content-generation';
+export { renderPromptTemplate } from './render-prompt-template';
+export { validateTemplateInputs } from './template-input-validator';
