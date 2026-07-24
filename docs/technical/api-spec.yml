@@ -173,6 +173,75 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
 
+  /api/leads/ubicacion:
+    post:
+      tags: [Leads]
+      operationId: createLocationLead
+      summary: Microconversión — enviar ubicación de la parcela
+      description: >
+        Endpoint público de baja fricción (GTK-29). Valida con `locationLeadSchema`
+        (`lib/leads/schema.ts`): referencia catastral o coordenadas de mapa más
+        email o teléfono. Turnstile, rate limit `RATE_LIMIT_PUBLIC_PER_MIN` (clave
+        `leads-ubicacion:{ip}`). Crea contacto (dedupe), lead (`ubicacion`) y
+        proyecto. Email de confirmación solo si hay email; evento `send_location`
+        post-commit (best-effort).
+      security: []
+      x-geoteknia-authz:
+        rbac: público
+        permiso: ninguno
+        rateLimit: RATE_LIMIT_PUBLIC_PER_MIN (clave leads-ubicacion:{ip})
+        turnstile: true
+        pii:
+          entrada: email/teléfono opcionales, catastral/coords (HTTPS)
+          salida: solo referenceNumber; sin PII en cuerpo de éxito
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationLeadInput'
+      responses:
+        '201':
+          description: Lead y proyecto creados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadCreatedSuccessEnvelope'
+        '400':
+          description: Validación Zod, ubicación/contacto o slug de provincia inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: Token Turnstile inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit excedido.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '502':
+          description: Turnstile siteverify no disponible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Error interno o generación de referencia fallida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+
   /api/auth/csrf:
     get:
       tags: [Portal Auth]
@@ -544,6 +613,61 @@ components:
         landingUrl:
           type: string
           format: uri
+
+    LocationLeadInput:
+      type: object
+      additionalProperties: false
+      required:
+        - gdprConsent
+        - turnstileToken
+      properties:
+        cadastralRef:
+          type: string
+          maxLength: 50
+          description: Referencia catastral (alternativa a mapLat/mapLng)
+        mapLat:
+          type: number
+          minimum: -90
+          maximum: 90
+        mapLng:
+          type: number
+          minimum: -180
+          maximum: 180
+        nombre:
+          type: string
+          minLength: 2
+          maxLength: 200
+        email:
+          type: string
+          format: email
+        telefono:
+          type: string
+          minLength: 9
+          maxLength: 20
+        provincia:
+          type: string
+          minLength: 1
+          description: Slug opcional de `provinces.slug`
+        gdprConsent:
+          type: boolean
+          const: true
+        turnstileToken:
+          type: string
+          minLength: 1
+        utmSource:
+          type: string
+        utmMedium:
+          type: string
+        utmCampaign:
+          type: string
+        gaClientId:
+          type: string
+        landingUrl:
+          type: string
+          format: uri
+      description: >
+        Debe indicarse `cadastralRef` o el par `mapLat`+`mapLng`, y al menos
+        `email` o `telefono` (validación `superRefine` en Zod).
 
     LoginInput:
       type: object
