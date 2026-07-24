@@ -24,6 +24,7 @@ const REQUIRED_VARS = {
   SESSION_TTL_MINUTES: '480',
   TWOFA_ENCRYPTION_KEY:
     '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+  MEDIA_STORAGE_BASE_URL: 'https://cdn.test.geoteknia.com/media',
 } as const;
 
 const originalEnv = { ...process.env };
