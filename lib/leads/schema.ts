@@ -135,3 +135,23 @@ export type BudgetLeadInput = z.infer<typeof budgetLeadSchema>;
 export type ContactBaseInput = z.infer<typeof contactBaseSchema>;
 export type LocationLeadInput = z.infer<typeof locationLeadSchema>;
 export type TenderLeadInput = z.infer<typeof tenderLeadSchema>;
+
+export const resourceLeadSchema = z
+  .object({
+    nombre: z.string().trim().min(2).max(200),
+    email: emailField,
+    empresa: z.string().trim().max(200).optional(),
+    telefono: phoneField.optional(),
+    rol: professionalRoleSchema.optional(),
+    gdprConsent: z.literal(true),
+    turnstileToken: z.string().min(1),
+    utmSource: z.string().trim().max(200).optional(),
+    utmMedium: z.string().trim().max(200).optional(),
+    utmCampaign: z.string().trim().max(200).optional(),
+    gaClientId: z.string().trim().max(200).optional(),
+    landingUrl: z.string().trim().url().optional(),
+  })
+  .strict();
+
+export type ResourceLeadInput = z.infer<typeof resourceLeadSchema>;
+

@@ -3,6 +3,7 @@ export {
   contactBaseSchema,
   locationLeadSchema,
   tenderLeadSchema,
+  resourceLeadSchema,
   professionalRoleSchema,
   emailField,
   phoneField,
@@ -10,6 +11,7 @@ export {
   type ContactBaseInput,
   type LocationLeadInput,
   type TenderLeadInput,
+  type ResourceLeadInput,
 } from './schema';
 export { deriveLeadSource } from './attribution';
 export {
@@ -28,3 +30,9 @@ export {
   createTenderLead,
   type CreateTenderLeadResult,
 } from './create-tender-lead';
+export {
+  createResourceLead,
+  type CreateResourceLeadResult,
+  type LeadMagnetTarget,
+} from './create-resource-lead';
+
