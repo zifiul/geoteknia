@@ -107,7 +107,7 @@ export async function revalidatePublishedContent(
     for (const path of paths) {
       revalidatePath(path);
     }
-    revalidateTag(SITEMAP_CACHE_TAG);
+    revalidateTag(SITEMAP_CACHE_TAG, 'max');
   } catch (error) {
     console.error(
       JSON.stringify({

@@ -54,7 +54,9 @@ function buildTenderProjectData(
     data.plataformaUrl = input.plataformaUrl;
   }
   if (input.esUte !== undefined) data.esUte = input.esUte;
-  return Object.keys(data).length > 0 ? data : undefined;
+  return Object.keys(data).length > 0
+    ? (data as Prisma.InputJsonValue)
+    : undefined;
 }
 
 async function sendConfirmationBestEffort(

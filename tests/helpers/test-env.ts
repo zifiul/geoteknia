@@ -1,6 +1,6 @@
 /** Variables mínimas para cargar `@/lib/env` en Vitest. */
 export function applyVitestEnv(): void {
-  process.env.NODE_ENV = 'test';
+  (process.env as NodeJS.ProcessEnv & { NODE_ENV: string }).NODE_ENV = 'test';
   process.env.DATABASE_URL =
     process.env.DATABASE_URL ??
     'postgresql://user:pass@localhost:5432/geoteknia?sslmode=require';

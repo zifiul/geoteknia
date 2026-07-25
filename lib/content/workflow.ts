@@ -42,8 +42,13 @@ export type EditorialTransitionResult = {
   requiresTechnicalVerification?: boolean;
 };
 
+type EditorialMustAuditAction =
+  | (typeof AuditAction)['approve']
+  | (typeof AuditAction)['reject']
+  | (typeof AuditAction)['publish'];
+
 type TransitionAudit =
-  | { kind: 'must'; action: AuditAction.approve | AuditAction.reject | AuditAction.publish }
+  | { kind: 'must'; action: EditorialMustAuditAction }
   | { kind: 'content_update' };
 
 function auditForTransition(

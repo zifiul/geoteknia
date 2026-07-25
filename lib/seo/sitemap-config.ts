@@ -2,6 +2,7 @@
 export const SITEMAP_CACHE_TAG = 'sitemap';
 
 /** Revalidación por tiempo hasta publicación on-demand (GTK-40). */
+/** Debe coincidir con `export const revalidate` en rutas de sitemap (literal exigido por Next). */
 export const SITEMAP_REVALIDATE_SECONDS = 3600;
 
 export type SitemapChangeFrequency =

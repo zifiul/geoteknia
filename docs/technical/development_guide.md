@@ -9,6 +9,8 @@
 | Herramienta | Versión recomendada | Notas |
 |---|---|---|
 | **Node.js** | 20 LTS o superior | El proyecto usa npm (`package-lock.json`). |
+| **Next.js** | 16.3 canary (hasta soporte estable de TS 7 en `next build`) | Requiere `experimental.useTypeScriptCli` en `next.config.ts`. |
+| **TypeScript** | 7.x (`typescript` en devDependencies) | `npm run typecheck` usa `tsc --noEmit`. Tras `npm install`, `postinstall` copia TS 6 bajo `typescript-eslint` para ESLint (hasta soporte oficial de TS 7). |
 | **npm** | Incluido con Node | No usar `pnpm`/`yarn` salvo que el equipo unifique el gestor. |
 | **Git** | Cualquier versión reciente | — |
 | **Cuenta Neon** | Plan gratuito suficiente para MVP | [neon.com](https://neon.com/docs/introduction) — región **EU** obligatoria (RGPD). |
@@ -206,7 +208,9 @@ npx prisma validate
 | `npm run test` | Tests unitarios (Vitest). |
 | `npm run test:e2e` | E2E con Playwright (requiere app levantada o config del proyecto). |
 | `npm run lint` | ESLint. |
-| `npm run typecheck` | `tsc --noEmit`. |
+| `npm run typecheck` | `tsc --noEmit` (compilador TypeScript del proyecto). |
+
+`next build` usa el checker de Next.js; con TypeScript 7 debe estar activo `experimental.useTypeScriptCli` en [`next.config.ts`](../../next.config.ts) (ver [Using TypeScript 7 with Next.js](https://nextjs.org/docs/app/api-reference/config/typescript#using-typescript-7)).
 
 Tests que toquen persistencia real deben documentar la BD usada y restaurar el estado según la skill `db-state-verify` (fase QA del harness).
 

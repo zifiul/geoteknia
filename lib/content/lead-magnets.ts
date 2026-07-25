@@ -172,7 +172,6 @@ export async function findGatedLeadMagnetBySlug(slug: string) {
     where: {
       slug,
       isGated: true,
-      fileId: { not: null },
       deletedAt: null,
     },
     select: {

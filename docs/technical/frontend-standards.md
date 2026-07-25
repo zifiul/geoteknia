@@ -609,6 +609,7 @@ Configurar TypeScript con:
 - Path aliases consistentes, preferentemente `@/*`.
 - Tipos de Node, Vitest y Playwright cuando correspondan.
 - `noUncheckedIndexedAccess` recomendado si el coste de migración es asumible.
+- El proyecto apunta a **TypeScript 7** en CLI; las opciones de `tsconfig.json` deben mantenerse libres de flags eliminados en 7 (`baseUrl`, `ignoreDeprecations`, resolución `node10`, etc.).
 
 ### 14.2 ESLint y formato
 

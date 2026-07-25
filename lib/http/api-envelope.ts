@@ -22,10 +22,10 @@ export function apiError(
 }
 
 export function zodFieldDetails(
-  issues: { path: (string | number)[]; message: string }[],
+  issues: { path: PropertyKey[]; message: string }[],
 ): Record<string, unknown>[] {
   return issues.map((issue) => ({
-    path: issue.path.join('.'),
+    path: issue.path.map(String).join('.'),
     message: issue.message,
   }));
 }

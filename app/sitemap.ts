@@ -7,7 +7,7 @@ import {
 } from '@/lib/seo/sitemap-config';
 import { gatherMainSitemapEntries } from '@/lib/seo/sitemap-sources';
 
-export const revalidate = SITEMAP_REVALIDATE_SECONDS;
+export const revalidate = 3600;
 
 const loadSitemap = unstable_cache(
   async () => gatherMainSitemapEntries(),

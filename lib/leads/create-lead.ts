@@ -67,7 +67,9 @@ function buildProjectData(input: BudgetLeadInput): Prisma.InputJsonValue | undef
   if (input.plantas !== undefined) data.plantas = input.plantas;
   if (input.superficie !== undefined) data.superficie = input.superficie;
   if (input.fase !== undefined) data.fase = input.fase;
-  return Object.keys(data).length > 0 ? data : undefined;
+  return Object.keys(data).length > 0
+    ? (data as Prisma.InputJsonValue)
+    : undefined;
 }
 
 async function sendConfirmationBestEffort(
