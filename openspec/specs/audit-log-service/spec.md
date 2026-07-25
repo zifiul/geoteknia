@@ -31,7 +31,7 @@ The system SHALL reject any `action` value not present in the Prisma enum `Audit
 
 ### Requirement: Sanitización de metadata
 
-The system SHALL sanitize `metadata` with an action-specific whitelist and redact passwords, 2FA secrets and full lead PII (identifiers only). For `role_change`, the whitelist SHALL include `event` in addition to `targetUserId`, `previousRole` and `newRole`, so security sub-events such as `2fa_enabled` and `2fa_disabled` persist without adding new `AuditAction` enum values. Values for key `event` are allowed when the key name passes the sensitive-key filter (do not use key names containing `2fa` or `twofa`).
+The system SHALL sanitize `metadata` with an action-specific whitelist and redact passwords, 2FA secrets and full lead PII (identifiers only). For `role_change`, the whitelist SHALL include `event` in addition to `targetUserId`, `previousRole` and `newRole`, so security sub-events such as `2fa_enabled` and `2fa_disabled` persist without adding new `AuditAction` enum values. Values for key `event` are allowed when the key name passes the sensitive-key filter (do not use key names containing `2fa` or `twofa`). For `content_update`, the whitelist SHALL include `entitySlug`, `contentType`, `entityType`, `previousStatus`, `workflowStatus` and `event` so transiciones editoriales y despublicación conserven contexto.
 
 #### Scenario: Redacción de secretos
 
@@ -42,6 +42,11 @@ The system SHALL sanitize `metadata` with an action-specific whitelist and redac
 
 - **WHEN** se registra `role_change` con `metadata: { event: '2fa_enabled', targetUserId }`
 - **THEN** la metadata persistida conserva `event` y `targetUserId`
+
+#### Scenario: content_update unpublish
+
+- **WHEN** GTK-40 registra `content_update` con `event: 'unpublish'` y `previousStatus: 'publicado'`
+- **THEN** la metadata persistida conserva `event`, `previousStatus` y `workflowStatus`
 
 #### Scenario: Clave no permitida
 
