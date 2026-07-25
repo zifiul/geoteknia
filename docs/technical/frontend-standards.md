@@ -400,8 +400,10 @@ El sistema de diseño debe cubrir como mínimo:
 - `Input`, `Textarea`, `Select`, `Checkbox`, `Radio`.
 - `FormField`, `FieldError`, `StepIndicator`.
 - `Card`, `Badge`, `Alert`.
+- `Skeleton`, `ProgressBar`.
 - `Breadcrumbs`.
 - `Container`, `Section`, `Grid`.
+- `StickyCtaBar` (organismo, CTA sticky en móvil).
 - `Modal` o `Dialog` accesible si se usa.
 - `Tabs`/`Accordion` accesibles para FAQs y contenido técnico.
 

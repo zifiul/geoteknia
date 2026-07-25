@@ -28,10 +28,14 @@
     "security:gitleaks": "pnpm run security:secrets"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@eslint/eslintrc": "^3.3.1",
     "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.3.3",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@types/jsdom": "^28.0.3",
     "@types/node": "^26.1.1",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.17",
@@ -39,6 +43,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.3.0-canary.96",
+    "jsdom": "^29.1.1",
     "postcss": "^8.5.22",
     "prettier": "^3.9.5",
     "prisma": "^6.19.3",
@@ -52,8 +57,12 @@
     "@anthropic-ai/sdk": "^0.110.0",
     "@auth/core": "0.41.3",
     "@prisma/client": "^6.19.3",
+    "@radix-ui/react-accordion": "^1.2.18",
+    "@radix-ui/react-dialog": "^1.1.21",
+    "@radix-ui/react-tabs": "^1.1.19",
     "@react-email/components": "^1.0.12",
     "argon2": "^0.44.0",
+    "clsx": "^2.1.1",
     "next": "16.3.0-canary.96",
     "next-auth": "^5.0.0-beta.31",
     "otplib": "^13.4.1",
@@ -62,6 +71,7 @@
     "react-dom": "^19.2.7",
     "resend": "^6.17.2",
     "server-only": "^0.0.1",
+    "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },
   "prisma": {
