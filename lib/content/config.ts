@@ -8,8 +8,11 @@ import {
   recordContentUpdateAudit,
 } from '@/lib/content/content-audit';
 import { ContentNotFoundError } from '@/lib/content/errors';
+import { ORGANIZATION_PROFILE_CACHE_TAG } from '@/lib/content/organization';
 import { assertActiveWorkTypologyId } from '@/lib/content/references';
 import type { PortalSessionPayload } from '@/lib/auth/session';
+import { revalidateTag } from 'next/cache';
+
 import { db } from '@/lib/db';
 
 const calculatorRuleBodySchema = z.object({
@@ -185,6 +188,7 @@ export async function updateOrganizationProfile(
       entityId: profileId,
     });
   });
+  revalidateTag(ORGANIZATION_PROFILE_CACHE_TAG, 'max');
 }
 
 const contactChannelSchema = z.object({

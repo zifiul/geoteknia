@@ -14,6 +14,7 @@ export * from './accreditations';
 export * from './blog-faqs';
 export * from './lead-magnets';
 export * from './config';
+export * from './organization';
 export * from './schemas/workflow';
 export * from './workflow';
 export * from './workflow-registry';
