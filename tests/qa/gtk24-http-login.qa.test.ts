@@ -131,7 +131,11 @@ describe('QA GTK-24 — HTTP login con TOTP', () => {
       const setCookie = res.headers.getSetCookie?.() ?? [];
       for (const c of setCookie) {
         const [pair] = c.split(';');
-        const [name, value] = pair.split('=');
+        if (!pair) continue;
+        const eq = pair.indexOf('=');
+        if (eq <= 0) continue;
+        const name = pair.slice(0, eq).trim();
+        const value = pair.slice(eq + 1).trim();
         if (name && value) {
           jar.set(name.trim(), value.trim());
         }

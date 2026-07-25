@@ -18,8 +18,8 @@ const streamMock = vi.fn(() => ({
 vi.mock('@/lib/ia/client', () => ({
   anthropic: {
     messages: {
-      create: (...args: unknown[]) => createMock(...args),
-      stream: (...args: unknown[]) => streamMock(...args),
+      create: createMock,
+      stream: streamMock,
     },
   },
 }));

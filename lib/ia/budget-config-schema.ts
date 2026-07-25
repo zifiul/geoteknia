@@ -8,7 +8,7 @@ const billingPeriodSchema = z
 const promptPageTypeSchema = z.nativeEnum(PromptPageType);
 
 const modelByPageTypeSchema = z
-  .record(z.nativeEnum(AiModel))
+  .record(z.string(), z.nativeEnum(AiModel))
   .superRefine((record, ctx) => {
     for (const key of Object.keys(record)) {
       const parsed = promptPageTypeSchema.safeParse(key);

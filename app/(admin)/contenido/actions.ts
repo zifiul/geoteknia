@@ -118,14 +118,20 @@ export const deleteServiceAction = withPermission(
 
 export const getServiceAction = withPermission(
   'content.read',
-  async (_user, serviceId: string): Promise<ContentActionResult> => {
+  async (
+    _user,
+    serviceId: string,
+  ): Promise<ContentActionResult<Awaited<ReturnType<typeof getServiceById>>>> => {
     return runContentAction(async () => getServiceById(serviceId));
   },
 );
 
 export const listServicesAction = withPermission(
   'content.read',
-  async (_user, raw?: unknown): Promise<ContentActionResult> => {
+  async (
+    _user,
+    raw?: unknown,
+  ): Promise<ContentActionResult<Awaited<ReturnType<typeof listServices>>>> => {
     return runContentAction(async () => {
       const params =
         raw && typeof raw === 'object'

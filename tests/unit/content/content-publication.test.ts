@@ -132,7 +132,7 @@ describe('publishContent (GTK-40)', () => {
       expect.anything(),
     );
     expect(revalidatePath).toHaveBeenCalledWith('/servicios/sondeos-mecanicos');
-    expect(revalidateTag).toHaveBeenCalledWith('sitemap');
+    expect(revalidateTag).toHaveBeenCalledWith('sitemap', 'max');
   });
 
   it('SEC-6: no aprobado → 409 sin revalidar', async () => {

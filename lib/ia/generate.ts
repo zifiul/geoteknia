@@ -50,10 +50,13 @@ export function normalizeUsage(usage: Message['usage']): NormalizedUsage {
 }
 
 function extractText(message: Message): string {
-  return message.content
-    .filter((block): block is { type: 'text'; text: string } => block.type === 'text')
-    .map((block) => block.text)
-    .join('');
+  const parts: string[] = [];
+  for (const block of message.content) {
+    if (block.type === 'text') {
+      parts.push(block.text);
+    }
+  }
+  return parts.join('');
 }
 
 function buildSystemParam(

@@ -43,7 +43,7 @@ export async function createCalculatorRule(
       maxFloors: input.maxFloors ?? null,
       minAreaM2: input.minAreaM2 ?? null,
       maxAreaM2: input.maxAreaM2 ?? null,
-      boreholesFormula: input.boreholesFormula,
+      boreholesFormula: input.boreholesFormula as Prisma.InputJsonValue,
       depthEstimate: input.depthEstimate ?? null,
       recommendedTests: input.recommendedTests ?? null,
       cteReference: input.cteReference ?? null,
@@ -73,31 +73,34 @@ export async function updateCalculatorRule(
   }
 
   await db.$transaction(async (tx: Prisma.TransactionClient) => {
+    const updateData: Prisma.CalculatorRuleUncheckedUpdateInput = {
+      updatedById: user.userId,
+    };
+    if (input.workTypologyId !== undefined) {
+      updateData.workTypologyId = input.workTypologyId;
+    }
+    if (input.minFloors !== undefined) updateData.minFloors = input.minFloors;
+    if (input.maxFloors !== undefined) updateData.maxFloors = input.maxFloors;
+    if (input.minAreaM2 !== undefined) updateData.minAreaM2 = input.minAreaM2;
+    if (input.maxAreaM2 !== undefined) updateData.maxAreaM2 = input.maxAreaM2;
+    if (input.boreholesFormula !== undefined) {
+      updateData.boreholesFormula =
+        input.boreholesFormula as Prisma.InputJsonValue;
+    }
+    if (input.depthEstimate !== undefined) {
+      updateData.depthEstimate = input.depthEstimate;
+    }
+    if (input.recommendedTests !== undefined) {
+      updateData.recommendedTests = input.recommendedTests;
+    }
+    if (input.cteReference !== undefined) {
+      updateData.cteReference = input.cteReference;
+    }
+    if (input.isActive !== undefined) updateData.isActive = input.isActive;
+
     await tx.calculatorRule.update({
       where: { id: ruleId },
-      data: {
-        ...(input.workTypologyId !== undefined
-          ? { workTypologyId: input.workTypologyId }
-          : {}),
-        ...(input.minFloors !== undefined ? { minFloors: input.minFloors } : {}),
-        ...(input.maxFloors !== undefined ? { maxFloors: input.maxFloors } : {}),
-        ...(input.minAreaM2 !== undefined ? { minAreaM2: input.minAreaM2 } : {}),
-        ...(input.maxAreaM2 !== undefined ? { maxAreaM2: input.maxAreaM2 } : {}),
-        ...(input.boreholesFormula !== undefined
-          ? { boreholesFormula: input.boreholesFormula }
-          : {}),
-        ...(input.depthEstimate !== undefined
-          ? { depthEstimate: input.depthEstimate }
-          : {}),
-        ...(input.recommendedTests !== undefined
-          ? { recommendedTests: input.recommendedTests }
-          : {}),
-        ...(input.cteReference !== undefined
-          ? { cteReference: input.cteReference }
-          : {}),
-        ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
-        updatedById: user.userId,
-      },
+      data: updateData,
     });
     await recordContentUpdateAudit(tx, user, {
       entityType: CALC_ENTITY,

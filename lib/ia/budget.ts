@@ -215,8 +215,10 @@ export async function updateBudgetConfig(
   const data = {
     monthlyBudgetEur: new Prisma.Decimal(input.monthlyBudgetEur),
     alertThresholdPct: input.alertThresholdPct,
-    modelByPageType: input.modelByPageType ?? Prisma.JsonNull,
-    notifyEmails: input.notifyEmails ?? Prisma.JsonNull,
+    modelByPageType: (input.modelByPageType ??
+      Prisma.JsonNull) as Prisma.InputJsonValue,
+    notifyEmails: (input.notifyEmails ??
+      Prisma.JsonNull) as Prisma.InputJsonValue,
     isActive: input.isActive ?? true,
     updatedById: userId,
   };

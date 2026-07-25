@@ -20,7 +20,8 @@ describe('QA GTK-32 — BD conversion_events', () => {
   const createdIds: string[] = [];
 
   beforeAll(async () => {
-    process.env.NODE_ENV ??= 'test';
+    (process.env as NodeJS.ProcessEnv & { NODE_ENV?: string }).NODE_ENV ??=
+      'test';
     process.env.NEXTAUTH_URL ??= 'http://localhost:3000';
     process.env.NEXTAUTH_SECRET ??= 'local-qa-nextauth-secret-32chars-min';
     process.env.ANTHROPIC_API_KEY ??= 'sk-ant-local-qa-placeholder';

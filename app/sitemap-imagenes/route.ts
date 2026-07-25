@@ -7,7 +7,7 @@ import {
 } from '@/lib/seo/sitemap-config';
 import { getIndexableImageEntries } from '@/lib/seo/sitemap-sources';
 
-export const revalidate = SITEMAP_REVALIDATE_SECONDS;
+export const revalidate = 3600;
 
 const loadImages = unstable_cache(
   async () => getIndexableImageEntries(),
