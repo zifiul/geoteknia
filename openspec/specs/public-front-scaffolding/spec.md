@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Andamiaje del frontal público Next.js: route groups, Tailwind, tipografías, metadata base e imágenes remotas. Materializado con GTK-43.
+Andamiaje del frontal público Next.js: route groups, Tailwind, tipografías, metadata base, imágenes remotas y layout semántico con header/footer (GTK-43, GTK-47).
 
 ## Requirements
 
@@ -47,3 +47,10 @@ El layout raíz SHALL definir `metadataBase` desde `NEXT_PUBLIC_SITE_URL`, `titl
 #### Scenario: Meta robots en HTML de admin accesible
 - **WHEN** `GET /admin` responde 200 con HTML (sin redirección previa al documento)
 - **THEN** el `<head>` contiene `noindex` y `nofollow` en meta robots
+
+### Requirement: Layout del route group público
+El layout `app/(public)/layout.tsx` SHALL envolver las páginas públicas con estructura semántica completa: skip-link, `header` con navegación sticky, `main` enfocable para el contenido de cada página, y `footer` con NAP leído de BD. Además SHALL montar GTM y el banner de consentimiento (GTK-46). La reconfiguración de cookies SHALL estar disponible desde el footer mediante `openConsentPreferences()`; no es obligatorio mantener un botón flotante fijo de cookies una vez desplegado el footer.
+
+#### Scenario: Estructura semántica en cualquier página pública
+- **WHEN** se solicita una página bajo `app/(public)/`
+- **THEN** el HTML incluye `header`, `main` y `footer` producidos por el layout del grupo

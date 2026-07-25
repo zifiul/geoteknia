@@ -1,7 +1,8 @@
 import { SchemaType } from '@prisma/client';
 
+import { Breadcrumbs } from '@/components/molecules/Breadcrumbs';
 import { JsonLd } from '@/components/seo/json-ld';
-import { buildSiloBreadcrumbListSchema } from '@/lib/seo/breadcrumbs';
+import { buildSiloBreadcrumbListSchema, buildSiloBreadcrumbSegments } from '@/lib/seo/breadcrumbs';
 import { buildServiceSchema } from '@/lib/seo/jsonld';
 import { buildMetadata } from '@/lib/seo/metadata';
 
@@ -34,15 +35,27 @@ export default function DevSeoPage() {
     { slug: 'dev-seo-test' },
     'Prueba SEO',
   );
+  const breadcrumbSegments = buildSiloBreadcrumbSegments(
+    'service',
+    { slug: 'dev-seo-test' },
+    'Prueba SEO',
+  );
+  const breadcrumbItems = breadcrumbSegments.map((segment, index) => ({
+    label: segment.name,
+    href: index < breadcrumbSegments.length - 1 ? segment.path : undefined,
+  }));
 
   return (
-    <main className="mx-auto max-w-3xl p-6">
+    <div className="mx-auto max-w-3xl p-6">
+      <div data-testid="gtk47-breadcrumbs">
+        <Breadcrumbs items={breadcrumbItems} className="mb-6" />
+      </div>
       <h1>Página de prueba SEO (GTK-45)</h1>
       <p className="text-sm text-gray-600">
         Ruta interna de verificación; metadata con noindex.
       </p>
       <JsonLd data={serviceSchema} />
       <JsonLd data={breadcrumbSchema} />
-    </main>
+    </div>
   );
 }
