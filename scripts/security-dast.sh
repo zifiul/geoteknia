@@ -30,7 +30,7 @@ if ((${#ROUTES[@]} == 0)); then
 fi
 
 if ! curl -sf --max-time 5 "${BASE_URL}" >/dev/null 2>&1; then
-  echo "DAST: NO EJECUTADO — servidor no disponible en ${BASE_URL} (levanta con: npm run dev)"
+  echo "DAST: NO EJECUTADO — servidor no disponible en ${BASE_URL} (levanta con: pnpm run dev)"
   exit 0
 fi
 

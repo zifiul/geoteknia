@@ -1,6 +1,6 @@
 # DAST ligero con curl (fase 5b - skill security-scan).
 # Uso: powershell -ExecutionPolicy Bypass -File scripts/security-dast.ps1 [rama-base] [base-url]
-# Requiere servidor local (npm run dev). Se omite si no hay Route Handlers en el diff.
+# Requiere servidor local (pnpm run dev). Se omite si no hay Route Handlers en el diff.
 
 param(
     [string]$Base = "main",
@@ -38,7 +38,7 @@ if ($routes.Count -eq 0) {
 try {
     $null = Invoke-WebRequest -Uri $BaseUrl -Method Get -TimeoutSec 5 -UseBasicParsing
 } catch {
-    Write-Host "DAST: NO EJECUTADO - servidor no disponible en ${BaseUrl} (levanta con: npm run dev)"
+    Write-Host "DAST: NO EJECUTADO - servidor no disponible en ${BaseUrl} (levanta con: pnpm run dev)"
     exit 0
 }
 

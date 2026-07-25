@@ -19,7 +19,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npm run start -- -p ${E2E_PORT}`,
+    command: `pnpm exec next start -p ${E2E_PORT}`,
     url: E2E_BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

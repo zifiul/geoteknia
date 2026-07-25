@@ -7,18 +7,18 @@ TBD - created by archiving change gtk-21-bootstrap-nextjs-stack. Update Purpose 
 El proyecto SHALL compilar con Next.js 15 (App Router), React 19 y TypeScript en modo estricto (`strict: true` y `noUncheckedIndexedAccess: true`) con alias de imports `@/*`, sin errores de tipo.
 
 #### Scenario: Build de producción sin errores
-- **WHEN** se ejecuta `npm run build` en un checkout limpio con dependencias instaladas
+- **WHEN** se ejecuta `pnpm run build` en un checkout limpio con dependencias instaladas
 - **THEN** la compilación termina con código de salida 0 y sin errores de TypeScript
 
 #### Scenario: Typecheck en verde
-- **WHEN** se ejecuta `npm run typecheck`
+- **WHEN** se ejecuta `pnpm run typecheck`
 - **THEN** `tsc --noEmit` termina con código de salida 0
 
 ### Requirement: Scripts de calidad operativos
 El proyecto SHALL exponer los scripts `build`, `typecheck`, `lint`, `test` y `test:e2e` en `package.json`, y todos SHALL ejecutarse en verde (se permite suite vacía).
 
 #### Scenario: Scripts presentes y en verde
-- **WHEN** se ejecutan `npm run lint`, `npm run test` y `npm run test:e2e`
+- **WHEN** se ejecutan `pnpm run lint`, `pnpm run test` y `pnpm run test:e2e`
 - **THEN** cada comando termina con código de salida 0
 
 ### Requirement: Estructura App Router con frontal público y grupo (admin)
@@ -32,7 +32,7 @@ La estructura `app/` SHALL contener el frontal público (home mínima que respon
 Las carpetas `lib/leads/`, `lib/projects/`, `lib/content/`, `lib/ia/`, `lib/auth/` y `lib/email/` SHALL existir con index de barril, y ningún módulo de `/lib` SHALL importar desde `app/`. La frontera SHALL ser verificable mediante regla de lint (`no-restricted-imports`).
 
 #### Scenario: Import de app/ desde /lib es rechazado por lint
-- **WHEN** un fichero de `lib/**` añade un import de `app/**` y se ejecuta `npm run lint`
+- **WHEN** un fichero de `lib/**` añade un import de `app/**` y se ejecuta `pnpm run lint`
 - **THEN** el lint falla señalando la importación prohibida
 
 #### Scenario: Carpetas de dominio existentes

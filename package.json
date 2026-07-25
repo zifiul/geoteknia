@@ -2,6 +2,7 @@
   "name": "geoteknia",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@11.0.8",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,8 +13,8 @@
     "test:e2e": "playwright test",
     "db:seed": "prisma db seed",
     "postinstall": "node scripts/patch-eslint-typescript6.mjs",
-    "security:install": "npm run security:install-tools",
-    "security:install-tools": "npm run security:install-semgrep && npm run security:install-gitleaks",
+    "security:install": "pnpm run security:install-tools",
+    "security:install-tools": "pnpm run security:install-semgrep && pnpm run security:install-gitleaks",
     "security:install-semgrep": "powershell -ExecutionPolicy Bypass -File scripts/install-semgrep.ps1",
     "security:install-gitleaks": "powershell -ExecutionPolicy Bypass -File scripts/install-gitleaks.ps1",
     "security:sast": "powershell -ExecutionPolicy Bypass -File scripts/semgrep-scan.ps1",
@@ -22,8 +23,8 @@
     "security:secrets": "powershell -ExecutionPolicy Bypass -File scripts/gitleaks-detect.ps1",
     "security:dast": "powershell -ExecutionPolicy Bypass -File scripts/security-dast.ps1",
     "security:scan": "powershell -ExecutionPolicy Bypass -File scripts/security-scan.ps1",
-    "security:semgrep": "npm run security:sast",
-    "security:gitleaks": "npm run security:secrets"
+    "security:semgrep": "pnpm run security:sast",
+    "security:gitleaks": "pnpm run security:secrets"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -32,6 +33,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "dotenv": "^17.4.2",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.3.0-canary.96",
     "prettier": "^3.9.5",
@@ -43,6 +45,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",
+    "@auth/core": "0.41.3",
     "@prisma/client": "^6.19.3",
     "@react-email/components": "^1.0.12",
     "argon2": "^0.44.0",
@@ -57,11 +60,20 @@
     "zod": "^4.4.3"
   },
   "prisma": {
-    "seed": "npx tsx prisma/seed.ts"
+    "seed": "pnpm exec tsx prisma/seed.ts"
   },
-  "overrides": {
-    "next-auth": {
-      "next": "$next"
-    }
+  "pnpm": {
+    "overrides": {
+      "next-auth>next": "$next"
+    },
+    "onlyBuiltDependencies": [
+      "argon2",
+      "prisma",
+      "@prisma/client",
+      "@prisma/engines",
+      "sharp",
+      "esbuild",
+      "unrs-resolver"
+    ]
   }
 }

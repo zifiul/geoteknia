@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Ejecuta npm audit (SCA — fase 5b).
+# Ejecuta pnpm audit (SCA — fase 5b).
 set -euo pipefail
 
 if [[ "${1:-}" == "--json" ]]; then
-  npm audit --json
+  pnpm audit --json
 else
-  npm audit
+  pnpm audit
 fi

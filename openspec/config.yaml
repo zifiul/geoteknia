@@ -14,7 +14,7 @@ context: |
   - Auth: Auth.js v5 (credenciales + TOTP 2FA + RBAC + audit log) para /admin.
   - IA: SDK oficial de Anthropic (Claude) solo server-side; clave nunca en cliente.
   - Email: Resend + React Email. Anti-spam: Cloudflare Turnstile.
-  - Infra: Vercel + Neon + Cloudflare. Testing: Vitest (unidad/integración) + Playwright (E2E) + Lighthouse CI (gate CWV).
+  - Infra: Vercel + Neon + Cloudflare. Gestor de paquetes: pnpm (lockfile pnpm-lock.yaml). Testing: Vitest (unidad/integración) + Playwright (E2E) + Lighthouse CI (gate CWV).
 
   Prioridades de producto que toda decisión debe proteger:
   1. SEO/ISR: SSG + ISR on-demand, JSON-LD, sitemap, Core Web Vitals en verde; publicar contenido sin redeploy.

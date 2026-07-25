@@ -450,10 +450,10 @@ El modelo de datos se rige por `docs/technical/data-model.md`:
 Comandos esperados:
 
 ```bash
-npx prisma migrate dev --name nombre_descriptivo
-npx prisma migrate deploy
-npx prisma generate
-npx prisma db seed
+pnpm exec prisma migrate dev --name nombre_descriptivo
+pnpm exec prisma migrate deploy
+pnpm exec prisma generate
+pnpm exec prisma db seed
 ```
 
 ### 7.4 Consultas
@@ -778,12 +778,12 @@ Para cada función crítica cubrir:
 Ejecutar, cuando existan los scripts:
 
 ```bash
-npm run lint
-npm run typecheck
-npm test
-npm run test:e2e
-npm run lighthouse
-npx prisma migrate deploy
+pnpm run lint
+pnpm run typecheck
+pnpm test
+pnpm run test:e2e
+pnpm run lighthouse
+pnpm exec prisma migrate deploy
 ```
 
 Adaptar los comandos al `package.json` real cuando el proyecto esté inicializado.

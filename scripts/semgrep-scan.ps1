@@ -12,7 +12,7 @@ $RepoRoot = Split-Path -Parent $PSScriptRoot
 $SemgrepExe = Join-Path $RepoRoot "tools\semgrep-venv\Scripts\semgrep.exe"
 
 if (-not (Test-Path $SemgrepExe)) {
-    Write-Error "Semgrep no está instalado. Ejecuta: npm run security:install-semgrep"
+    Write-Error "Semgrep no está instalado. Ejecuta: pnpm run security:install-semgrep"
 }
 
 Set-Location $RepoRoot

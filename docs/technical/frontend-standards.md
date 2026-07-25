@@ -641,12 +641,12 @@ Configurar TypeScript con:
 Scripts esperados:
 
 ```bash
-npm run dev
-npm run lint
-npm run typecheck
-npm run test
-npm run test:e2e
-npm run build
+pnpm run dev
+pnpm run lint
+pnpm run typecheck
+pnpm run test
+pnpm run test:e2e
+pnpm run build
 ```
 
 Si los nombres de scripts cambian, deben mantener esta intención.
