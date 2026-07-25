@@ -32,6 +32,8 @@ describe('getOrganizationProfile', () => {
       napAddress: 'Calle 1',
       napPhone: '+34900000000',
       napEmail: 'info@geoteknia.local',
+      areaServed: null,
+      aggregateRating: null,
     });
 
     const profile = await getOrganizationProfile();
@@ -41,6 +43,8 @@ describe('getOrganizationProfile', () => {
       napAddress: 'Calle 1',
       napPhone: '+34900000000',
       napEmail: 'info@geoteknia.local',
+      areaServed: null,
+      aggregateRating: null,
     });
     expect(findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -50,9 +54,27 @@ describe('getOrganizationProfile', () => {
           napAddress: true,
           napPhone: true,
           napEmail: true,
+          areaServed: true,
+          aggregateRating: true,
         },
       }),
     );
+  });
+
+  it('mapea areaServed y aggregateRating', async () => {
+    findFirst.mockResolvedValue({
+      displayName: 'Geoteknia',
+      legalName: 'Geoteknia S.L.',
+      napAddress: 'Calle 1',
+      napPhone: '+34900000000',
+      napEmail: 'info@geoteknia.local',
+      areaServed: ['Madrid'],
+      aggregateRating: '4.50',
+    });
+
+    const profile = await getOrganizationProfile();
+    expect(profile?.areaServed).toEqual(['Madrid']);
+    expect(profile?.aggregateRating).toBe(4.5);
   });
 
   it('devuelve null si no hay perfil', async () => {

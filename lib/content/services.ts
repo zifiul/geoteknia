@@ -15,7 +15,10 @@ import { editorialCrudBlockSchema } from '@/lib/content/schemas/editorial';
 import { seoBlockSchema } from '@/lib/content/schemas/seo';
 import { ensureUniqueSlug } from '@/lib/content/slug';
 import type { PortalSessionPayload } from '@/lib/auth/session';
+import { env } from '@/lib/env';
 import { db } from '@/lib/db';
+import { PUBLISHED_EDITORIAL_WHERE } from '@/lib/content/published-filter';
+import { resolveMediaFileUrl } from '@/lib/content/slug';
 
 const serviceBodySchema = z.object({
   name: z.string().min(1),
@@ -229,5 +232,58 @@ export async function listServices(params?: { skip?: number; take?: number }) {
       workflowStatus: true,
       updatedAt: true,
     },
+  });
+}
+
+export type PublishedServiceListItem = {
+  id: string;
+  name: string;
+  slug: string;
+  summary: string | null;
+  heroImageUrl: string | null;
+  heroImageAlt: string | null;
+  isPillar: boolean;
+};
+
+export async function listPublishedServices(
+  params?: { take?: number },
+): Promise<PublishedServiceListItem[]> {
+  const take = params?.take ?? 12;
+  const rows = await db.service.findMany({
+    where: PUBLISHED_EDITORIAL_WHERE,
+    orderBy: [{ isPillar: 'desc' }, { order: 'asc' }, { name: 'asc' }],
+    take,
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      summary: true,
+      isPillar: true,
+      heroImageId: true,
+    },
+  });
+  const imageIds = rows
+    .map((row) => row.heroImageId)
+    .filter((id): id is string => id !== null);
+  const assets =
+    imageIds.length > 0
+      ? await db.mediaAsset.findMany({
+          where: { id: { in: imageIds }, deletedAt: null },
+          select: { id: true, fileUrl: true, altText: true },
+        })
+      : [];
+  const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+  const base = env.MEDIA_STORAGE_BASE_URL;
+  return rows.map((row) => {
+    const hero = row.heroImageId ? assetById.get(row.heroImageId) : undefined;
+    return {
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      summary: row.summary,
+      isPillar: row.isPillar,
+      heroImageUrl: hero ? resolveMediaFileUrl(hero.fileUrl, base) : null,
+      heroImageAlt: hero?.altText ?? null,
+    };
   });
 }

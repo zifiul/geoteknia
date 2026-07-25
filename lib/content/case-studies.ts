@@ -19,6 +19,7 @@ import { seoBlockSchema } from '@/lib/content/schemas/seo';
 import { ensureUniqueSlug } from '@/lib/content/slug';
 import type { PortalSessionPayload } from '@/lib/auth/session';
 import { db } from '@/lib/db';
+import { PUBLISHED_EDITORIAL_WHERE } from '@/lib/content/published-filter';
 
 const caseStudyBodySchema = z.object({
   title: z.string().min(1),
@@ -232,5 +233,28 @@ export async function softDeleteCaseStudy(
       entityId: caseStudyId,
       entitySlug: existing.slug,
     });
+  });
+}
+
+export type PublishedCaseStudyListItem = {
+  id: string;
+  title: string;
+  slug: string;
+  projectYear: number | null;
+};
+
+export async function listRecentPublishedCaseStudies(
+  take = 3,
+): Promise<PublishedCaseStudyListItem[]> {
+  return db.caseStudy.findMany({
+    where: PUBLISHED_EDITORIAL_WHERE,
+    orderBy: [{ projectYear: 'desc' }, { updatedAt: 'desc' }],
+    take,
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      projectYear: true,
+    },
   });
 }

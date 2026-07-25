@@ -11,6 +11,7 @@ import { ContentNotFoundError } from '@/lib/content/errors';
 import { editorialCrudBlockSchema } from '@/lib/content/schemas/editorial';
 import type { PortalSessionPayload } from '@/lib/auth/session';
 import { db } from '@/lib/db';
+import { PUBLISHED_EDITORIAL_WHERE } from '@/lib/content/published-filter';
 
 const accreditationBodySchema = z.object({
   name: z.string().min(1),
@@ -127,5 +128,21 @@ export async function softDeleteAccreditation(
       entityType: ENTITY_TYPE,
       entityId: accreditationId,
     });
+  });
+}
+
+export type ActiveAccreditationListItem = {
+  id: string;
+  name: string;
+};
+
+export async function listActiveAccreditations(): Promise<ActiveAccreditationListItem[]> {
+  return db.accreditation.findMany({
+    where: PUBLISHED_EDITORIAL_WHERE,
+    orderBy: { name: 'asc' },
+    select: {
+      id: true,
+      name: true,
+    },
   });
 }

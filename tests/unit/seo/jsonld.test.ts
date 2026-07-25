@@ -32,6 +32,48 @@ describe('jsonld builders', () => {
     expect(json['@type']).toBe('ProfessionalService');
   });
 
+  it('buildLocalBusinessSchema extiende NAP, areaServed y catálogo', () => {
+    const json = buildLocalBusinessSchema({
+      name: 'Geo',
+      url: 'https://geoteknia.es',
+      useProfessionalService: true,
+      telephone: '+34900000000',
+      email: 'info@example.com',
+      address: 'Calle 1, Madrid',
+      areaServed: ['Madrid', 'Toledo'],
+      offerCatalog: {
+        name: 'Servicios',
+        items: [
+          {
+            name: 'Estudios',
+            url: 'https://geoteknia.es/servicios/estudios',
+          },
+        ],
+      },
+    });
+    expect(json.telephone).toBe('+34900000000');
+    expect(json.email).toBe('info@example.com');
+    expect(json.areaServed).toEqual(['Madrid', 'Toledo']);
+    const catalog = json.hasOfferCatalog as Record<string, unknown>;
+    expect(catalog['@type']).toBe('OfferCatalog');
+    expect(json.address).toEqual({
+      '@type': 'PostalAddress',
+      streetAddress: 'Calle 1, Madrid',
+    });
+  });
+
+  it('buildLocalBusinessSchema omite campos vacíos y aggregateRating sin reviewCount', () => {
+    const json = buildLocalBusinessSchema({
+      name: 'Geo',
+      url: 'https://geoteknia.es',
+      areaServed: [],
+      aggregateRating: { ratingValue: 4.5, reviewCount: 0 },
+    });
+    expect(json.areaServed).toBeUndefined();
+    expect(json.aggregateRating).toBeUndefined();
+    expect(json.telephone).toBeUndefined();
+  });
+
   it('buildArticleSchema incluye autor', () => {
     const json = buildArticleSchema({
       headline: 'Título',

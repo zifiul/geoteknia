@@ -386,6 +386,7 @@ components/
 │   ├── FormField.tsx
 │   └── PhoneLink.tsx
 ├── organisms/
+│   ├── home/                         # GTK-48: Hero, PersonaPaths, ServicesGrid, TrustSignals, CtaSection
 │   ├── leads/BudgetLeadForm.tsx
 │   └── layout/SiteHeader.tsx
 └── templates/
@@ -528,6 +529,7 @@ type ConversionEventPayload = {
 
 - Centralizar helpers de `dataLayer` en `/lib/analytics` o `components/analytics`.
 - Helpers cliente: `pushDataLayer`, `trackConversionEvent` (GTK-46). Reconfiguración: `openConsentPreferences()` hasta footer GTK-47.
+- CTAs de navegación interna (home, silos): `EngagementTrackLink` → `select_content` en dataLayer **sin** mirror a `/api/eventos` (GTK-48).
 - Comprobar existencia de `window` antes de acceder desde cliente.
 - No duplicar eventos por re-render.
 - En formularios, disparar eventos solo tras confirmación del servidor.

@@ -36,16 +36,102 @@ export function buildServiceSchema(input: ServiceSchemaInput): Record<string, un
   });
 }
 
+export type LocalBusinessAddressInput = {
+  streetAddress?: string | null;
+  addressLocality?: string | null;
+  postalCode?: string | null;
+  addressCountry?: string | null;
+};
+
+export type LocalBusinessOfferCatalogItem = {
+  name: string;
+  url: string;
+};
+
 export type LocalBusinessSchemaInput = WithImage & {
   name: string;
   description?: string | null;
   url: string;
   useProfessionalService?: boolean;
+  telephone?: string | null;
+  email?: string | null;
+  address?: LocalBusinessAddressInput | string | null;
+  areaServed?: string[] | null;
+  offerCatalog?: { name?: string; items: LocalBusinessOfferCatalogItem[] } | null;
+  aggregateRating?: { ratingValue: number; reviewCount: number } | null;
 };
+
+function buildPostalAddress(
+  address: LocalBusinessAddressInput | string,
+): Record<string, unknown> {
+  if (typeof address === 'string') {
+    const trimmed = address.trim();
+    return trimmed
+      ? compact({
+          '@type': 'PostalAddress',
+          streetAddress: trimmed,
+        })
+      : {};
+  }
+  return compact({
+    '@type': 'PostalAddress',
+    streetAddress: address.streetAddress,
+    addressLocality: address.addressLocality,
+    postalCode: address.postalCode,
+    addressCountry: address.addressCountry,
+  });
+}
+
+function buildOfferCatalog(
+  catalog: NonNullable<LocalBusinessSchemaInput['offerCatalog']>,
+): Record<string, unknown> {
+  const itemListElement = catalog.items.map((item, index) =>
+    compact({
+      '@type': 'Offer',
+      position: index + 1,
+      itemOffered: compact({
+        '@type': 'Service',
+        name: item.name,
+        url: item.url,
+      }),
+    }),
+  );
+  return compact({
+    '@type': 'OfferCatalog',
+    name: catalog.name,
+    itemListElement: itemListElement.length ? itemListElement : undefined,
+  });
+}
 
 export function buildLocalBusinessSchema(
   input: LocalBusinessSchemaInput,
 ): Record<string, unknown> {
+  const addressInput = input.address;
+  const address =
+    addressInput === undefined || addressInput === null
+      ? undefined
+      : buildPostalAddress(addressInput);
+  const hasAddress = address && Object.keys(address).length > 1;
+
+  const areaServed =
+    input.areaServed?.filter((entry) => entry.trim().length > 0) ?? undefined;
+
+  const catalog = input.offerCatalog?.items.length
+    ? buildOfferCatalog(input.offerCatalog)
+    : undefined;
+
+  const rating =
+    input.aggregateRating &&
+    Number.isFinite(input.aggregateRating.ratingValue) &&
+    Number.isFinite(input.aggregateRating.reviewCount) &&
+    input.aggregateRating.reviewCount > 0
+      ? compact({
+          '@type': 'AggregateRating',
+          ratingValue: input.aggregateRating.ratingValue,
+          reviewCount: input.aggregateRating.reviewCount,
+        })
+      : undefined;
+
   return compact({
     '@context': SCHEMA_CONTEXT,
     '@type': input.useProfessionalService ? 'ProfessionalService' : 'LocalBusiness',
@@ -53,6 +139,12 @@ export function buildLocalBusinessSchema(
     description: input.description,
     url: input.url,
     image: input.imageUrl,
+    telephone: input.telephone,
+    email: input.email,
+    address: hasAddress ? address : undefined,
+    areaServed: areaServed?.length ? areaServed : undefined,
+    hasOfferCatalog: catalog,
+    aggregateRating: rating,
   });
 }
 
