@@ -67,6 +67,9 @@ export const METADATA_WHITELIST: Record<AuditAction, readonly string[]> = {
     'entitySlug',
     'contentType',
     'entityType',
+    'previousStatus',
+    'workflowStatus',
+    'event',
   ],
   ai_config_update: [
     ...COMMON_METADATA_KEYS,

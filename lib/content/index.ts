@@ -18,3 +18,7 @@ export * from './schemas/workflow';
 export * from './workflow';
 export * from './workflow-registry';
 export * from './revisions';
+export * from './publish';
+export * from './revalidate';
+export * from './schemas/publish';
+export * from './schema-type-coherence';

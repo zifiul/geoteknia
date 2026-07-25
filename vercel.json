@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/publicar-programados",
+      "schedule": "*/15 * * * *"
+    }
+  ]
+}

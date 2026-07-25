@@ -5,17 +5,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const { requirePermission, applyEditorialTransition } = vi.hoisted(() => ({
+const { requirePermission, publishContentEffect } = vi.hoisted(() => ({
   requirePermission: vi.fn(),
-  applyEditorialTransition: vi.fn(),
+  publishContentEffect: vi.fn(),
 }));
 
 vi.mock('@/lib/auth/rbac', () => ({
   requirePermission,
 }));
 
-vi.mock('@/lib/content/workflow', () => ({
-  applyEditorialTransition,
+vi.mock('@/lib/content/publish', () => ({
+  publishContent: publishContentEffect,
 }));
 
 vi.mock('next/cache', () => ({
@@ -31,7 +31,7 @@ const USER_ID = '11111111-1111-4111-8111-111111111111';
 describe('workflow Server Actions RBAC (GTK-39)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    applyEditorialTransition.mockResolvedValue({
+    publishContentEffect.mockResolvedValue({
       workflowStatus: 'publicado',
     });
   });
@@ -45,7 +45,7 @@ describe('workflow Server Actions RBAC (GTK-39)', () => {
     if (!result.ok) {
       expect(result.error.code).toBe('INVALID_SESSION');
     }
-    expect(applyEditorialTransition).not.toHaveBeenCalled();
+    expect(publishContentEffect).not.toHaveBeenCalled();
   });
 
   it('SEC-1: sin content.publish → FORBIDDEN', async () => {
@@ -69,6 +69,6 @@ describe('workflow Server Actions RBAC (GTK-39)', () => {
     const result = await transitionToPublish('service', USER_ID);
 
     expect(result.ok).toBe(true);
-    expect(applyEditorialTransition).toHaveBeenCalled();
+    expect(publishContentEffect).toHaveBeenCalled();
   });
 });

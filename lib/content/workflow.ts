@@ -86,6 +86,10 @@ export type ApplyEditorialTransitionParams = {
   answer?: string;
   aiGenerationId?: string;
   changeSummary?: string;
+  /** GTK-40: snapshot en publish/unpublish aunque el cuerpo no cambie. */
+  forceRevision?: boolean;
+  /** GTK-40: metadata event=unpublish en content_update. */
+  unpublishEvent?: boolean;
 };
 
 export async function applyEditorialTransition(
@@ -102,7 +106,10 @@ export async function applyEditorialTransition(
   assertTransition(from, to);
 
   const bodyChanged = Boolean(
-    params.bodyChanged || params.body || params.answer,
+    params.forceRevision ||
+      params.bodyChanged ||
+      params.body ||
+      params.answer,
   );
 
   await db.$transaction(async (tx) => {
@@ -128,6 +135,7 @@ export async function applyEditorialTransition(
       entitySlug: row.slug,
       previousStatus: from,
       workflowStatus: to,
+      ...(params.unpublishEvent ? { event: 'unpublish' } : {}),
       ...(params.note ? { note: params.note } : {}),
     };
 

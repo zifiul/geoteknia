@@ -41,8 +41,56 @@ tags:
     description: >
       Endpoints autenticados del portal para generación asistida de contenido SEO
       (GTK-38). RBAC `ai.generate`; presupuesto mensual GTK-37.
+  - name: Cron
+    description: >
+      Tareas programadas Vercel Cron autenticadas por `CRON_SECRET` (GTK-40).
+      Fuera de `/api/admin`; sin sesión de portal.
 
 paths:
+  /api/cron/publicar-programados:
+    get:
+      tags: [Cron]
+      operationId: cronPublishScheduledContent
+      summary: Publicar contenido con fecha programada vencida
+      description: >
+        Procesa entidades en `aprobado` con `scheduled_publish_at <= now()`.
+        Autenticación: cabecera `Authorization: Bearer {CRON_SECRET}` (mín. 32
+        caracteres, comparación en tiempo constante). Sin secreto válido → 401.
+        Idempotente por elemento; un fallo no aborta el lote.
+      security:
+        - CronBearer: []
+      responses:
+        '200':
+          description: Resumen del lote
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [published, skipped, failed]
+                properties:
+                  published:
+                    type: integer
+                    minimum: 0
+                  skipped:
+                    type: integer
+                    minimum: 0
+                  failed:
+                    type: integer
+                    minimum: 0
+        '401':
+          description: Secreto ausente o inválido (sin detalle del secreto)
+    post:
+      tags: [Cron]
+      operationId: cronPublishScheduledContentPost
+      summary: Alias POST del cron de publicación programada
+      security:
+        - CronBearer: []
+      responses:
+        '200':
+          description: Igual que GET
+        '401':
+          description: No autorizado
+
   /api/admin/ia/generar:
     post:
       tags: [Admin IA]
@@ -597,6 +645,12 @@ components:
       description: >
         Nombre de cookie según configuración Auth.js v5 en producción; puede variar
         con prefijo `__Secure-` en HTTPS.
+    CronBearer:
+      type: http
+      scheme: bearer
+      description: >
+        `CRON_SECRET` (≥32 caracteres) en variable de entorno; solo para cron GTK-40.
+        No usar sesión de portal.
 
   schemas:
     ApiErrorBody:
