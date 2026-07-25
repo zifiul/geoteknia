@@ -9,6 +9,7 @@ export * from './geo-zones';
 export * from './service-zone-pages';
 export * from './media-assets';
 export * from './case-studies';
+export * from './machinery';
 export * from './team-machinery';
 export * from './accreditations';
 export * from './blog-faqs';

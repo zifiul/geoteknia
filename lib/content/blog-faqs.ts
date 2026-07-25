@@ -22,6 +22,7 @@ import {
 import { ensureUniqueSlug } from '@/lib/content/slug';
 import type { PortalSessionPayload } from '@/lib/auth/session';
 import { db } from '@/lib/db';
+import { PUBLISHED_EDITORIAL_WHERE } from '@/lib/content/published-filter';
 
 export const createBlogCategorySchema = z
   .object({
@@ -494,5 +495,33 @@ export async function softDeleteFaq(
       entityType: FAQ_ENTITY,
       entityId: faqId,
     });
+  });
+}
+
+export type PublishedServiceFaqItem = {
+  id: string;
+  question: string;
+  answer: string;
+  order: number | null;
+};
+
+export async function listPublishedFaqsByService(
+  serviceId: string,
+): Promise<PublishedServiceFaqItem[]> {
+  return db.faq.findMany({
+    where: {
+      ...PUBLISHED_EDITORIAL_WHERE,
+      faqGroup: {
+        serviceId,
+        deletedAt: null,
+      },
+    },
+    orderBy: [{ order: 'asc' }, { question: 'asc' }],
+    select: {
+      id: true,
+      question: true,
+      answer: true,
+      order: true,
+    },
   });
 }

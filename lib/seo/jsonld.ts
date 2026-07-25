@@ -19,13 +19,31 @@ function compact<T extends Record<string, unknown>>(obj: T): T {
   return out;
 }
 
+export type ServiceProviderInput = {
+  name: string;
+  url?: string | null;
+};
+
 export type ServiceSchemaInput = WithImage & {
   name: string;
   description?: string | null;
   url: string;
+  serviceType?: string | null;
+  provider?: ServiceProviderInput | null;
+  areaServed?: string[] | null;
 };
 
 export function buildServiceSchema(input: ServiceSchemaInput): Record<string, unknown> {
+  const provider = input.provider?.name?.trim()
+    ? compact({
+        '@type': 'Organization',
+        name: input.provider.name,
+        url: input.provider.url,
+      })
+    : undefined;
+  const areaServed =
+    input.areaServed?.filter((entry) => entry.trim().length > 0) ?? undefined;
+
   return compact({
     '@context': SCHEMA_CONTEXT,
     '@type': 'Service',
@@ -33,6 +51,9 @@ export function buildServiceSchema(input: ServiceSchemaInput): Record<string, un
     description: input.description,
     url: input.url,
     image: input.imageUrl,
+    serviceType: input.serviceType,
+    provider,
+    areaServed: areaServed?.length ? areaServed : undefined,
   });
 }
 

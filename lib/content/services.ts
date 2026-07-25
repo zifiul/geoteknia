@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { WorkflowStatus, type Prisma } from '@prisma/client';
+import { WorkflowStatus, type Prisma, SchemaType } from '@prisma/client';
 import { z } from 'zod';
 
 import {
@@ -244,6 +244,83 @@ export type PublishedServiceListItem = {
   heroImageAlt: string | null;
   isPillar: boolean;
 };
+
+export type PublishedServiceDetail = {
+  id: string;
+  name: string;
+  slug: string;
+  summary: string | null;
+  body: string;
+  methodology: unknown;
+  applicableNorms: string | null;
+  deliverables: unknown;
+  h1: string | null;
+  heroImageUrl: string | null;
+  heroImageAlt: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  canonicalUrl: string | null;
+  schemaType: SchemaType;
+  noindex: boolean;
+};
+
+export async function getPublishedServiceBySlug(
+  slug: string,
+): Promise<PublishedServiceDetail | null> {
+  const row = await db.service.findFirst({
+    where: { slug, ...PUBLISHED_EDITORIAL_WHERE },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      summary: true,
+      body: true,
+      methodology: true,
+      applicableNorms: true,
+      deliverables: true,
+      h1: true,
+      heroImageId: true,
+      metaTitle: true,
+      metaDescription: true,
+      canonicalUrl: true,
+      schemaType: true,
+      noindex: true,
+    },
+  });
+  if (!row) {
+    return null;
+  }
+  let heroImageUrl: string | null = null;
+  let heroImageAlt: string | null = null;
+  if (row.heroImageId) {
+    const asset = await db.mediaAsset.findFirst({
+      where: { id: row.heroImageId, deletedAt: null },
+      select: { fileUrl: true, altText: true },
+    });
+    if (asset) {
+      heroImageUrl = resolveMediaFileUrl(asset.fileUrl, env.MEDIA_STORAGE_BASE_URL);
+      heroImageAlt = asset.altText;
+    }
+  }
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    summary: row.summary,
+    body: row.body,
+    methodology: row.methodology,
+    applicableNorms: row.applicableNorms,
+    deliverables: row.deliverables,
+    h1: row.h1,
+    heroImageUrl,
+    heroImageAlt,
+    metaTitle: row.metaTitle,
+    metaDescription: row.metaDescription,
+    canonicalUrl: row.canonicalUrl,
+    schemaType: row.schemaType,
+    noindex: row.noindex,
+  };
+}
 
 export async function listPublishedServices(
   params?: { take?: number },
