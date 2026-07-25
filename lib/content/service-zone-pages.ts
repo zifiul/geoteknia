@@ -17,6 +17,7 @@ import { seoBlockSchema } from '@/lib/content/schemas/seo';
 import { ensureUniqueSlug } from '@/lib/content/slug';
 import type { PortalSessionPayload } from '@/lib/auth/session';
 import { db } from '@/lib/db';
+import { PUBLISHED_EDITORIAL_WHERE } from '@/lib/content/published-filter';
 
 const bodySchema = z.object({
   serviceId: z.uuid(),
@@ -156,4 +157,36 @@ export async function softDeleteServiceZonePage(
       entitySlug: existing.slug,
     });
   });
+}
+
+export type PublishedServiceZonePageLink = {
+  id: string;
+  slug: string;
+  title: string;
+  zoneName: string;
+  zoneSlug: string;
+};
+
+export async function listPublishedServiceZonePagesByService(
+  serviceId: string,
+): Promise<PublishedServiceZonePageLink[]> {
+  const rows = await db.serviceZonePage.findMany({
+    where: { serviceId, ...PUBLISHED_EDITORIAL_WHERE },
+    orderBy: [{ updatedAt: 'desc' }],
+    select: {
+      id: true,
+      slug: true,
+      h1: true,
+      zone: {
+        select: { name: true, slug: true },
+      },
+    },
+  });
+  return rows.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    title: row.h1?.trim() || row.zone.name,
+    zoneName: row.zone.name,
+    zoneSlug: row.zone.slug,
+  }));
 }

@@ -23,6 +23,34 @@ describe('jsonld builders', () => {
     expect(json.name).toBe('Estudios');
   });
 
+  it('buildServiceSchema extiende serviceType, provider y areaServed', () => {
+    const json = buildServiceSchema({
+      name: 'Estudios geotécnicos',
+      url: 'https://geoteknia.es/servicios/estudios-geotecnicos',
+      serviceType: 'Estudios geotécnicos',
+      provider: { name: 'Geoteknia', url: 'https://geoteknia.es' },
+      areaServed: ['Madrid', ''],
+    });
+    expect(json.serviceType).toBe('Estudios geotécnicos');
+    expect(json.provider).toEqual({
+      '@type': 'Organization',
+      name: 'Geoteknia',
+      url: 'https://geoteknia.es',
+    });
+    expect(json.areaServed).toEqual(['Madrid']);
+  });
+
+  it('buildServiceSchema omite provider y areaServed vacíos', () => {
+    const json = buildServiceSchema({
+      name: 'Estudios',
+      url: 'https://geoteknia.es/servicios/estudios',
+      provider: { name: '   ' },
+      areaServed: [],
+    });
+    expect(json.provider).toBeUndefined();
+    expect(json.areaServed).toBeUndefined();
+  });
+
   it('buildLocalBusinessSchema usa ProfessionalService opcional', () => {
     const json = buildLocalBusinessSchema({
       name: 'Geo',

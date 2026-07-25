@@ -258,3 +258,20 @@ export async function listRecentPublishedCaseStudies(
     },
   });
 }
+
+export async function listPublishedCaseStudiesByService(
+  serviceId: string,
+  take = 6,
+): Promise<PublishedCaseStudyListItem[]> {
+  return db.caseStudy.findMany({
+    where: { serviceId, ...PUBLISHED_EDITORIAL_WHERE },
+    orderBy: [{ projectYear: 'desc' }, { updatedAt: 'desc' }],
+    take,
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      projectYear: true,
+    },
+  });
+}

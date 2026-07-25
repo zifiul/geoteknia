@@ -13,11 +13,15 @@ type TrackEventName = Extract<
 
 export type ContactTrackLinkProps = ComponentPropsWithoutRef<'a'> & {
   eventName: TrackEventName;
+  serviceSlug?: string;
+  provinceSlug?: string;
   children: ReactNode;
 };
 
 export function ContactTrackLink({
   eventName,
+  serviceSlug,
+  provinceSlug,
   className,
   children,
   onClick,
@@ -28,7 +32,11 @@ export function ContactTrackLink({
       {...props}
       className={cn(className)}
       onClick={(event) => {
-        void trackConversionEvent({ eventName });
+        void trackConversionEvent({
+          eventName,
+          ...(serviceSlug ? { serviceSlug } : {}),
+          ...(provinceSlug ? { provinceSlug } : {}),
+        });
         onClick?.(event);
       }}
     >
