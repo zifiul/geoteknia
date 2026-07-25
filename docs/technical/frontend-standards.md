@@ -514,16 +514,20 @@ Los parámetros permitidos deben evitar PII:
 
 ```typescript
 type ConversionEventPayload = {
+  eventName: (typeof CONVERSION_EVENT_NAME_VALUES)[number];
   serviceSlug?: string;
   provinceSlug?: string;
   leadType?: 'presupuesto' | 'licitacion' | 'recurso' | 'ubicacion';
-  sourcePage: string;
+  pageUrl?: string;
+  formStep?: number;
+  value?: number;
 };
 ```
 
 ### 11.3 DataLayer
 
 - Centralizar helpers de `dataLayer` en `/lib/analytics` o `components/analytics`.
+- Helpers cliente: `pushDataLayer`, `trackConversionEvent` (GTK-46). Reconfiguración: `openConsentPreferences()` hasta footer GTK-47.
 - Comprobar existencia de `window` antes de acceder desde cliente.
 - No duplicar eventos por re-render.
 - En formularios, disparar eventos solo tras confirmación del servidor.

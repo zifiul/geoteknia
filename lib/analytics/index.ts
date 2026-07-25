@@ -17,6 +17,18 @@ export {
 export { sanitizePageUrl } from './sanitize';
 
 export {
+  ACCEPT_ALL_CATEGORIES,
+  REJECT_ALL_CATEGORIES,
+  hasAnalyticsConsent,
+  readBrowserConsent,
+  writeBrowserConsent,
+} from './consent';
+
+export { pushDataLayer, pushRawDataLayer } from './datalayer';
+export { trackConversionEvent } from './track';
+export { openConsentPreferences } from './consent-preferences';
+
+export {
   recordConversionEvent,
   recordConversionEvents,
   type RecordConversionEventOptions,
