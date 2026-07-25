@@ -291,6 +291,82 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
 
+  /api/recursos/[slug]:
+    post:
+      tags: [Leads]
+      operationId: createResourceLead
+      summary: Descarga de lead magnet gated (recurso técnico)
+      description: >
+        Endpoint público (GTK-30). Valida con `resourceLeadSchema` (`lib/leads/schema.ts`):
+        nombre, email, consent GDPR obligatorio, Turnstile token y campos opcionales.
+        Resuelve el `lead_magnet` por `slug` (404 si no existe, borrado o `is_gated=false`).
+        Rate limit `RATE_LIMIT_PUBLIC_PER_MIN` con clave `recursos:{ip}`. Crea contacto
+        (dedupe), lead (`recurso`, `channel='lead_magnet'`) y proyecto en transacción.
+        Email de confirmación con fallbacks; evento `resource_download` post-commit
+        (best-effort). Devuelve `downloadUrl` estilizada/no-listada + `thankYouUrl`.
+      security: []
+      x-geoteknia-authz:
+        rbac: público
+        permiso: ninguno
+        rateLimit: RATE_LIMIT_PUBLIC_PER_MIN (clave recursos:{ip})
+        turnstile: true
+        pii:
+          entrada: nombre, email, empresa, teléfono, rol (HTTPS)
+          salida: downloadUrl + thankYouUrl + referenceNumber; sin PII en cuerpo de éxito
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceLeadInput'
+      responses:
+        '201':
+          description: Lead, proyecto y acceso a descarga creados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceLeadSuccessEnvelope'
+        '400':
+          description: Validación Zod, consentimiento o formato inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '403':
+          description: Token Turnstile inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Recurso no encontrado, borrado o no es gated (`is_gated=false`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '429':
+          description: Rate limit excedido.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '502':
+          description: Turnstile siteverify no disponible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '500':
+          description: Error interno o generación de referencia fallida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+
   /api/leads/presupuesto:
     post:
       tags: [Leads]
@@ -976,6 +1052,82 @@ components:
           const: true
         data:
           $ref: '#/components/schemas/ConversionEventsAcceptedData'
+
+    ResourceLeadInput:
+      type: object
+      additionalProperties: false
+      required:
+        - nombre
+        - email
+        - gdprConsent
+        - turnstileToken
+      properties:
+        nombre:
+          type: string
+          minLength: 2
+          maxLength: 200
+        email:
+          type: string
+          format: email
+        empresa:
+          type: string
+          maxLength: 200
+        telefono:
+          type: string
+          minLength: 9
+          maxLength: 20
+        rol:
+          type: string
+          enum:
+            - propiedad
+            - promotor
+            - constructor
+            - arquitecto
+            - ingenieria
+            - otro
+        gdprConsent:
+          type: boolean
+          const: true
+        turnstileToken:
+          type: string
+          minLength: 1
+        utmSource:
+          type: string
+        utmMedium:
+          type: string
+        utmCampaign:
+          type: string
+        gaClientId:
+          type: string
+        landingUrl:
+          type: string
+          format: uri
+
+    ResourceLeadData:
+      type: object
+      additionalProperties: false
+      required: [referenceNumber, downloadUrl, thankYouUrl]
+      properties:
+        referenceNumber:
+          type: string
+          maxLength: 50
+          example: REC-20260725-8K2N
+        downloadUrl:
+          type: string
+          format: uri
+        thankYouUrl:
+          type: string
+
+    ResourceLeadSuccessEnvelope:
+      type: object
+      additionalProperties: false
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/ResourceLeadData'
 
     BudgetLeadInput:
       type: object

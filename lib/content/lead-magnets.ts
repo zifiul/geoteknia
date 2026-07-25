@@ -162,3 +162,27 @@ export async function softDeleteLeadMagnet(
     });
   });
 }
+
+/**
+ * Consulta pública de lead magnet gated por slug para captación (GTK-30).
+ * Retorna null si no existe, si no es gated (isGated=false), si fileId es null o está borrado.
+ */
+export async function findGatedLeadMagnetBySlug(slug: string) {
+  return db.leadMagnet.findFirst({
+    where: {
+      slug,
+      isGated: true,
+      fileId: { not: null },
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      thankYouUrl: true,
+      fileId: true,
+      serviceId: true,
+    },
+  });
+}
+
