@@ -18,8 +18,11 @@ import { editorialCrudBlockSchema } from '@/lib/content/schemas/editorial';
 import { seoBlockSchema } from '@/lib/content/schemas/seo';
 import { ensureUniqueSlug } from '@/lib/content/slug';
 import type { PortalSessionPayload } from '@/lib/auth/session';
+import { parseCatalogYearRaw } from '@/lib/cases/catalog-search-params';
 import { db } from '@/lib/db';
+import { env } from '@/lib/env';
 import { PUBLISHED_EDITORIAL_WHERE } from '@/lib/content/published-filter';
+import { resolveMediaFileUrl } from '@/lib/content/slug';
 
 const caseStudyBodySchema = z.object({
   title: z.string().min(1),
@@ -274,4 +277,192 @@ export async function listPublishedCaseStudiesByService(
       projectYear: true,
     },
   });
+}
+
+export type CaseCatalogFilterInput = {
+  serviceSlug?: string | null;
+  workTypologySlug?: string | null;
+  provinceSlug?: string | null;
+  yearRaw?: string | null;
+};
+
+export type PublishedCaseStudyCatalogItem = {
+  id: string;
+  title: string;
+  slug: string;
+  projectYear: number | null;
+  boreholesCount: number | null;
+  metersDrilled: number | null;
+  service: { id: string; name: string; slug: string };
+  workTypology: { name: string; slug: string };
+  province: { name: string; slug: string; ccaa: string };
+  imageUrl: string | null;
+  imageAlt: string | null;
+};
+
+export type CaseCatalogPageResult = {
+  items: PublishedCaseStudyCatalogItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+const catalogItemSelect = {
+  id: true,
+  title: true,
+  slug: true,
+  projectYear: true,
+  boreholesCount: true,
+  metersDrilled: true,
+  ogImageId: true,
+  service: { select: { id: true, name: true, slug: true } },
+  workTypology: { select: { name: true, slug: true } },
+  province: { select: { name: true, slug: true, ccaa: true } },
+} as const;
+
+export async function buildCaseCatalogWhere(
+  filters: CaseCatalogFilterInput,
+): Promise<Prisma.CaseStudyWhereInput> {
+  const clauses: Prisma.CaseStudyWhereInput[] = [PUBLISHED_EDITORIAL_WHERE];
+
+  const serviceSlug = filters.serviceSlug?.trim();
+  if (serviceSlug) {
+    const service = await db.service.findFirst({
+      where: { slug: serviceSlug, ...PUBLISHED_EDITORIAL_WHERE },
+      select: { id: true },
+    });
+    if (service) {
+      clauses.push({ serviceId: service.id });
+    }
+  }
+
+  const typologySlug = filters.workTypologySlug?.trim();
+  if (typologySlug) {
+    const typology = await db.workTypology.findFirst({
+      where: { slug: typologySlug, deletedAt: null },
+      select: { id: true },
+    });
+    if (typology) {
+      clauses.push({ workTypologyId: typology.id });
+    }
+  }
+
+  const provinceSlug = filters.provinceSlug?.trim();
+  if (provinceSlug) {
+    const province = await db.province.findFirst({
+      where: { slug: provinceSlug, isOperational: true, deletedAt: null },
+      select: { id: true },
+    });
+    if (province) {
+      clauses.push({ provinceId: province.id });
+    }
+  }
+
+  const year = parseCatalogYearRaw(filters.yearRaw);
+  if (year !== undefined) {
+    clauses.push({ projectYear: year });
+  }
+
+  return clauses.length === 1 ? clauses[0]! : { AND: clauses };
+}
+
+async function attachCatalogImages(
+  rows: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    projectYear: number | null;
+    boreholesCount: number | null;
+    metersDrilled: Prisma.Decimal | null;
+    ogImageId: string | null;
+    service: { id: string; name: string; slug: string };
+    workTypology: { name: string; slug: string };
+    province: { name: string; slug: string; ccaa: string };
+  }>,
+): Promise<PublishedCaseStudyCatalogItem[]> {
+  const imageIds = [
+    ...new Set(rows.map((row) => row.ogImageId).filter((id): id is string => Boolean(id))),
+  ];
+  const assets =
+    imageIds.length > 0
+      ? await db.mediaAsset.findMany({
+          where: { id: { in: imageIds }, deletedAt: null },
+          select: { id: true, fileUrl: true, altText: true },
+        })
+      : [];
+  const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+  const mediaBase = env.MEDIA_STORAGE_BASE_URL;
+
+  return rows.map((row) => {
+    const asset = row.ogImageId ? assetById.get(row.ogImageId) : undefined;
+    const meters =
+      row.metersDrilled === null ? null : Number(row.metersDrilled.toString());
+    return {
+      id: row.id,
+      title: row.title,
+      slug: row.slug,
+      projectYear: row.projectYear,
+      boreholesCount: row.boreholesCount,
+      metersDrilled: Number.isFinite(meters) ? meters : null,
+      service: row.service,
+      workTypology: row.workTypology,
+      province: row.province,
+      imageUrl: asset ? resolveMediaFileUrl(asset.fileUrl, mediaBase) : null,
+      imageAlt: asset?.altText ?? row.title,
+    };
+  });
+}
+
+export async function listPublishedCaseStudyProjectYears(): Promise<number[]> {
+  const rows = await db.caseStudy.findMany({
+    where: {
+      ...PUBLISHED_EDITORIAL_WHERE,
+      projectYear: { not: null },
+    },
+    distinct: ['projectYear'],
+    select: { projectYear: true },
+    orderBy: { projectYear: 'desc' },
+  });
+  return rows
+    .map((row) => row.projectYear)
+    .filter((year): year is number => year != null);
+}
+
+export async function listPublishedCaseStudiesCatalog(
+  filters: CaseCatalogFilterInput,
+  pagination: { page: number; pageSize: number },
+): Promise<CaseCatalogPageResult> {
+  const page = pagination.page < 1 ? 1 : pagination.page;
+  const pageSize = pagination.pageSize < 1 ? 1 : pagination.pageSize;
+  const where = await buildCaseCatalogWhere(filters);
+  const skip = (page - 1) * pageSize;
+
+  const [total, rows] = await Promise.all([
+    db.caseStudy.count({ where }),
+    db.caseStudy.findMany({
+      where,
+      orderBy: [{ projectYear: 'desc' }, { updatedAt: 'desc' }],
+      skip,
+      take: pageSize,
+      select: catalogItemSelect,
+    }),
+  ]);
+
+  const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize);
+  const safePage = totalPages > 0 && page > totalPages ? totalPages : page;
+
+  if (safePage !== page && total > 0) {
+    return listPublishedCaseStudiesCatalog(filters, { page: safePage, pageSize });
+  }
+
+  const items = await attachCatalogImages(rows);
+
+  return {
+    items,
+    total,
+    page: safePage,
+    pageSize,
+    totalPages,
+  };
 }
