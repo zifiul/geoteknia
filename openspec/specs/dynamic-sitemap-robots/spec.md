@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Generación dinámica de sitemap XML, sitemap de imágenes y reglas `robots.txt` para descubrimiento SEO de contenido publicado e indexable. Materializa GTK-42; revalidación on-demand al publicar en GTK-40.
+Generación dinámica de sitemap XML, sitemap de imágenes y reglas `robots.txt` para descubrimiento SEO de contenido publicado e indexable. Materializa GTK-42; revalidación on-demand al publicar en GTK-40 (implementado).
 
 ## Requirements
 
@@ -54,11 +54,16 @@ El sistema SHALL extender `app/robots.ts` existente con `Disallow: /admin` y `Si
 
 ### Requirement: Punto de revalidación para GTK-40
 
-El sistema SHALL exportar constante de tag/caché (`SITEMAP_CACHE_TAG = 'sitemap'`) y usar `revalidate = 3600` en sitemap hasta que GTK-40 invoque `revalidateTag`.
+El sistema SHALL exportar constante de tag/caché (`SITEMAP_CACHE_TAG = 'sitemap'`) y usar `revalidate = 3600` en sitemap como fallback. GTK-40 SHALL invocar `revalidateTag(SITEMAP_CACHE_TAG)` tras cada publicación o despublicación exitosa para que el sitemap refleje el cambio sin esperar al TTL.
+
+#### Scenario: Revalidación on-demand
+
+- **WHEN** GTK-40 publica contenido indexable
+- **THEN** se invoca `revalidateTag` con `SITEMAP_CACHE_TAG` y la siguiente generación del sitemap incluye la URL
 
 #### Scenario: Fallback ISR
 
-- **WHEN** GTK-40 no ha revalidado
+- **WHEN** no ha habido publicación reciente
 - **THEN** el sitemap se regenera como máximo cada 3600 segundos
 
 ### Requirement: Respuestas HTTP correctas

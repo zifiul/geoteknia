@@ -1,10 +1,4 @@
-# content-publication-isr Specification
-
-## Purpose
-
-Efecto de publicación al frontal: `published_at`, revalidación ISR on-demand del silo, invalidación del sitemap y cron de publicación programada. Materializa GTK-40.
-
-## Requirements
+## ADDED Requirements
 
 ### Requirement: Orquestación de publicación y despublicación
 

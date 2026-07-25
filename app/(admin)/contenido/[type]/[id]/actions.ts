@@ -18,6 +18,10 @@ import {
   applyEditorialTransition,
   type EditorialTransitionResult,
 } from '@/lib/content/workflow';
+import {
+  publishContent as publishContentEffect,
+  unpublishContent as unpublishContentEffect,
+} from '@/lib/content/publish';
 
 const contentIdSchema = z.uuid();
 
@@ -106,10 +110,9 @@ export async function transitionToPublish(
     const id = contentIdSchema.parse(contentId);
     const parsedNote =
       note !== undefined ? workflowNoteSchema.parse(note) : undefined;
-    const result = await applyEditorialTransition(user, {
+    const result = await publishContentEffect(user, {
       contentType: type,
       contentId: id,
-      targetStatus: WorkflowStatus.publicado,
       note: parsedNote,
     });
     revalidatePath('/admin/contenido');
@@ -127,10 +130,9 @@ export async function unpublishContent(
     const id = contentIdSchema.parse(contentId);
     const parsedNote =
       note !== undefined ? workflowNoteSchema.parse(note) : undefined;
-    const result = await applyEditorialTransition(user, {
+    const result = await unpublishContentEffect(user, {
       contentType: type,
       contentId: id,
-      targetStatus: WorkflowStatus.despublicado,
       note: parsedNote,
     });
     revalidatePath('/admin/contenido');

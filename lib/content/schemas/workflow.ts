@@ -8,6 +8,8 @@ export const EDITORIAL_CONTENT_TYPES = [
   'case_study',
   'blog_post',
   'faq',
+  'team_member',
+  'machinery',
 ] as const;
 
 export const editorialContentTypeSchema = z.enum(EDITORIAL_CONTENT_TYPES);

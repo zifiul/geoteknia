@@ -36,6 +36,8 @@ const envSchema = z.object({
   IA_TIMEOUT_MS: z.coerce.number().int().positive().default(600_000),
   /** Factor USD→EUR para coste estimado (GTK-36). */
   IA_USD_TO_EUR_RATE: z.coerce.number().positive().default(0.92),
+  /** Secreto Bearer para cron de publicación programada (GTK-40). */
+  CRON_SECRET: z.string().min(32).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

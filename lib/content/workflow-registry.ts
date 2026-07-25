@@ -24,6 +24,17 @@ const EDITORIAL_SELECT = {
   h1: true,
 } as const;
 
+const EDITORIAL_SELECT_SLUG_ONLY = {
+  id: true,
+  slug: true,
+  workflowStatus: true,
+  currentVersion: true,
+  reviewedById: true,
+  approvedById: true,
+  approvedAt: true,
+  publishedAt: true,
+} as const;
+
 type EditorialRowBase = {
   id: string;
   slug: string;
@@ -383,6 +394,95 @@ const faqEntry: EditorialRegistryEntry = {
   extractSeo: () => null,
 };
 
+const teamMemberEntry: EditorialRegistryEntry = {
+  entityType: 'team_member',
+  async load(id) {
+    return db.teamMember.findFirst({
+      where: notDeletedWhere(id),
+      select: {
+        ...EDITORIAL_SELECT_SLUG_ONLY,
+        fullName: true,
+        jobTitle: true,
+        bio: true,
+        authorId: true,
+      },
+    });
+  },
+  async loadInTx(tx, id) {
+    return tx.teamMember.findFirst({
+      where: notDeletedWhere(id),
+      select: {
+        ...EDITORIAL_SELECT_SLUG_ONLY,
+        fullName: true,
+        jobTitle: true,
+        bio: true,
+        authorId: true,
+      },
+    });
+  },
+  async applyWorkflowFields(tx, id, userId, target, extra) {
+    const data = workflowPatch(target, userId, extra?.body ? { bio: extra.body } : {});
+    await tx.teamMember.update({ where: { id }, data });
+  },
+  async setCurrentVersion(tx, id, version, userId) {
+    await tx.teamMember.update({
+      where: { id },
+      data: { currentVersion: version, updatedById: userId },
+    });
+  },
+  extractBody(row) {
+    return {
+      fullName: row.fullName,
+      jobTitle: row.jobTitle,
+      bio: row.bio,
+    };
+  },
+  extractSeo: () => null,
+};
+
+const machineryEntry: EditorialRegistryEntry = {
+  entityType: 'machinery',
+  async load(id) {
+    return db.machinery.findFirst({
+      where: notDeletedWhere(id),
+      select: {
+        ...EDITORIAL_SELECT_SLUG_ONLY,
+        name: true,
+        model: true,
+        authorId: true,
+      },
+    });
+  },
+  async loadInTx(tx, id) {
+    return tx.machinery.findFirst({
+      where: notDeletedWhere(id),
+      select: {
+        ...EDITORIAL_SELECT_SLUG_ONLY,
+        name: true,
+        model: true,
+        authorId: true,
+      },
+    });
+  },
+  async applyWorkflowFields(tx, id, userId, target, extra) {
+    const data = workflowPatch(target, userId, extra?.body ? { name: extra.body } : {});
+    await tx.machinery.update({ where: { id }, data });
+  },
+  async setCurrentVersion(tx, id, version, userId) {
+    await tx.machinery.update({
+      where: { id },
+      data: { currentVersion: version, updatedById: userId },
+    });
+  },
+  extractBody(row) {
+    return {
+      name: row.name,
+      model: row.model,
+    };
+  },
+  extractSeo: () => null,
+};
+
 function workflowPatch(
   target: WorkflowStatus,
   userId: string,
@@ -401,6 +501,9 @@ function workflowPatch(
     base.approvedById = userId;
     base.approvedAt = new Date();
   }
+  if (target === WorkflowStatus.publicado) {
+    base.publishedAt = new Date();
+  }
 
   return base;
 }
@@ -412,6 +515,8 @@ const REGISTRY: Record<EditorialContentType, EditorialRegistryEntry> = {
   case_study: caseStudyEntry,
   blog_post: blogPostEntry,
   faq: faqEntry,
+  team_member: teamMemberEntry,
+  machinery: machineryEntry,
 };
 
 export function getEditorialRegistryEntry(
