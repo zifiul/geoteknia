@@ -18,6 +18,7 @@ import {
 } from '@/lib/content/word-count';
 import type { PortalSessionPayload } from '@/lib/auth/session';
 import { db } from '@/lib/db';
+import { PUBLISHED_EDITORIAL_WHERE } from '@/lib/content/published-filter';
 
 const geoZoneBodySchema = z.object({
   provinceId: z.uuid(),
@@ -178,5 +179,27 @@ export async function softDeleteGeoZone(
       entityId: geoZoneId,
       entitySlug: existing.slug,
     });
+  });
+}
+
+export type PublishedGeoZoneListItem = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+export async function listPublishedGeoZones(
+  params?: { take?: number },
+): Promise<PublishedGeoZoneListItem[]> {
+  const take = params?.take ?? 50;
+  return db.geoZone.findMany({
+    where: PUBLISHED_EDITORIAL_WHERE,
+    orderBy: { name: 'asc' },
+    take,
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
   });
 }

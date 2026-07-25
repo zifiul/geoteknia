@@ -12,7 +12,19 @@ export type PublicOrganizationProfile = {
   napAddress: string;
   napPhone: string;
   napEmail: string;
+  areaServed: string[] | null;
+  aggregateRating: number | null;
 };
+
+function parseAreaServed(value: unknown): string[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+  const items = value.filter(
+    (entry): entry is string => typeof entry === 'string' && entry.trim().length > 0,
+  );
+  return items.length > 0 ? items : null;
+}
 
 export type PublicContactChannel = {
   phone: string | null;
@@ -30,10 +42,26 @@ const loadOrganizationProfile = unstable_cache(
         napAddress: true,
         napPhone: true,
         napEmail: true,
+        areaServed: true,
+        aggregateRating: true,
       },
       orderBy: { updatedAt: 'desc' },
     });
-    return row;
+    if (!row) {
+      return null;
+    }
+    return {
+      displayName: row.displayName,
+      legalName: row.legalName,
+      napAddress: row.napAddress,
+      napPhone: row.napPhone,
+      napEmail: row.napEmail,
+      areaServed: parseAreaServed(row.areaServed),
+      aggregateRating:
+        row.aggregateRating !== null && row.aggregateRating !== undefined
+          ? Number(row.aggregateRating)
+          : null,
+    };
   },
   ['organization-profile-public'],
   {

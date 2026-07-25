@@ -1,7 +1,7 @@
 # seo-utilities Specification
 
 ## Purpose
-Utilidades SEO compartidas del frontal público (JSON-LD, metadata de entidad, canonical de listados y reglas de indexabilidad). Ampliado por GTK-45 y GTK-78.
+Utilidades SEO compartidas del frontal público (JSON-LD, metadata de entidad, canonical de listados y reglas de indexabilidad). Ampliado por GTK-45, GTK-78 y GTK-48.
 ## Requirements
 ### Requirement: Builders JSON-LD tipados por SchemaType
 
@@ -21,6 +21,15 @@ El sistema SHALL exponer en `lib/seo/jsonld.ts` funciones builder para cada valo
 
 - **WHEN** `buildOrganizationSchema` recibe filas de `accreditations` con `name`, `credential_type`, `issuer`, `registration_number`, `verification_url`, `valid_until`
 - **THEN** el JSON-LD incluye `hasCredential` mapeado desde esos campos
+
+### Requirement: LocalBusiness schema extendido
+
+`buildLocalBusinessSchema()` SHALL aceptar NAP (`address`, `telephone`, `email`), `areaServed` multivalor, `hasOfferCatalog` con `itemListElement` de servicios, y `aggregateRating` solo cuando `ratingValue` y `reviewCount` son válidos. Propiedades ausentes SHALL omitirse del JSON (no `null`).
+
+#### Scenario: Catálogo de ofertas
+
+- **WHEN** se pasa `offerCatalog.items` con al menos un servicio
+- **THEN** el objeto incluye `hasOfferCatalog` con `@type` `OfferCatalog`
 
 ### Requirement: buildMetadata centralizado
 

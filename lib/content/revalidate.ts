@@ -104,6 +104,10 @@ export async function revalidatePublishedContent(
 ): Promise<void> {
   try {
     const paths = await resolveRevalidationPaths(contentType, contentId, row);
+    const homeTypes: EditorialContentType[] = ['service', 'geo_zone', 'case_study'];
+    if (homeTypes.includes(contentType)) {
+      paths.push('/');
+    }
     for (const path of paths) {
       revalidatePath(path);
     }
