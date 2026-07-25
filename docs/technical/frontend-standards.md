@@ -237,7 +237,7 @@ Cada página indexable debe definir:
 - Alternativas solo si existe multidioma real.
 - `robots` con `noindex` cuando aplique.
 
-Usar helpers centralizados en `/lib/seo` para evitar divergencias. Las rutas de silo públicas deben construirse con `buildSiloUrl` / `buildSiloPath` (`lib/seo/silo-urls.ts`, GTK-42), alineadas con el sitemap.
+Usar helpers centralizados en `/lib/seo` para evitar divergencias. Las rutas de silo públicas deben construirse con `buildSiloUrl` / `buildSiloPath` (`lib/seo/silo-urls.ts`, GTK-42), alineadas con el sitemap. Metadata unificada con `buildMetadata()` (`lib/seo/metadata.ts`, GTK-45); JSON-LD con builders en `lib/seo/jsonld.ts` y componente RSC `<JsonLd>` en `components/seo/json-ld.tsx`.
 
 ### 6.2 JSON-LD
 
