@@ -22,15 +22,17 @@ test.describe('GTK-46 GTM y consentimiento', () => {
     });
 
     await page.goto('/dev-analytics');
-    await expect(page.getByRole('region', { name: 'Aviso de cookies' })).toBeVisible();
+    await expect(
+      page.getByRole('dialog', { name: 'Respetamos tu privacidad' }),
+    ).toBeVisible();
     await page.waitForTimeout(500);
     expect(gtmRequests).toHaveLength(0);
   });
 
   test('tras aceptar, dataLayer registra consentimiento', async ({ page }) => {
     await page.goto('/dev-analytics');
-    await page.getByRole('button', { name: 'Aceptar' }).click();
-    await expect(page.getByRole('region', { name: 'Aviso de cookies' })).toBeHidden();
+    await page.getByRole('button', { name: 'Aceptar todas' }).click();
+    await expect(page.getByRole('dialog')).toBeHidden();
 
     const hasConsentEvent = await page.evaluate(() => {
       const layer = window.dataLayer ?? [];
@@ -47,12 +49,14 @@ test.describe('GTK-46 GTM y consentimiento', () => {
 
   test('banner operable por teclado entre acciones', async ({ page }) => {
     await page.goto('/dev-analytics');
-    const region = page.getByRole('region', { name: 'Aviso de cookies' });
-    await region.getByRole('button', { name: 'Rechazar' }).focus();
+    const dialog = page.getByRole('dialog', { name: 'Respetamos tu privacidad' });
+    await dialog.getByRole('button', { name: 'Configurar preferencias' }).focus();
     await page.keyboard.press('Tab');
-    await expect(region.getByRole('button', { name: 'Configurar' })).toBeFocused();
+    await expect(
+      dialog.getByRole('button', { name: 'Rechazar no esenciales' }),
+    ).toBeFocused();
     await page.keyboard.press('Tab');
-    await expect(region.getByRole('button', { name: 'Aceptar' })).toBeFocused();
+    await expect(dialog.getByRole('button', { name: 'Aceptar todas' })).toBeFocused();
   });
 
   test('tras aceptar, evento de prueba llama a POST /api/eventos', async ({
@@ -66,7 +70,7 @@ test.describe('GTK-46 GTM y consentimiento', () => {
     });
 
     await page.goto('/dev-analytics');
-    await page.getByRole('button', { name: 'Aceptar' }).click();
+    await page.getByRole('button', { name: 'Aceptar todas' }).click();
     await page.getByTestId('gtk46-track-test').click();
     await expect.poll(() => eventoPosts.length).toBeGreaterThan(0);
     const body = eventoPosts[0] as { eventName?: string; serviceSlug?: string };
