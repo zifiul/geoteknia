@@ -5,13 +5,15 @@ import { expect, test } from '@playwright/test';
 
 test.describe('GTK-24 /perfil/seguridad', () => {
   test('sin sesión redirige fuera de la página de seguridad', async ({
-    page,
+    request,
   }) => {
-    const response = await page.goto('/perfil/seguridad', {
-      waitUntil: 'commit',
+    const response = await request.get('/perfil/seguridad', {
+      maxRedirects: 0,
     });
 
-    expect(response?.status()).toBeLessThan(500);
-    await expect(page).not.toHaveURL(/\/perfil\/seguridad$/);
+    expect(response.status()).toBeGreaterThanOrEqual(300);
+    expect(response.status()).toBeLessThan(400);
+    const location = response.headers().location ?? '';
+    expect(location).not.toMatch(/\/perfil\/seguridad$/);
   });
 });

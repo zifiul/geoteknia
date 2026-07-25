@@ -22,11 +22,15 @@ El proyecto SHALL exponer los scripts `build`, `typecheck`, `lint`, `test` y `te
 - **THEN** cada comando termina con código de salida 0
 
 ### Requirement: Estructura App Router con frontal público y grupo (admin)
-La estructura `app/` SHALL contener el frontal público (home mínima que responde 200) y un grupo de rutas `(admin)` aislado, sin lógica de negocio.
+La estructura `app/` SHALL contener el frontal público bajo el route group `(public)` con home que responde 200, y un grupo de rutas `(admin)` con layout propio que aplica `noindex` por defecto, sin lógica de negocio adicional en los layouts de andamiaje.
 
 #### Scenario: Home responde 200
 - **WHEN** se arranca la aplicación y se solicita `GET /`
 - **THEN** la respuesta tiene código HTTP 200
+
+#### Scenario: No existe page.tsx en raíz de app
+- **WHEN** se inspecciona el árbol `app/`
+- **THEN** no existe `app/page.tsx` y existe `app/(public)/page.tsx`
 
 ### Requirement: Carpetas de dominio en /lib con frontera limpia
 Las carpetas `lib/leads/`, `lib/projects/`, `lib/content/`, `lib/ia/`, `lib/auth/` y `lib/email/` SHALL existir con index de barril, y ningún módulo de `/lib` SHALL importar desde `app/`. La frontera SHALL ser verificable mediante regla de lint (`no-restricted-imports`).
