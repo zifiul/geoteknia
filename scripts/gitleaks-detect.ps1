@@ -13,7 +13,7 @@ $ExePath = Join-Path $RepoRoot "tools\gitleaks\gitleaks.exe"
 $ConfigPath = Join-Path $RepoRoot ".gitleaks.toml"
 
 if (-not (Test-Path $ExePath)) {
-    Write-Error "gitleaks no está instalado. Ejecuta: npm run security:install-gitleaks"
+    Write-Error "gitleaks no está instalado. Ejecuta: pnpm run security:install-gitleaks"
 }
 
 Set-Location $RepoRoot

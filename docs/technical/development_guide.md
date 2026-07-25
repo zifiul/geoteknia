@@ -8,14 +8,14 @@
 
 | Herramienta | Versión recomendada | Notas |
 |---|---|---|
-| **Node.js** | 20 LTS o superior | El proyecto usa npm (`package-lock.json`). |
+| **Node.js** | 20 LTS o superior | El proyecto usa **pnpm** (`pnpm-lock.yaml`). Activa Corepack: `corepack enable`. |
 | **Next.js** | 16.3 canary (hasta soporte estable de TS 7 en `next build`) | Requiere `experimental.useTypeScriptCli` en `next.config.ts`. |
-| **TypeScript** | 7.x (`typescript` en devDependencies) | `npm run typecheck` usa `tsc --noEmit`. Tras `npm install`, `postinstall` copia TS 6 bajo `typescript-eslint` para ESLint (hasta soporte oficial de TS 7). |
-| **npm** | Incluido con Node | No usar `pnpm`/`yarn` salvo que el equipo unifique el gestor. |
+| **TypeScript** | 7.x (`typescript` en devDependencies) | `ppnpm run typecheck` usa `tsc --noEmit`. Tras `pnpm install`, `postinstall` copia TS 6 bajo `typescript-eslint` para ESLint (hasta soporte oficial de TS 7). |
+| **pnpm** | Versión fijada en `packageManager` de `package.json` | Instalación reproducible con `pnpm install --frozen-lockfile`. |
 | **Git** | Cualquier versión reciente | — |
 | **Cuenta Neon** | Plan gratuito suficiente para MVP | [neon.com](https://neon.com/docs/introduction) — región **EU** obligatoria (RGPD). |
 
-Opcional para E2E: Playwright instala sus browsers con `npx playwright install` la primera vez que ejecutes `npm run test:e2e`.
+Opcional para E2E: Playwright instala sus browsers con `pnpm exec playwright install` la primera vez que ejecutes `ppnpm run test:e2e`.
 
 ---
 
@@ -24,10 +24,13 @@ Opcional para E2E: Playwright instala sus browsers con `npx playwright install` 
 ```bash
 git clone https://github.com/zifiul/finalproject-alp.git geoteknia
 cd geoteknia
-npm ci
+corepack enable
+pnpm install --frozen-lockfile
 ```
 
-`npm ci` respeta el lockfile y garantiza dependencias reproducibles. Tras cambios en `package.json`, usa `npm install`.
+`pnpm install --frozen-lockfile` respeta el lockfile y garantiza dependencias reproducibles (equivalente a `npm ci`). Tras cambios en `package.json`, usa `pnpm install`.
+
+Si pnpm avisa de scripts de instalación pendientes (`approve-builds`), ejecuta `pnpm approve-builds --all` una vez y commitea los cambios en `package.json` que genere el comando.
 
 ---
 
@@ -117,8 +120,8 @@ Detalle de implementación: change OpenSpec `gtk-6-fundacion-schema-prisma` y [B
 Si el repositorio ya contiene carpetas en `prisma/migrations/` (p. ej. tras clonar `main`):
 
 ```bash
-npx prisma generate
-npx prisma migrate deploy
+pnpm exec prisma generate
+pnpm exec prisma migrate deploy
 ```
 
 `migrate deploy` aplica todas las migraciones pendientes **sin** crear nuevas. Es el comando correcto para alinear un branch Neon vacío o desactualizado con el historial versionado.
@@ -126,7 +129,7 @@ npx prisma migrate deploy
 Comprueba que el schema es válido:
 
 ```bash
-npx prisma validate
+pnpm exec prisma validate
 ```
 
 ### 5.2 Cuando cambias `schema.prisma` (desarrollo activo)
@@ -134,7 +137,7 @@ npx prisma validate
 Si **tú** modificas el modelo y necesitas generar una migración nueva:
 
 ```bash
-npx prisma migrate dev --name descripcion_corta_del_cambio
+pnpm exec prisma migrate dev --name descripcion_corta_del_cambio
 ```
 
 Este comando:
@@ -155,7 +158,7 @@ Este comando:
 Cuando el proyecto incluya `prisma/seed.ts` configurado en `package.json`:
 
 ```bash
-npx prisma db seed
+pnpm exec prisma db seed
 ```
 
 Los seeds deben ser **idempotentes** (re-ejecutables sin duplicar catálogos). Hasta que exista el fichero, este paso no aplica.
@@ -164,19 +167,19 @@ Los seeds deben ser **idempotentes** (re-ejecutables sin duplicar catálogos). H
 
 | Situación | Comando |
 |---|---|
-| Clonar repo / alinear BD dev con migraciones existentes | `npx prisma migrate deploy` |
-| Cambio nuevo de schema en local | `npx prisma migrate dev --name ...` |
-| CI / preview de PR / producción | `npx prisma migrate deploy` |
-| Regenerar cliente tras pull | `npx prisma generate` |
-| Validar schema sin tocar BD | `npx prisma validate` |
-| Inspeccionar datos | `npx prisma studio` |
+| Clonar repo / alinear BD dev con migraciones existentes | `pnpm exec prisma migrate deploy` |
+| Cambio nuevo de schema en local | `pnpm exec prisma migrate dev --name ...` |
+| CI / preview de PR / producción | `pnpm exec prisma migrate deploy` |
+| Regenerar cliente tras pull | `pnpm exec prisma generate` |
+| Validar schema sin tocar BD | `pnpm exec prisma validate` |
+| Inspeccionar datos | `pnpm exec prisma studio` |
 
 ---
 
 ## 6. Arrancar la aplicación
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 La app queda en [http://localhost:3000](http://localhost:3000). Las rutas de API y Server Actions usan `DATABASE_URL` vía el singleton en `lib/db.ts`.
@@ -184,8 +187,8 @@ La app queda en [http://localhost:3000](http://localhost:3000). Las rutas de API
 Build de producción local (opcional):
 
 ```bash
-npm run build
-npm run start
+pnpm run build
+pnpm run start
 ```
 
 ---
@@ -195,20 +198,20 @@ npm run start
 Antes de abrir un PR, ejecuta al menos:
 
 ```bash
-npm run typecheck
-npm run lint
-npm run test
-npx prisma validate
+pnpm run typecheck
+pnpm run lint
+pnpm run test
+pnpm exec prisma validate
 ```
 
 | Script | Qué hace |
 |---|---|
-| `npm run dev` | Servidor Next.js en modo desarrollo. |
-| `npm run build` | Build de producción. |
-| `npm run test` | Tests unitarios (Vitest). |
-| `npm run test:e2e` | E2E con Playwright (requiere app levantada o config del proyecto). |
-| `npm run lint` | ESLint. |
-| `npm run typecheck` | `tsc --noEmit` (compilador TypeScript del proyecto). |
+| `pnpm run dev` | Servidor Next.js en modo desarrollo. |
+| `pnpm run build` | Build de producción. |
+| `pnpm run test` | Tests unitarios (Vitest). |
+| `pnpm run test:e2e` | E2E con Playwright (requiere app levantada o config del proyecto). |
+| `pnpm run lint` | ESLint. |
+| `pnpm run typecheck` | `tsc --noEmit` (compilador TypeScript del proyecto). |
 
 `next build` usa el checker de Next.js; con TypeScript 7 debe estar activo `experimental.useTypeScriptCli` en [`next.config.ts`](../../next.config.ts) (ver [Using TypeScript 7 with Next.js](https://nextjs.org/docs/app/api-reference/config/typescript#using-typescript-7)).
 
@@ -222,7 +225,7 @@ Tests que toquen persistencia real deben documentar la BD usada y restaurar el e
 Cambio en schema.prisma (ticket DB, Gate 1 aprobado)
     │
     ▼
-npx prisma migrate dev --name ...     ← branch development (o branch personal)
+pnpm exec prisma migrate dev --name ...     ← branch development (o branch personal)
     │
     ▼
 Commit: schema.prisma + prisma/migrations/**
@@ -246,7 +249,7 @@ En local **no** ejecutes `migrate dev` contra el branch `main` de producción.
 ### `Variables de entorno ausentes o inválidas: DATABASE_URL, DIRECT_URL`
 
 - Comprueba que `.env` existe en la raíz del proyecto y contiene ambas URLs.
-- Reinicia `npm run dev` tras editar `.env` (Next.js carga env al arrancar).
+- Reinicia `pnpm run dev` tras editar `.env` (Next.js carga env al arrancar).
 
 ### `P1001: Can't reach database server`
 
@@ -272,13 +275,13 @@ En local **no** ejecutes `migrate dev` contra el branch `main` de producción.
 ### Cliente Prisma desactualizado tras `git pull`
 
 ```bash
-npx prisma generate
+pnpm exec prisma generate
 ```
 
 Si hay migraciones nuevas en el pull:
 
 ```bash
-npx prisma migrate deploy
+pnpm exec prisma migrate deploy
 ```
 
 ---
