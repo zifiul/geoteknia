@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { WorkflowStatus, type Prisma } from '@prisma/client';
+import { WorkflowStatus, type Prisma, type SchemaType } from '@prisma/client';
 import { z } from 'zod';
 
 import {
@@ -11,9 +11,11 @@ import { ContentNotFoundError } from '@/lib/content/errors';
 import { assertActiveMediaAssetIds, assertActiveServiceIds } from '@/lib/content/references';
 import { editorialCrudBlockSchema } from '@/lib/content/schemas/editorial';
 import { seoBlockSchema } from '@/lib/content/schemas/seo';
-import { ensureUniqueSlug } from '@/lib/content/slug';
+import { ensureUniqueSlug, resolveMediaFileUrl } from '@/lib/content/slug';
+import { PUBLISHED_EDITORIAL_WHERE } from '@/lib/content/published-filter';
 import type { PortalSessionPayload } from '@/lib/auth/session';
 import { db } from '@/lib/db';
+import { env } from '@/lib/env';
 
 const leadMagnetBodySchema = z.object({
   title: z.string().min(1),
@@ -183,5 +185,148 @@ export async function findGatedLeadMagnetBySlug(slug: string) {
       serviceId: true,
     },
   });
+}
+
+export type PublishedLeadMagnetListItem = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  coverImageUrl: string | null;
+  coverImageAlt: string | null;
+};
+
+export type PublishedLeadMagnetDetail = PublishedLeadMagnetListItem & {
+  h1: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  canonicalUrl: string | null;
+  schemaType: SchemaType;
+  noindex: boolean;
+  ogImageId: string | null;
+  service: { slug: string; name: string } | null;
+};
+
+const publishedGatedWhere = {
+  ...PUBLISHED_EDITORIAL_WHERE,
+  isGated: true,
+} as const;
+
+export async function listPublishedLeadMagnets(): Promise<PublishedLeadMagnetListItem[]> {
+  const rows = await db.leadMagnet.findMany({
+    where: publishedGatedWhere,
+    orderBy: { title: 'asc' },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      description: true,
+      ogImageId: true,
+    },
+  });
+
+  const imageIds = [
+    ...new Set(rows.map((row) => row.ogImageId).filter((id): id is string => Boolean(id))),
+  ];
+  const assets =
+    imageIds.length > 0
+      ? await db.mediaAsset.findMany({
+          where: { id: { in: imageIds }, deletedAt: null },
+          select: { id: true, fileUrl: true, altText: true },
+        })
+      : [];
+  const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+  const mediaBase = env.MEDIA_STORAGE_BASE_URL;
+
+  return rows.map((row) => {
+    const asset = row.ogImageId ? assetById.get(row.ogImageId) : undefined;
+    return {
+      id: row.id,
+      title: row.title,
+      slug: row.slug,
+      description: row.description,
+      coverImageUrl: asset
+        ? resolveMediaFileUrl(asset.fileUrl, mediaBase)
+        : null,
+      coverImageAlt: asset?.altText ?? null,
+    };
+  });
+}
+
+export async function getPublishedLeadMagnetBySlug(
+  slug: string,
+): Promise<PublishedLeadMagnetDetail | null> {
+  const row = await db.leadMagnet.findFirst({
+    where: { slug, ...publishedGatedWhere },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      description: true,
+      h1: true,
+      metaTitle: true,
+      metaDescription: true,
+      canonicalUrl: true,
+      schemaType: true,
+      noindex: true,
+      ogImageId: true,
+      service: {
+        select: {
+          slug: true,
+          name: true,
+          workflowStatus: true,
+          deletedAt: true,
+        },
+      },
+    },
+  });
+  if (!row) {
+    return null;
+  }
+
+  const service =
+    row.service &&
+    row.service.deletedAt === null &&
+    row.service.workflowStatus === WorkflowStatus.publicado
+      ? { slug: row.service.slug, name: row.service.name }
+      : null;
+
+  let coverImageUrl: string | null = null;
+  let coverImageAlt: string | null = null;
+  if (row.ogImageId) {
+    const asset = await db.mediaAsset.findFirst({
+      where: { id: row.ogImageId, deletedAt: null },
+      select: { fileUrl: true, altText: true },
+    });
+    if (asset) {
+      coverImageUrl = resolveMediaFileUrl(asset.fileUrl, env.MEDIA_STORAGE_BASE_URL);
+      coverImageAlt = asset.altText;
+    }
+  }
+
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    description: row.description,
+    coverImageUrl,
+    coverImageAlt,
+    h1: row.h1,
+    metaTitle: row.metaTitle,
+    metaDescription: row.metaDescription,
+    canonicalUrl: row.canonicalUrl,
+    schemaType: row.schemaType,
+    noindex: row.noindex,
+    ogImageId: row.ogImageId,
+    service,
+  };
+}
+
+export async function listPublishedLeadMagnetSlugs(): Promise<{ slug: string }[]> {
+  const rows = await db.leadMagnet.findMany({
+    where: publishedGatedWhere,
+    select: { slug: true },
+  });
+  return rows.map((row) => ({ slug: row.slug }));
 }
 
