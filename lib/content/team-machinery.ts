@@ -11,9 +11,11 @@ import { ContentNotFoundError } from '@/lib/content/errors';
 import { assertActiveServiceIds } from '@/lib/content/references';
 import { editorialCrudBlockSchema } from '@/lib/content/schemas/editorial';
 import { teamMachinerySeoSchema } from '@/lib/content/schemas/seo';
-import { ensureUniqueSlug } from '@/lib/content/slug';
+import { PUBLISHED_EDITORIAL_WHERE } from '@/lib/content/published-filter';
+import { ensureUniqueSlug, resolveMediaFileUrl } from '@/lib/content/slug';
 import type { PortalSessionPayload } from '@/lib/auth/session';
 import { db } from '@/lib/db';
+import { env } from '@/lib/env';
 
 const teamBodySchema = z.object({
   fullName: z.string().min(1),
@@ -157,6 +159,133 @@ export async function softDeleteTeamMember(
       entitySlug: existing.slug,
     });
   });
+}
+
+export type PublishedTeamMemberListItem = {
+  id: string;
+  fullName: string;
+  jobTitle: string;
+  slug: string;
+  specialization: string | null;
+  photoUrl: string | null;
+  photoAlt: string | null;
+};
+
+export type PublishedTeamMemberDetail = {
+  id: string;
+  fullName: string;
+  jobTitle: string;
+  slug: string;
+  qualification: string | null;
+  collegeRegistrationNo: string | null;
+  yearsExperience: number | null;
+  specialization: string | null;
+  bio: string | null;
+  publications: string | null;
+  worksFor: string | null;
+  alumniOf: string | null;
+  photoUrl: string | null;
+  photoAlt: string | null;
+};
+
+async function resolveTeamMemberPhoto(photoId: string | null): Promise<{
+  photoUrl: string | null;
+  photoAlt: string | null;
+}> {
+  if (!photoId) {
+    return { photoUrl: null, photoAlt: null };
+  }
+  const asset = await db.mediaAsset.findFirst({
+    where: { id: photoId, deletedAt: null },
+    select: { fileUrl: true, altText: true },
+  });
+  if (!asset) {
+    return { photoUrl: null, photoAlt: null };
+  }
+  return {
+    photoUrl: resolveMediaFileUrl(asset.fileUrl, env.MEDIA_STORAGE_BASE_URL),
+    photoAlt: asset.altText,
+  };
+}
+
+export async function listPublishedTeamMembers(): Promise<PublishedTeamMemberListItem[]> {
+  const rows = await db.teamMember.findMany({
+    where: PUBLISHED_EDITORIAL_WHERE,
+    orderBy: [{ fullName: 'asc' }],
+    select: {
+      id: true,
+      fullName: true,
+      jobTitle: true,
+      slug: true,
+      specialization: true,
+      photoId: true,
+    },
+  });
+  const photoIds = rows.map((row) => row.photoId).filter((id): id is string => id !== null);
+  const assets =
+    photoIds.length > 0
+      ? await db.mediaAsset.findMany({
+          where: { id: { in: photoIds }, deletedAt: null },
+          select: { id: true, fileUrl: true, altText: true },
+        })
+      : [];
+  const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+  const base = env.MEDIA_STORAGE_BASE_URL;
+  return rows.map((row) => {
+    const photo = row.photoId ? assetById.get(row.photoId) : undefined;
+    return {
+      id: row.id,
+      fullName: row.fullName,
+      jobTitle: row.jobTitle,
+      slug: row.slug,
+      specialization: row.specialization,
+      photoUrl: photo ? resolveMediaFileUrl(photo.fileUrl, base) : null,
+      photoAlt: photo?.altText ?? null,
+    };
+  });
+}
+
+export async function getPublishedTeamMemberBySlug(
+  slug: string,
+): Promise<PublishedTeamMemberDetail | null> {
+  const row = await db.teamMember.findFirst({
+    where: { slug, ...PUBLISHED_EDITORIAL_WHERE },
+    select: {
+      id: true,
+      fullName: true,
+      jobTitle: true,
+      slug: true,
+      qualification: true,
+      collegeRegistrationNo: true,
+      yearsExperience: true,
+      specialization: true,
+      bio: true,
+      publications: true,
+      worksFor: true,
+      alumniOf: true,
+      photoId: true,
+    },
+  });
+  if (!row) {
+    return null;
+  }
+  const { photoUrl, photoAlt } = await resolveTeamMemberPhoto(row.photoId);
+  return {
+    id: row.id,
+    fullName: row.fullName,
+    jobTitle: row.jobTitle,
+    slug: row.slug,
+    qualification: row.qualification,
+    collegeRegistrationNo: row.collegeRegistrationNo,
+    yearsExperience: row.yearsExperience,
+    specialization: row.specialization,
+    bio: row.bio,
+    publications: row.publications,
+    worksFor: row.worksFor,
+    alumniOf: row.alumniOf,
+    photoUrl,
+    photoAlt,
+  };
 }
 
 const machineryBodySchema = z.object({
