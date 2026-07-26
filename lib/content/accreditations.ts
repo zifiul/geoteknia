@@ -12,6 +12,8 @@ import { editorialCrudBlockSchema } from '@/lib/content/schemas/editorial';
 import type { PortalSessionPayload } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { PUBLISHED_EDITORIAL_WHERE } from '@/lib/content/published-filter';
+import { resolveMediaFileUrl } from '@/lib/content/slug';
+import { env } from '@/lib/env';
 
 const accreditationBodySchema = z.object({
   name: z.string().min(1),
@@ -144,5 +146,69 @@ export async function listActiveAccreditations(): Promise<ActiveAccreditationLis
       id: true,
       name: true,
     },
+  });
+}
+
+const notExpiredAccreditationWhere = {
+  OR: [{ validUntil: null }, { validUntil: { gt: new Date() } }],
+};
+
+export type PublishedAccreditationDetail = {
+  id: string;
+  name: string;
+  credentialType: CredentialType;
+  issuer: string | null;
+  registrationNumber: string | null;
+  verificationUrl: string | null;
+  validUntil: Date | null;
+  logoUrl: string | null;
+  logoAlt: string | null;
+};
+
+export async function listPublishedAccreditationsDetailed(): Promise<PublishedAccreditationDetail[]> {
+  const rows = await db.accreditation.findMany({
+    where: {
+      ...PUBLISHED_EDITORIAL_WHERE,
+      ...notExpiredAccreditationWhere,
+    },
+    orderBy: [{ credentialType: 'asc' }, { name: 'asc' }],
+    select: {
+      id: true,
+      name: true,
+      credentialType: true,
+      issuer: true,
+      registrationNumber: true,
+      verificationUrl: true,
+      validUntil: true,
+      logoId: true,
+    },
+  });
+
+  const logoIds = rows
+    .map((row) => row.logoId)
+    .filter((id): id is string => id !== null);
+  const assets =
+    logoIds.length > 0
+      ? await db.mediaAsset.findMany({
+          where: { id: { in: logoIds }, deletedAt: null },
+          select: { id: true, fileUrl: true, altText: true },
+        })
+      : [];
+  const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+  const base = env.MEDIA_STORAGE_BASE_URL;
+
+  return rows.map((row) => {
+    const logo = row.logoId ? assetById.get(row.logoId) : undefined;
+    return {
+      id: row.id,
+      name: row.name,
+      credentialType: row.credentialType,
+      issuer: row.issuer,
+      registrationNumber: row.registrationNumber,
+      verificationUrl: row.verificationUrl,
+      validUntil: row.validUntil,
+      logoUrl: logo ? resolveMediaFileUrl(logo.fileUrl, base) : null,
+      logoAlt: logo?.altText ?? null,
+    };
   });
 }
