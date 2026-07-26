@@ -387,6 +387,13 @@ export async function buildCaseCatalogWhere(
   return clauses.length === 1 ? clauses[0]! : { AND: clauses };
 }
 
+export async function countPublishedCaseStudiesForProvince(
+  provinceSlug: string,
+): Promise<number> {
+  const where = await buildCaseCatalogWhere({ provinceSlug });
+  return db.caseStudy.count({ where });
+}
+
 async function attachCatalogImages(
   rows: Array<{
     id: string;
