@@ -500,16 +500,28 @@ export async function softDeleteFaq(
   });
 }
 
-export type PublishedServiceFaqItem = {
+export type PublishedFaqItem = {
   id: string;
   question: string;
   answer: string;
+  internalLinkUrl: string | null;
   order: number | null;
 };
 
+/** @deprecated Use PublishedFaqItem */
+export type PublishedServiceFaqItem = PublishedFaqItem;
+
+const publishedFaqSelect = {
+  id: true,
+  question: true,
+  answer: true,
+  internalLinkUrl: true,
+  order: true,
+} as const;
+
 export async function listPublishedFaqsByService(
   serviceId: string,
-): Promise<PublishedServiceFaqItem[]> {
+): Promise<PublishedFaqItem[]> {
   return db.faq.findMany({
     where: {
       ...PUBLISHED_EDITORIAL_WHERE,
@@ -519,13 +531,61 @@ export async function listPublishedFaqsByService(
       },
     },
     orderBy: [{ order: 'asc' }, { question: 'asc' }],
+    select: publishedFaqSelect,
+  });
+}
+
+export type PublishedGeneralFaqGroupSummary = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+export async function listPublishedGeneralFaqGroups(): Promise<
+  PublishedGeneralFaqGroupSummary[]
+> {
+  return db.faqGroup.findMany({
+    where: {
+      scope: FaqScope.general,
+      deletedAt: null,
+      faqs: { some: PUBLISHED_EDITORIAL_WHERE },
+    },
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true, slug: true },
+  });
+}
+
+export type PublishedFaqGroupDetail = {
+  id: string;
+  name: string;
+  slug: string;
+  faqs: PublishedFaqItem[];
+};
+
+export async function getPublishedFaqGroupBySlug(
+  slug: string,
+): Promise<PublishedFaqGroupDetail | null> {
+  const group = await db.faqGroup.findFirst({
+    where: {
+      slug,
+      scope: FaqScope.general,
+      deletedAt: null,
+    },
     select: {
       id: true,
-      question: true,
-      answer: true,
-      order: true,
+      name: true,
+      slug: true,
+      faqs: {
+        where: PUBLISHED_EDITORIAL_WHERE,
+        orderBy: [{ order: 'asc' }, { question: 'asc' }],
+        select: publishedFaqSelect,
+      },
     },
   });
+  if (!group || group.faqs.length === 0) {
+    return null;
+  }
+  return group;
 }
 
 export type PublishedBlogPostParam = {
