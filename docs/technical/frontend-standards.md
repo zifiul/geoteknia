@@ -72,7 +72,7 @@ app/
 │   ├── blog/[category]/[slug]/page.tsx
 │   ├── recursos/[slug]/page.tsx
 │   ├── contacto/page.tsx
-│   └── gracias/[type]/page.tsx
+│   └── gracias/{presupuesto|licitacion|ubicacion|recurso}/page.tsx  (GTK-63)
 ├── admin/                            # Portal interno protegido y noindex
 ├── api/                              # Route Handlers, no UI
 ├── layout.tsx
