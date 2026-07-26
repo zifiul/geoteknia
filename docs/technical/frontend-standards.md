@@ -69,6 +69,8 @@ app/
 │   ├── zonas/[slug]/page.tsx         # Geo-landings
 │   ├── servicios/[service]/[zone]/page.tsx
 │   ├── casos/[slug]/page.tsx         # Casos de estudio
+│   ├── blog/page.tsx                     # Índice listado (GTK-54)
+│   ├── blog/[categoria]/page.tsx         # Listado por categoría (GTK-54)
 │   ├── blog/[categoria]/[slug]/page.tsx  # Artículo Article JSON-LD (GTK-55)
 │   ├── recursos/[slug]/page.tsx
 │   ├── contacto/page.tsx
@@ -430,6 +432,7 @@ Los componentes base deben ser accesibles por defecto y no depender de estilos g
 
 **Artículos de blog (GTK-55):**
 
+- Listados `/blog` y `/blog/[categoria]` (GTK-54): metadata con `buildListingCanonical` + `resolveListingRobots({ hasActiveFilters: false })`; navegación `CategoryNav` con `aria-current`; paginación `BlogPagination` + `<PaginationLinks />`. No usar `buildMetadata()` en listados (bloque SEO incompleto en `blog_categories`).
 - `blog_posts.body` es HTML almacenado: sanitizar siempre en servidor con `sanitizeCmsHtml()` (`lib/content/sanitize-cms-html.ts`) antes de pasarlo a `ArticleBody`.
 - `blog_posts.toc` sigue `blogTocSchema` (`lib/content/schemas/blog-toc.ts`): `{ id, text, level: 2 | 3 }[]`; la plantilla renderiza el JSON almacenado, no deriva encabezados del HTML en runtime.
 
