@@ -279,6 +279,26 @@ export async function listPublishedCaseStudiesByService(
   });
 }
 
+export async function listPublishedCaseStudiesByTeamMember(
+  teamMemberId: string,
+  take = 12,
+): Promise<PublishedCaseStudyListItem[]> {
+  return db.caseStudy.findMany({
+    where: {
+      ...PUBLISHED_EDITORIAL_WHERE,
+      teamMembers: { some: { teamMemberId } },
+    },
+    orderBy: [{ projectYear: 'desc' }, { updatedAt: 'desc' }],
+    take,
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      projectYear: true,
+    },
+  });
+}
+
 export type CaseCatalogFilterInput = {
   serviceSlug?: string | null;
   workTypologySlug?: string | null;
