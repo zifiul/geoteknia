@@ -169,17 +169,33 @@ export function buildLocalBusinessSchema(
   });
 }
 
+export type ArticlePublisherInput = {
+  name: string;
+  url: string;
+};
+
 export type ArticleSchemaInput = WithImage & {
   headline: string;
   description?: string | null;
   url: string;
   datePublished?: string | null;
+  dateModified?: string | null;
   authorName?: string | null;
+  authorUrl?: string | null;
+  publisher?: ArticlePublisherInput | null;
 };
 
 export function buildArticleSchema(input: ArticleSchemaInput): Record<string, unknown> {
-  const author = input.authorName
-    ? { '@type': 'Person', name: input.authorName }
+  const author =
+    input.authorName || input.authorUrl
+      ? compact({
+          '@type': 'Person',
+          name: input.authorName ?? undefined,
+          url: input.authorUrl ?? undefined,
+        })
+      : undefined;
+  const publisher = input.publisher
+    ? { '@type': 'Organization', name: input.publisher.name, url: input.publisher.url }
     : undefined;
   return compact({
     '@context': SCHEMA_CONTEXT,
@@ -189,7 +205,9 @@ export function buildArticleSchema(input: ArticleSchemaInput): Record<string, un
     url: input.url,
     image: input.imageUrl,
     datePublished: input.datePublished,
+    dateModified: input.dateModified,
     author,
+    publisher,
   });
 }
 

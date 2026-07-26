@@ -69,7 +69,7 @@ app/
 │   ├── zonas/[slug]/page.tsx         # Geo-landings
 │   ├── servicios/[service]/[zone]/page.tsx
 │   ├── casos/[slug]/page.tsx         # Casos de estudio
-│   ├── blog/[category]/[slug]/page.tsx
+│   ├── blog/[categoria]/[slug]/page.tsx  # Artículo Article JSON-LD (GTK-55)
 │   ├── recursos/[slug]/page.tsx
 │   ├── contacto/page.tsx
 │   ├── equipo/page.tsx                 # Directorio equipo (GTK-56)
@@ -427,6 +427,11 @@ Los componentes base deben ser accesibles por defecto y no depender de estilos g
 - Mostrar normativa aplicable de forma verificable.
 - Diferenciar contenido editorial, comercial y legal.
 - No ocultar CTAs detrás de interacciones innecesarias.
+
+**Artículos de blog (GTK-55):**
+
+- `blog_posts.body` es HTML almacenado: sanitizar siempre en servidor con `sanitizeCmsHtml()` (`lib/content/sanitize-cms-html.ts`) antes de pasarlo a `ArticleBody`.
+- `blog_posts.toc` sigue `blogTocSchema` (`lib/content/schemas/blog-toc.ts`): `{ id, text, level: 2 | 3 }[]`; la plantilla renderiza el JSON almacenado, no deriva encabezados del HTML en runtime.
 
 ---
 
