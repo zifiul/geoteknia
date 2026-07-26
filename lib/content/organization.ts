@@ -1,5 +1,6 @@
 import 'server-only';
 
+import type { ContactDepartment } from '@prisma/client';
 import { unstable_cache } from 'next/cache';
 
 import { db } from '@/lib/db';
@@ -30,6 +31,7 @@ export type PublicContactChannel = {
   phone: string | null;
   whatsappNumber: string | null;
   email: string | null;
+  prefilledMessageTemplate: string | null;
 };
 
 const loadOrganizationProfile = unstable_cache(
@@ -86,10 +88,19 @@ const loadGeneralContactChannel = unstable_cache(
         phone: true,
         whatsappNumber: true,
         email: true,
+        prefilledMessageTemplate: true,
       },
       orderBy: { updatedAt: 'desc' },
     });
-    return row;
+    if (!row) {
+      return null;
+    }
+    return {
+      phone: row.phone,
+      whatsappNumber: row.whatsappNumber,
+      email: row.email,
+      prefilledMessageTemplate: row.prefilledMessageTemplate,
+    };
   },
   ['general-contact-channel-public'],
   {
@@ -104,4 +115,41 @@ export async function getOrganizationProfile(): Promise<PublicOrganizationProfil
 
 export async function getGeneralContactChannel(): Promise<PublicContactChannel | null> {
   return loadGeneralContactChannel();
+}
+
+export async function getContactChannelByDepartment(
+  department: ContactDepartment,
+): Promise<PublicContactChannel | null> {
+  return unstable_cache(
+    async (): Promise<PublicContactChannel | null> => {
+      const row = await db.contactChannel.findFirst({
+        where: {
+          department,
+          deletedAt: null,
+          isActive: true,
+        },
+        select: {
+          phone: true,
+          whatsappNumber: true,
+          email: true,
+          prefilledMessageTemplate: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+      });
+      if (!row) {
+        return null;
+      }
+      return {
+        phone: row.phone,
+        whatsappNumber: row.whatsappNumber,
+        email: row.email,
+        prefilledMessageTemplate: row.prefilledMessageTemplate,
+      };
+    },
+    ['contact-channel-by-department-public', department],
+    {
+      revalidate: 3600,
+      tags: [ORGANIZATION_PROFILE_CACHE_TAG],
+    },
+  )();
 }

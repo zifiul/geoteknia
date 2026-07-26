@@ -17,6 +17,9 @@ export type PhoneLinkProps = {
   children?: ReactNode;
   className?: string;
   trackEvent?: TrackEventName;
+  serviceSlug?: string;
+  provinceSlug?: string;
+  ariaLabel?: string;
 };
 
 function PhoneIcon() {
@@ -34,18 +37,31 @@ function PhoneIcon() {
   );
 }
 
-export function PhoneLink({ phone, children, className, trackEvent }: PhoneLinkProps) {
+export function PhoneLink({
+  phone,
+  children,
+  className,
+  trackEvent,
+  serviceSlug,
+  provinceSlug,
+  ariaLabel,
+}: PhoneLinkProps) {
   const telHref = `tel:${digitsOnlyPhone(phone)}`;
   return (
     <a
       href={telHref}
+      aria-label={ariaLabel}
       className={cn(
         'inline-flex min-h-11 min-w-11 items-center gap-2 rounded-sm text-brand-on-surface underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent',
         className,
       )}
       onClick={() => {
         if (trackEvent) {
-          void trackConversionEvent({ eventName: trackEvent });
+          void trackConversionEvent({
+            eventName: trackEvent,
+            ...(serviceSlug ? { serviceSlug } : {}),
+            ...(provinceSlug ? { provinceSlug } : {}),
+          });
         }
       }}
     >

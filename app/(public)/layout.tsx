@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { ReactNode } from 'react';
 
 import {
@@ -8,21 +9,30 @@ import { SiteFooter } from '@/components/organisms/layout/SiteFooter';
 import { SiteHeader } from '@/components/organisms/layout/SiteHeader';
 import { SiteStickyContactBar } from '@/components/organisms/layout/SiteStickyContactBar';
 import {
+  getContactChannelByDepartment,
   getGeneralContactChannel,
   getOrganizationProfile,
 } from '@/lib/content/organization';
 
 export default async function PublicLayout({ children }: { children: ReactNode }) {
-  const [profile, channel] = await Promise.all([
+  const [profile, channel, presupuestosChannel, licitacionesChannel] = await Promise.all([
     getOrganizationProfile(),
     getGeneralContactChannel(),
+    getContactChannelByDepartment('presupuestos'),
+    getContactChannelByDepartment('licitaciones'),
   ]);
-  const phone = channel?.phone ?? profile?.napPhone ?? null;
+  const channels = {
+    general: channel,
+    presupuestos: presupuestosChannel,
+    licitaciones: licitacionesChannel,
+  };
 
   return (
     <div className="flex min-h-dvh flex-col">
       <GtmScript />
-      <SiteHeader profile={profile} phone={phone} />
+      <Suspense fallback={<div className="min-h-14 border-b border-brand-secondary/15" />}>
+        <SiteHeader profile={profile} channels={channels} />
+      </Suspense>
       <main
         id="main-content"
         tabIndex={-1}
@@ -31,7 +41,9 @@ export default async function PublicLayout({ children }: { children: ReactNode }
         {children}
       </main>
       <SiteFooter profile={profile} />
-      <SiteStickyContactBar profile={profile} channel={channel} />
+      <Suspense fallback={null}>
+        <SiteStickyContactBar profile={profile} channel={channel} channels={channels} />
+      </Suspense>
       <ConsentBanner />
     </div>
   );

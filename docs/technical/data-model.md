@@ -592,7 +592,7 @@ Canales de contacto por departamento.
 | `phone` | String? | nullable | Teléfono. |
 | `whatsapp_number` | String? | nullable | WhatsApp. |
 | `email` | String? | nullable | Email. |
-| `prefilled_message_template` | Text? | nullable | Plantilla para mensajes. |
+| `prefilled_message_template` | Text? | nullable | Plantilla WhatsApp con placeholders `{{servicio}}` y `{{provincia}}` (texto legible interpolado en runtime; mensaje por defecto en código si es null). |
 | `is_active` | Boolean | default true | Canal activo. |
 | AUDIT | mixed | required | Trazabilidad. |
 

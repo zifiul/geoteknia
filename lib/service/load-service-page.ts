@@ -4,7 +4,7 @@ import { listPublishedFaqsByService } from '@/lib/content/blog-faqs';
 import { listPublishedCaseStudiesByService } from '@/lib/content/case-studies';
 import { listMachineryByService } from '@/lib/content/machinery';
 import {
-  getGeneralContactChannel,
+  getContactChannelByDepartment,
   getOrganizationProfile,
 } from '@/lib/content/organization';
 import { listPublishedServiceZonePagesByService } from '@/lib/content/service-zone-pages';
@@ -20,7 +20,7 @@ export type ServicePageData = {
   zonePages: Awaited<ReturnType<typeof listPublishedServiceZonePagesByService>>;
   machinery: Awaited<ReturnType<typeof listMachineryByService>>;
   profile: Awaited<ReturnType<typeof getOrganizationProfile>>;
-  channel: Awaited<ReturnType<typeof getGeneralContactChannel>>;
+  channel: Awaited<ReturnType<typeof getContactChannelByDepartment>>;
 };
 
 export async function loadServicePageData(slug: string): Promise<ServicePageData | null> {
@@ -35,7 +35,7 @@ export async function loadServicePageData(slug: string): Promise<ServicePageData
     listPublishedServiceZonePagesByService(service.id),
     listMachineryByService(service.id),
     getOrganizationProfile(),
-    getGeneralContactChannel(),
+    getContactChannelByDepartment('presupuestos'),
   ]);
 
   return {

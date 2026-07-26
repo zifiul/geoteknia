@@ -170,6 +170,7 @@ export default async function ServiceDetailPage({ params }: PageProps) {
         </section>
         <ServiceContactStrip
           serviceSlug={service.slug}
+          serviceName={service.name}
           profile={profile}
           channel={channel}
         />
