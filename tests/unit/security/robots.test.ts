@@ -28,5 +28,8 @@ describe('app/robots.ts', () => {
     expect(disallows.some((path: string) => path.startsWith('/admin'))).toBe(
       true,
     );
+    expect(disallows.some((path: string) => path.startsWith('/gracias'))).toBe(
+      true,
+    );
   });
 });
