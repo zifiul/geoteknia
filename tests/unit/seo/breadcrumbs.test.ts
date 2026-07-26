@@ -35,6 +35,11 @@ const KIND_CASES: Array<{
   { kind: 'team_member', params: { slug: 'ana' }, leafPathSuffix: '/equipo/ana' },
   { kind: 'machinery', params: { slug: 'sondeos' }, leafPathSuffix: '/maquinaria/sondeos' },
   { kind: 'faq_group', params: { slug: 'ensayos' }, leafPathSuffix: '/faqs/ensayos' },
+  {
+    kind: 'lead_magnet',
+    params: { slug: 'checklist' },
+    leafPathSuffix: '/recursos/checklist',
+  },
 ];
 
 describe('buildSiloBreadcrumbSegments', () => {

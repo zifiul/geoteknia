@@ -47,6 +47,8 @@ export function buildSiloPath(
       return `/maquinaria/${params.slug}`;
     case 'faq_group':
       return `/faqs/${params.slug}`;
+    case 'lead_magnet':
+      return `/recursos/${params.slug}`;
     default: {
       const _exhaustive: never = kind;
       return _exhaustive;

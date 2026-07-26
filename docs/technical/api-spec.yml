@@ -367,6 +367,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorEnvelope'
 
+  /api/recursos/download:
+    get:
+      tags: [Leads]
+      operationId: downloadResourceLeadMagnet
+      summary: Entrega de fichero tras captación (token)
+      description: >
+        Endpoint público (GTK-61). Valida `token` (`base64url(leadId:leadMagnetId)`),
+        comprueba coherencia lead/magnet y redirige al PDF público sin devolver `file_url`
+        en JSON. Token MVP reutilizable (ver threat model GTK-61).
+      security: []
+      x-geoteknia-authz:
+        rbac: público
+        permiso: ninguno
+        rateLimit: ninguno (MVP)
+        turnstile: false
+        pii:
+          entrada: token opaco en query
+          salida: redirección 302; sin PII
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirección al fichero público del lead magnet.
+        '400':
+          description: Token ausente o malformado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+        '404':
+          description: Lead o recurso no disponible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorEnvelope'
+
   /api/leads/presupuesto:
     post:
       tags: [Leads]

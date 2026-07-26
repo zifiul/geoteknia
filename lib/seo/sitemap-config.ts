@@ -22,7 +22,8 @@ export type SitemapPriorityKind =
   | 'blog_post'
   | 'team_member'
   | 'machinery'
-  | 'faq_group';
+  | 'faq_group'
+  | 'lead_magnet';
 
 export const SITEMAP_PRIORITY_BY_KIND: Record<
   SitemapPriorityKind,
@@ -36,4 +37,5 @@ export const SITEMAP_PRIORITY_BY_KIND: Record<
   team_member: { priority: 0.4, changeFrequency: 'yearly' },
   machinery: { priority: 0.4, changeFrequency: 'yearly' },
   faq_group: { priority: 0.4, changeFrequency: 'yearly' },
+  lead_magnet: { priority: 0.5, changeFrequency: 'monthly' },
 };

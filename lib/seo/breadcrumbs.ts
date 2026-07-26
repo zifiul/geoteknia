@@ -106,6 +106,13 @@ export function buildSiloBreadcrumbSegments(
         path: buildSiloPath(kind, params),
       });
       break;
+    case 'lead_magnet':
+      segments.push({ name: 'Recursos', path: '/recursos' });
+      segments.push({
+        name: leafName,
+        path: buildSiloPath(kind, params),
+      });
+      break;
     default: {
       const _exhaustive: never = kind;
       return _exhaustive;
