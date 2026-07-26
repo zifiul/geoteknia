@@ -10,6 +10,7 @@ import {
 import { ContentNotFoundError } from '@/lib/content/errors';
 import { assertActiveServiceIds } from '@/lib/content/references';
 import { editorialCrudBlockSchema } from '@/lib/content/schemas/editorial';
+import { machineryInSituTestsSchema } from '@/lib/content/schemas/machinery-in-situ-tests';
 import { teamMachinerySeoSchema } from '@/lib/content/schemas/seo';
 import { PUBLISHED_EDITORIAL_WHERE } from '@/lib/content/published-filter';
 import { ensureUniqueSlug, resolveMediaFileUrl } from '@/lib/content/slug';
@@ -294,7 +295,7 @@ const machineryBodySchema = z.object({
   model: z.string().nullable().optional(),
   maxDepthM: z.coerce.number().nullable().optional(),
   diameters: z.string().nullable().optional(),
-  inSituTests: z.unknown().optional(),
+  inSituTests: machineryInSituTestsSchema.optional(),
   hasEnacLab: z.boolean().nullable().optional(),
   photoId: z.uuid().nullable().optional(),
   serviceIds: z.array(z.uuid()).optional(),
