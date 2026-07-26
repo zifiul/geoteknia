@@ -112,6 +112,28 @@ describe('jsonld builders', () => {
     expect(json.author).toEqual({ '@type': 'Person', name: 'Ana' });
   });
 
+  it('buildArticleSchema incluye authorUrl, publisher y dateModified', () => {
+    const json = buildArticleSchema({
+      headline: 'Título',
+      url: 'https://geoteknia.es/blog/cat/post',
+      authorName: 'Ana',
+      authorUrl: 'https://geoteknia.es/equipo/ana',
+      dateModified: '2024-07-01T00:00:00.000Z',
+      publisher: { name: 'Geoteknia', url: 'https://geoteknia.es' },
+    });
+    expect(json.author).toEqual({
+      '@type': 'Person',
+      name: 'Ana',
+      url: 'https://geoteknia.es/equipo/ana',
+    });
+    expect(json.publisher).toEqual({
+      '@type': 'Organization',
+      name: 'Geoteknia',
+      url: 'https://geoteknia.es',
+    });
+    expect(json.dateModified).toBe('2024-07-01T00:00:00.000Z');
+  });
+
   it('buildCreativeWorkSchema', () => {
     const json = buildCreativeWorkSchema({
       name: 'Caso',

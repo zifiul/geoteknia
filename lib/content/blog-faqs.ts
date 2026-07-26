@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { FaqScope, WorkflowStatus, type Prisma } from '@prisma/client';
+import { FaqScope, WorkflowStatus, type Prisma, SchemaType } from '@prisma/client';
 import { z } from 'zod';
 
 import {
@@ -19,7 +19,9 @@ import {
   faqGroupSeoSchema,
   seoBlockSchema,
 } from '@/lib/content/schemas/seo';
-import { ensureUniqueSlug } from '@/lib/content/slug';
+import { blogTocSchema, parseStoredBlogToc, type BlogTocEntry } from '@/lib/content/schemas/blog-toc';
+import { ensureUniqueSlug, resolveMediaFileUrl } from '@/lib/content/slug';
+import { env } from '@/lib/env';
 import type { PortalSessionPayload } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { PUBLISHED_EDITORIAL_WHERE } from '@/lib/content/published-filter';
@@ -126,7 +128,7 @@ const blogPostBodySchema = z.object({
   categoryId: z.uuid(),
   teamAuthorId: z.uuid(),
   body: z.string().min(1),
-  toc: z.unknown().optional(),
+  toc: blogTocSchema.optional(),
   readingMinutes: z.number().int().nullable().optional(),
   excerpt: z.string().nullable().optional(),
   heroImageId: z.uuid().nullable().optional(),
@@ -522,6 +524,158 @@ export async function listPublishedFaqsByService(
       question: true,
       answer: true,
       order: true,
+    },
+  });
+}
+
+export type PublishedBlogPostParam = {
+  categoria: string;
+  slug: string;
+};
+
+export type PublishedBlogPostRelatedService = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+export type PublishedBlogPostDetail = {
+  id: string;
+  title: string;
+  slug: string;
+  h1: string | null;
+  excerpt: string | null;
+  body: string;
+  toc: BlogTocEntry[] | null;
+  readingMinutes: number | null;
+  publishedAt: Date | null;
+  updatedAt: Date;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  canonicalUrl: string | null;
+  schemaType: SchemaType;
+  noindex: boolean;
+  ogImageId: string | null;
+  heroImageUrl: string | null;
+  heroImageAlt: string | null;
+  category: { id: string; name: string; slug: string };
+  teamAuthorSlug: string;
+};
+
+async function resolveHeroImage(
+  heroImageId: string | null,
+): Promise<{ heroImageUrl: string | null; heroImageAlt: string | null }> {
+  if (!heroImageId) {
+    return { heroImageUrl: null, heroImageAlt: null };
+  }
+  const asset = await db.mediaAsset.findFirst({
+    where: { id: heroImageId, deletedAt: null },
+    select: { fileUrl: true, altText: true },
+  });
+  if (!asset) {
+    return { heroImageUrl: null, heroImageAlt: null };
+  }
+  return {
+    heroImageUrl: resolveMediaFileUrl(asset.fileUrl, env.MEDIA_STORAGE_BASE_URL),
+    heroImageAlt: asset.altText,
+  };
+}
+
+export async function listPublishedBlogPostParams(): Promise<PublishedBlogPostParam[]> {
+  const rows = await db.blogPost.findMany({
+    where: PUBLISHED_EDITORIAL_WHERE,
+    select: {
+      slug: true,
+      category: { select: { slug: true } },
+    },
+  });
+  return rows.map((row) => ({
+    categoria: row.category.slug,
+    slug: row.slug,
+  }));
+}
+
+export async function getPublishedBlogPostBySlug(
+  categorySlug: string,
+  slug: string,
+): Promise<PublishedBlogPostDetail | null> {
+  const row = await db.blogPost.findFirst({
+    where: {
+      ...PUBLISHED_EDITORIAL_WHERE,
+      slug,
+      category: { slug: categorySlug, deletedAt: null },
+    },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      h1: true,
+      excerpt: true,
+      body: true,
+      toc: true,
+      readingMinutes: true,
+      publishedAt: true,
+      updatedAt: true,
+      metaTitle: true,
+      metaDescription: true,
+      canonicalUrl: true,
+      schemaType: true,
+      noindex: true,
+      ogImageId: true,
+      heroImageId: true,
+      category: { select: { id: true, name: true, slug: true } },
+      teamAuthor: { select: { slug: true } },
+    },
+  });
+  if (!row) {
+    return null;
+  }
+  const { heroImageUrl, heroImageAlt } = await resolveHeroImage(row.heroImageId);
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    h1: row.h1,
+    excerpt: row.excerpt,
+    body: row.body,
+    toc: parseStoredBlogToc(row.toc),
+    readingMinutes: row.readingMinutes,
+    publishedAt: row.publishedAt,
+    updatedAt: row.updatedAt,
+    metaTitle: row.metaTitle,
+    metaDescription: row.metaDescription,
+    canonicalUrl: row.canonicalUrl,
+    schemaType: row.schemaType,
+    noindex: row.noindex,
+    ogImageId: row.ogImageId,
+    heroImageUrl,
+    heroImageAlt,
+    category: row.category,
+    teamAuthorSlug: row.teamAuthor.slug,
+  };
+}
+
+export async function listRelatedServicesByBlogPost(
+  blogPostId: string,
+): Promise<PublishedBlogPostRelatedService[]> {
+  const links = await db.blogPostService.findMany({
+    where: { blogPostId },
+    select: { serviceId: true },
+  });
+  const serviceIds = links.map((link) => link.serviceId);
+  if (serviceIds.length === 0) {
+    return [];
+  }
+  return db.service.findMany({
+    where: {
+      id: { in: serviceIds },
+      ...PUBLISHED_EDITORIAL_WHERE,
+    },
+    orderBy: { name: 'asc' },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
     },
   });
 }
