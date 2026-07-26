@@ -581,6 +581,169 @@ async function resolveHeroImage(
   };
 }
 
+export type PublishedBlogCategorySummary = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  noindex: boolean;
+};
+
+export type PublishedBlogCatalogItem = {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  publishedAt: Date | null;
+  readingMinutes: number | null;
+  category: { name: string; slug: string };
+  teamAuthorSlug: string;
+  teamAuthorName: string;
+  heroImageUrl: string | null;
+  heroImageAlt: string | null;
+};
+
+export type BlogCatalogPageResult = {
+  items: PublishedBlogCatalogItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+const blogCatalogItemSelect = {
+  id: true,
+  title: true,
+  slug: true,
+  excerpt: true,
+  publishedAt: true,
+  readingMinutes: true,
+  heroImageId: true,
+  category: { select: { name: true, slug: true } },
+  teamAuthor: { select: { slug: true, fullName: true } },
+} as const;
+
+export async function listPublishedBlogCategories(): Promise<
+  Array<Pick<PublishedBlogCategorySummary, 'id' | 'name' | 'slug' | 'noindex'>>
+> {
+  return db.blogCategory.findMany({
+    where: { deletedAt: null },
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true, slug: true, noindex: true },
+  });
+}
+
+export async function getPublishedBlogCategoryBySlug(
+  slug: string,
+): Promise<PublishedBlogCategorySummary | null> {
+  return db.blogCategory.findFirst({
+    where: { slug, deletedAt: null },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      metaTitle: true,
+      metaDescription: true,
+      noindex: true,
+    },
+  });
+}
+
+async function attachBlogCatalogHeroImages(
+  rows: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    excerpt: string | null;
+    publishedAt: Date | null;
+    readingMinutes: number | null;
+    heroImageId: string | null;
+    category: { name: string; slug: string };
+    teamAuthor: { slug: string; fullName: string };
+  }>,
+): Promise<PublishedBlogCatalogItem[]> {
+  const imageIds = [
+    ...new Set(rows.map((row) => row.heroImageId).filter((id): id is string => Boolean(id))),
+  ];
+  const assets =
+    imageIds.length > 0
+      ? await db.mediaAsset.findMany({
+          where: { id: { in: imageIds }, deletedAt: null },
+          select: { id: true, fileUrl: true, altText: true },
+        })
+      : [];
+  const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+  const mediaBase = env.MEDIA_STORAGE_BASE_URL;
+
+  return rows.map((row) => {
+    const asset = row.heroImageId ? assetById.get(row.heroImageId) : undefined;
+    return {
+      id: row.id,
+      title: row.title,
+      slug: row.slug,
+      excerpt: row.excerpt,
+      publishedAt: row.publishedAt,
+      readingMinutes: row.readingMinutes,
+      category: row.category,
+      teamAuthorSlug: row.teamAuthor.slug,
+      teamAuthorName: row.teamAuthor.fullName,
+      heroImageUrl: asset ? resolveMediaFileUrl(asset.fileUrl, mediaBase) : null,
+      heroImageAlt: asset?.altText ?? row.title,
+    };
+  });
+}
+
+export async function listPublishedBlogPostsByCategory(input: {
+  categorySlug?: string | null;
+  page: number;
+  pageSize: number;
+}): Promise<BlogCatalogPageResult> {
+  const page = input.page < 1 ? 1 : input.page;
+  const pageSize = input.pageSize < 1 ? 1 : input.pageSize;
+  const clauses: Prisma.BlogPostWhereInput[] = [PUBLISHED_EDITORIAL_WHERE];
+  const categorySlug = input.categorySlug?.trim();
+  if (categorySlug) {
+    clauses.push({ category: { slug: categorySlug, deletedAt: null } });
+  }
+  const where = clauses.length === 1 ? clauses[0]! : { AND: clauses };
+  const skip = (page - 1) * pageSize;
+
+  const [total, rows] = await Promise.all([
+    db.blogPost.count({ where }),
+    db.blogPost.findMany({
+      where,
+      orderBy: [{ publishedAt: 'desc' }, { updatedAt: 'desc' }],
+      skip,
+      take: pageSize,
+      select: blogCatalogItemSelect,
+    }),
+  ]);
+
+  const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize);
+  const safePage = totalPages > 0 && page > totalPages ? totalPages : page;
+
+  if (safePage !== page && total > 0) {
+    return listPublishedBlogPostsByCategory({
+      categorySlug: input.categorySlug,
+      page: safePage,
+      pageSize,
+    });
+  }
+
+  const items = await attachBlogCatalogHeroImages(rows);
+
+  return {
+    items,
+    total,
+    page: safePage,
+    pageSize,
+    totalPages,
+  };
+}
+
 export async function listPublishedBlogPostParams(): Promise<PublishedBlogPostParam[]> {
   const rows = await db.blogPost.findMany({
     where: PUBLISHED_EDITORIAL_WHERE,
