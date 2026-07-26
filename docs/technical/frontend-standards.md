@@ -436,6 +436,12 @@ Los componentes base deben ser accesibles por defecto y no depender de estilos g
 - `blog_posts.body` es HTML almacenado: sanitizar siempre en servidor con `sanitizeCmsHtml()` (`lib/content/sanitize-cms-html.ts`) antes de pasarlo a `ArticleBody`.
 - `blog_posts.toc` sigue `blogTocSchema` (`lib/content/schemas/blog-toc.ts`): `{ id, text, level: 2 | 3 }[]`; la plantilla renderiza el JSON almacenado, no deriva encabezados del HTML en runtime.
 
+**Maquinaria (GTK-57):**
+
+- Listado `/maquinaria`: metadata estática y canonical fijo (`MACHINERY_CATALOG_BASE_PATH`); breadcrumbs manuales + JSON-LD; grid `MachineCard` + `SpecTable` (tabla con scroll horizontal en móvil).
+- `machinery.in_situ_tests` sigue `machineryInSituTestsSchema` (`lib/content/schemas/machinery-in-situ-tests.ts`); lectura pública vía `listPublishedMachinery()` (no modificar `listMachineryByService` de GTK-49).
+- Enlaces a servicios: `MachineryServiceTrackLink` → `select_content` en dataLayer; `MachineryScrollDepthTracker` para `scroll_depth`.
+
 ---
 
 ## 9. Accesibilidad
