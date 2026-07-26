@@ -9,6 +9,10 @@ import {
   resolvePermissionCodesForRole,
 } from '../lib/auth/permissions';
 import { PROMPT_TEMPLATE_SEEDS } from '../lib/content/prompt-templates.seed';
+import {
+  CONTRACTOR_CLASSIFICATION_SEEDS,
+  PUBLIC_ORGANISM_EXPERIENCE_SEEDS,
+} from '../lib/content/tenders-seed-data';
 
 const prisma = new PrismaClient();
 
@@ -515,6 +519,52 @@ async function seedAiBudgetConfig(db: PrismaClient): Promise<void> {
   }
 }
 
+export async function seedTendersMasters(client: PrismaClient): Promise<void> {
+  for (const row of CONTRACTOR_CLASSIFICATION_SEEDS) {
+    await client.contractorClassification.upsert({
+      where: { id: row.id },
+      create: {
+        id: row.id,
+        groupCode: row.groupCode,
+        subgroupCode: row.subgroupCode,
+        category: row.category,
+        description: row.description,
+        order: row.order,
+      },
+      update: {
+        groupCode: row.groupCode,
+        subgroupCode: row.subgroupCode,
+        category: row.category,
+        description: row.description,
+        order: row.order,
+        deletedAt: null,
+      },
+    });
+  }
+
+  for (const row of PUBLIC_ORGANISM_EXPERIENCE_SEEDS) {
+    await client.publicOrganismExperience.upsert({
+      where: { id: row.id },
+      create: {
+        id: row.id,
+        organismName: row.organismName,
+        organismType: row.organismType,
+        description: row.description,
+        wasUte: row.wasUte,
+        relatedCaseId: row.relatedCaseId,
+      },
+      update: {
+        organismName: row.organismName,
+        organismType: row.organismType,
+        description: row.description,
+        wasUte: row.wasUte,
+        relatedCaseId: row.relatedCaseId,
+        deletedAt: null,
+      },
+    });
+  }
+}
+
 export async function runSeed(client: PrismaClient = prisma): Promise<void> {
   await seedProjectStates(client);
   await seedRbac(client);
@@ -525,6 +575,7 @@ export async function runSeed(client: PrismaClient = prisma): Promise<void> {
   await seedContactChannels(client);
   await seedCalculatorRules(client);
   await seedAiBudgetConfig(client);
+  await seedTendersMasters(client);
 }
 
 async function main(): Promise<void> {
