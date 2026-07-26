@@ -18,6 +18,9 @@ import { ensureUniqueSlug } from '@/lib/content/slug';
 import type { PortalSessionPayload } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { PUBLISHED_EDITORIAL_WHERE } from '@/lib/content/published-filter';
+import { resolveMediaFileUrl } from '@/lib/content/slug';
+import { env } from '@/lib/env';
+import type { SchemaType } from '@prisma/client';
 
 const bodySchema = z.object({
   serviceId: z.uuid(),
@@ -188,5 +191,143 @@ export async function listPublishedServiceZonePagesByService(
     title: row.h1?.trim() || row.zone.name,
     zoneName: row.zone.name,
     zoneSlug: row.zone.slug,
+  }));
+}
+
+export type PublishedServiceZonePageDetail = {
+  id: string;
+  slug: string;
+  body: string;
+  targetKeyword: string | null;
+  h1: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  canonicalUrl: string | null;
+  schemaType: SchemaType;
+  noindex: boolean;
+  service: {
+    id: string;
+    name: string;
+    slug: string;
+    summary: string | null;
+    heroImageUrl: string | null;
+    heroImageAlt: string | null;
+  };
+  zone: {
+    id: string;
+    name: string;
+    slug: string;
+    province: { name: string; slug: string };
+  };
+};
+
+export async function getPublishedServiceZonePageBySlugs(
+  serviceSlug: string,
+  zoneSlug: string,
+): Promise<PublishedServiceZonePageDetail | null> {
+  const service = await db.service.findFirst({
+    where: { slug: serviceSlug, ...PUBLISHED_EDITORIAL_WHERE },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      summary: true,
+      heroImageId: true,
+    },
+  });
+  if (!service) {
+    return null;
+  }
+
+  const zone = await db.geoZone.findFirst({
+    where: { slug: zoneSlug, ...PUBLISHED_EDITORIAL_WHERE },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      province: { select: { name: true, slug: true } },
+    },
+  });
+  if (!zone) {
+    return null;
+  }
+
+  const page = await db.serviceZonePage.findFirst({
+    where: {
+      serviceId: service.id,
+      zoneId: zone.id,
+      ...PUBLISHED_EDITORIAL_WHERE,
+    },
+    select: {
+      id: true,
+      slug: true,
+      body: true,
+      targetKeyword: true,
+      h1: true,
+      metaTitle: true,
+      metaDescription: true,
+      canonicalUrl: true,
+      schemaType: true,
+      noindex: true,
+    },
+  });
+  if (!page) {
+    return null;
+  }
+
+  let heroImageUrl: string | null = null;
+  let heroImageAlt: string | null = null;
+  if (service.heroImageId) {
+    const asset = await db.mediaAsset.findFirst({
+      where: { id: service.heroImageId, deletedAt: null },
+      select: { fileUrl: true, altText: true },
+    });
+    if (asset) {
+      heroImageUrl = resolveMediaFileUrl(asset.fileUrl, env.MEDIA_STORAGE_BASE_URL);
+      heroImageAlt = asset.altText;
+    }
+  }
+
+  return {
+    id: page.id,
+    slug: page.slug,
+    body: page.body,
+    targetKeyword: page.targetKeyword,
+    h1: page.h1,
+    metaTitle: page.metaTitle,
+    metaDescription: page.metaDescription,
+    canonicalUrl: page.canonicalUrl,
+    schemaType: page.schemaType,
+    noindex: page.noindex,
+    service: {
+      id: service.id,
+      name: service.name,
+      slug: service.slug,
+      summary: service.summary,
+      heroImageUrl,
+      heroImageAlt,
+    },
+    zone: {
+      id: zone.id,
+      name: zone.name,
+      slug: zone.slug,
+      province: zone.province,
+    },
+  };
+}
+
+export async function listPublishedServiceZonePageStaticParams(): Promise<
+  { slug: string; zona: string }[]
+> {
+  const rows = await db.serviceZonePage.findMany({
+    where: PUBLISHED_EDITORIAL_WHERE,
+    select: {
+      service: { select: { slug: true } },
+      zone: { select: { slug: true } },
+    },
+  });
+  return rows.map((row) => ({
+    slug: row.service.slug,
+    zona: row.zone.slug,
   }));
 }
