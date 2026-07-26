@@ -52,3 +52,7 @@ export function parseContactContextSlugs(
 export function buildPresupuestoHref(pathname: string): string {
   return `/presupuesto${buildContactContextQuery(pathname)}`;
 }
+
+export function buildUbicacionHref(pathname: string): string {
+  return `/ubicacion${buildContactContextQuery(pathname)}`;
+}
