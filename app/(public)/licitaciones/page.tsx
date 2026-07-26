@@ -5,11 +5,13 @@ import type { Metadata } from 'next';
 import { ClassificationTable } from '@/components/organisms/tenders/ClassificationTable';
 import { PublicProjects } from '@/components/organisms/tenders/PublicProjects';
 import { TenderForm } from '@/components/organisms/forms/TenderForm';
+import { TenderMailtoLink } from '@/components/organisms/contact/TenderMailtoLink';
 import { JsonLd } from '@/components/seo/json-ld';
 import {
   listContractorClassifications,
   listPublicOrganismExperience,
 } from '@/lib/content/tenders';
+import { getContactChannelByDepartment } from '@/lib/content/organization';
 import { env } from '@/lib/env';
 import {
   breadcrumbSegmentsToListItems,
@@ -53,9 +55,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function LicitacionesPage() {
-  const [classifications, experiences] = await Promise.all([
+  const [classifications, experiences, licitacionesChannel] = await Promise.all([
     listContractorClassifications(),
     listPublicOrganismExperience(),
+    getContactChannelByDepartment('licitaciones'),
   ]);
 
   const siteUrl = env.NEXT_PUBLIC_SITE_URL;
@@ -78,13 +81,18 @@ export default async function LicitacionesPage() {
               Solvencia técnica para contratación pública: clasificación de contratista, trayectoria
               con organismos y formulario de expediente para plazos ajustados en subcontratación.
             </p>
-            <p className="mt-4">
+            <p className="mt-4 flex flex-wrap items-center gap-4">
               <Link
                 href="/acreditaciones"
                 className="text-sm font-semibold text-brand-accent underline-offset-2 hover:underline"
               >
                 Ver acreditaciones y certificaciones
               </Link>
+              {licitacionesChannel?.email ? (
+                <TenderMailtoLink email={licitacionesChannel.email}>
+                  Email licitaciones
+                </TenderMailtoLink>
+              ) : null}
             </p>
           </div>
         </div>

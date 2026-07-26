@@ -4,17 +4,21 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import type { PublicOrganizationProfile } from '@/lib/content/organization';
+import type { LayoutContactChannels } from '@/lib/contact/contact-department';
 import { cn } from '@/lib/shared/cn';
 
-import { SiteNav, SiteNavPhone } from './SiteNav';
+import { SiteNav } from './SiteNav';
+import { SiteNavContact } from './SiteNavContact';
+import { useLayoutContact } from './use-layout-contact';
 
 export type SiteHeaderProps = {
   profile: PublicOrganizationProfile | null;
-  phone: string | null;
+  channels: LayoutContactChannels;
 };
 
-export function SiteHeader({ profile, phone }: SiteHeaderProps) {
+export function SiteHeader({ profile, channels }: SiteHeaderProps) {
   const [compact, setCompact] = useState(false);
+  const { phone, whatsappHref, slugs, deptLabel } = useLayoutContact(channels, profile);
 
   useEffect(() => {
     const onScroll = () => setCompact(window.scrollY > 8);
@@ -45,7 +49,13 @@ export function SiteHeader({ profile, phone }: SiteHeaderProps) {
           {brand}
         </Link>
         <SiteNav />
-        {phone ? <SiteNavPhone phone={phone} /> : null}
+        <SiteNavContact
+          phone={phone}
+          whatsappHref={whatsappHref}
+          serviceSlug={slugs.serviceSlug}
+          provinceSlug={slugs.provinceSlug}
+          deptLabel={deptLabel}
+        />
       </div>
     </header>
   );
