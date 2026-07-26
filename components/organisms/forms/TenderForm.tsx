@@ -9,7 +9,6 @@ import {
   useState,
   type FormEvent,
 } from 'react';
-import type { ZodIssue } from 'zod';
 
 import { Button } from '@/components/atoms/Button';
 import { Checkbox } from '@/components/atoms/Checkbox';
@@ -18,6 +17,13 @@ import { FormField } from '@/components/molecules/FormField';
 import { TurnstileWidget } from '@/components/molecules/TurnstileWidget';
 import { pushRawDataLayer } from '@/lib/analytics/datalayer';
 import { trackConversionEvent } from '@/lib/analytics/track';
+import {
+  interpretLeadSubmitResponse,
+  issuesToFieldErrors,
+  readUtmParams,
+  sanitizePrefill,
+  type LeadApiJson,
+} from '@/lib/forms/lead-form-shared';
 import { tenderLeadSchema } from '@/lib/leads/schema';
 
 const API_PATH = '/api/leads/licitacion';
@@ -34,39 +40,8 @@ type FieldKey =
   | 'provincia'
   | 'gdprConsent';
 
-function sanitizePrefill(value: string | null, max: number): string {
-  if (!value) return '';
-  return value.trim().slice(0, max);
-}
-
-function issuesToFieldErrors(issues: ZodIssue[]): Partial<Record<FieldKey | 'global', string>> {
-  const map: Partial<Record<FieldKey | 'global', string>> = {};
-  for (const issue of issues) {
-    const key = issue.path[0];
-    if (typeof key === 'string' && !(key in map)) {
-      map[key as FieldKey] = issue.message;
-    }
-  }
-  return map;
-}
-
-function readUtmParams(): {
-  utmSource?: string;
-  utmMedium?: string;
-  utmCampaign?: string;
-  landingUrl?: string;
-} {
-  if (typeof window === 'undefined') return {};
-  const params = new URLSearchParams(window.location.search);
-  const utmSource = params.get('utm_source')?.trim();
-  const utmMedium = params.get('utm_medium')?.trim();
-  const utmCampaign = params.get('utm_campaign')?.trim();
-  return {
-    ...(utmSource ? { utmSource: utmSource.slice(0, 200) } : {}),
-    ...(utmMedium ? { utmMedium: utmMedium.slice(0, 200) } : {}),
-    ...(utmCampaign ? { utmCampaign: utmCampaign.slice(0, 200) } : {}),
-    landingUrl: window.location.href,
-  };
+function issuesToFieldErrorsLocal(issues: import('zod').ZodIssue[]): Partial<Record<FieldKey | 'global', string>> {
+  return issuesToFieldErrors<FieldKey>(issues);
 }
 
 export function TenderForm() {
@@ -199,7 +174,7 @@ function TenderFormFields({
 
     const parsed = tenderLeadSchema.safeParse(payload);
     if (!parsed.success) {
-      const errors = issuesToFieldErrors(parsed.error.issues);
+      const errors = issuesToFieldErrorsLocal(parsed.error.issues);
       setFieldErrors(errors);
       return;
     }
@@ -220,14 +195,16 @@ function TenderFormFields({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submitBody),
       });
-      const json = (await response.json()) as {
-        success?: boolean;
-        data?: { referenceNumber?: string };
-        error?: { message?: string; code?: string };
-      };
+      const json = (await response.json()) as LeadApiJson;
 
-      if (response.status === 201 && json.success && json.data?.referenceNumber) {
-        const ref = json.data.referenceNumber;
+      const outcome = interpretLeadSubmitResponse(
+        response.status,
+        json,
+        'No se pudo enviar el formulario. Inténtelo más tarde.',
+      );
+
+      if (outcome.kind === 'success') {
+        const ref = outcome.referenceNumber;
         await trackConversionEvent({
           eventName: 'generate_lead',
           leadType: 'licitacion',
@@ -237,7 +214,7 @@ function TenderFormFields({
         return;
       }
 
-      if (response.status === 403 && json.error?.code === 'TURNSTILE_INVALID') {
+      if (outcome.kind === 'turnstile_invalid') {
         setTurnstileToken('');
         setFieldErrors({
           global: 'La verificación anti-spam ha fallado. Inténtelo de nuevo.',
@@ -245,21 +222,19 @@ function TenderFormFields({
         return;
       }
 
-      if (response.status === 429) {
+      if (outcome.kind === 'rate_limited') {
         setFieldErrors({
           global: 'Demasiados intentos. Espere un momento y vuelva a intentarlo.',
         });
         return;
       }
 
-      if (response.status === 400 && json.error?.message) {
-        setFieldErrors({ global: json.error.message });
+      if (outcome.kind === 'validation') {
+        setFieldErrors({ global: outcome.message });
         return;
       }
 
-      setFieldErrors({
-        global: json.error?.message ?? 'No se pudo enviar el formulario. Inténtelo más tarde.',
-      });
+      setFieldErrors({ global: outcome.message });
     } catch {
       setFieldErrors({
         global: 'Error de red. Compruebe su conexión e inténtelo de nuevo.',
