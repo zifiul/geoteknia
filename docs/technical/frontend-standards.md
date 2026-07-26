@@ -439,7 +439,8 @@ Los componentes base deben ser accesibles por defecto y no depender de estilos g
 **Maquinaria (GTK-57):**
 
 - Listado `/maquinaria`: metadata estática y canonical fijo (`MACHINERY_CATALOG_BASE_PATH`); breadcrumbs manuales + JSON-LD; grid `MachineCard` + `SpecTable` (tabla con scroll horizontal en móvil).
-- Página `/licitaciones` (GTK-58): metadata en `lib/tenders/page-config.ts`; lectores `lib/content/tenders.ts` + seed `tenders-seed-data.ts`; `TenderForm` + `TurnstileWidget`; POST `/api/leads/licitacion`; enlace a `/acreditaciones` (GTK-59 pendiente).
+- Página `/licitaciones` (GTK-58): metadata en `lib/tenders/page-config.ts`; lectores `lib/content/tenders.ts` + seed `tenders-seed-data.ts`; `TenderForm` + `TurnstileWidget`; POST `/api/leads/licitacion`; enlace a `/acreditaciones`.
+- Página `/acreditaciones` (GTK-59): metadata en `lib/accreditations/page-config.ts`; lector `listPublishedAccreditationsDetailed()` en `lib/content/accreditations.ts` (sin tocar `listActiveAccreditations` de la Home); `CredentialGrid`/`CredentialCard`; JSON-LD `Organization`/`hasCredential`; CTA a `/licitaciones`.
 - `machinery.in_situ_tests` sigue `machineryInSituTestsSchema` (`lib/content/schemas/machinery-in-situ-tests.ts`); lectura pública vía `listPublishedMachinery()` (no modificar `listMachineryByService` de GTK-49).
 - Enlaces a servicios: `MachineryServiceTrackLink` → `select_content` en dataLayer; `MachineryScrollDepthTracker` para `scroll_depth`.
 
