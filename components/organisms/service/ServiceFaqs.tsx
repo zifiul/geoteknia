@@ -1,7 +1,8 @@
-import type { PublishedServiceFaqItem } from '@/lib/content/blog-faqs';
+import { FaqAccordion } from '@/components/organisms/faq/FaqAccordion';
+import type { PublishedFaqItem } from '@/lib/content/blog-faqs';
 
 export type ServiceFaqsProps = {
-  faqs: PublishedServiceFaqItem[];
+  faqs: PublishedFaqItem[];
 };
 
 export function ServiceFaqs({ faqs }: ServiceFaqsProps) {
@@ -18,19 +19,9 @@ export function ServiceFaqs({ faqs }: ServiceFaqsProps) {
         >
           Preguntas frecuentes
         </h2>
-        <dl className="mt-8 space-y-6">
-          {faqs.map((faq) => (
-            <div
-              key={faq.id}
-              className="rounded-lg border border-brand-secondary/10 bg-brand-surface p-5"
-            >
-              <dt className="font-display text-lg font-semibold text-brand-on-surface">
-                {faq.question}
-              </dt>
-              <dd className="mt-2 text-sm leading-relaxed text-muted md:text-base">{faq.answer}</dd>
-            </div>
-          ))}
-        </dl>
+        <div className="mt-8">
+          <FaqAccordion items={faqs} />
+        </div>
       </div>
     </section>
   );

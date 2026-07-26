@@ -475,6 +475,8 @@ Preguntas y respuestas revisables.
 | EDITORIAL | mixed | required | Flujo editorial. |
 | AUDIT | mixed | required | Trazabilidad. |
 
+**Lecturas públicas (GTK-62):** `listPublishedGeneralFaqGroups()` lista grupos `scope: general` con al menos una FAQ en `PUBLISHED_EDITORIAL_WHERE`; `getPublishedFaqGroupBySlug(slug)` devuelve el grupo y sus FAQs publicadas o `null` si no hay ninguna. En servicios, `listPublishedFaqsByService(serviceId)` reutiliza el mismo shape `PublishedFaqItem` (incluye `internal_link_url`). Rutas: `/faqs`, `/faqs/[slug]`.
+
 #### `lead_magnets`
 
 Recursos descargables gated.
