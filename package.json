@@ -12,6 +12,8 @@
     "test": "vitest run tests/unit",
     "test:e2e": "playwright test",
     "lhci": "lhci autorun",
+    "lighthouse": "lhci autorun",
+    "ci:lighthouse": "lhci autorun",
     "db:seed": "prisma db seed",
     "postinstall": "node scripts/patch-eslint-typescript6.mjs",
     "security:install": "pnpm run security:install-tools",

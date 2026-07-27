@@ -565,6 +565,8 @@ export async function seedTendersMasters(client: PrismaClient): Promise<void> {
   }
 }
 
+import { seedLighthousePublicFixtures } from './seed-lighthouse-public';
+
 export async function runSeed(client: PrismaClient = prisma): Promise<void> {
   await seedProjectStates(client);
   await seedRbac(client);
@@ -576,6 +578,7 @@ export async function runSeed(client: PrismaClient = prisma): Promise<void> {
   await seedCalculatorRules(client);
   await seedAiBudgetConfig(client);
   await seedTendersMasters(client);
+  await seedLighthousePublicFixtures(client);
 }
 
 async function main(): Promise<void> {

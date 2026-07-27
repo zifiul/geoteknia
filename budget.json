@@ -1,0 +1,34 @@
+[
+  {
+    "path": "/",
+    "resourceSizes": [
+      { "resourceType": "script", "budget": 380 },
+      { "resourceType": "image", "budget": 650 },
+      { "resourceType": "total", "budget": 1200 }
+    ]
+  },
+  {
+    "path": "/servicios/sondeos",
+    "resourceSizes": [
+      { "resourceType": "script", "budget": 400 },
+      { "resourceType": "image", "budget": 700 },
+      { "resourceType": "total", "budget": 1250 }
+    ]
+  },
+  {
+    "path": "/blog",
+    "resourceSizes": [
+      { "resourceType": "script", "budget": 360 },
+      { "resourceType": "image", "budget": 500 },
+      { "resourceType": "total", "budget": 1100 }
+    ]
+  },
+  {
+    "path": "/blog/normativa/novedades-db-sec-2024",
+    "resourceSizes": [
+      { "resourceType": "script", "budget": 380 },
+      { "resourceType": "image", "budget": 750 },
+      { "resourceType": "total", "budget": 1300 }
+    ]
+  }
+]
