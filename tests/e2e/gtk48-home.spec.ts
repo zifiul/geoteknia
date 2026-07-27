@@ -2,6 +2,10 @@
  * E2E GTK-48 — home, JSON-LD LocalBusiness y recorridos por persona.
  */
 import { expect, test } from '@playwright/test';
+import {
+  assertNoCriticalAxeViolations,
+  dismissCookieBannerIfPresent,
+} from './helpers/axe-wcag';
 
 test.describe('GTK-48 home', () => {
   test.beforeEach(async ({ context }) => {
@@ -56,5 +60,11 @@ test.describe('GTK-48 home', () => {
       return;
     }
     await expect(trust).toBeVisible();
+  });
+
+  test('sin violaciones críticas axe WCAG 2.1 AA', async ({ page }) => {
+    await page.goto('/');
+    await dismissCookieBannerIfPresent(page);
+    await assertNoCriticalAxeViolations(page);
   });
 });

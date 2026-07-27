@@ -2,6 +2,10 @@
  * E2E GTK-49 — plantilla de servicio, JSON-LD y CTA presupuesto.
  */
 import { expect, test } from '@playwright/test';
+import {
+  assertNoCriticalAxeViolations,
+  dismissCookieBannerIfPresent,
+} from './helpers/axe-wcag';
 
 test.describe('GTK-49 servicio', () => {
   test.beforeEach(async ({ context }) => {
@@ -67,5 +71,15 @@ test.describe('GTK-49 servicio', () => {
     await firstLink.click();
     await expect(page.locator('body')).not.toContainText('undefined');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  });
+
+  test('sin violaciones críticas axe en servicio publicado', async ({ page }) => {
+    const response = await page.goto('/servicios/sondeos');
+    if (response?.status() === 404) {
+      test.skip(true, 'Servicio sondeos no publicado en BD');
+      return;
+    }
+    await dismissCookieBannerIfPresent(page);
+    await assertNoCriticalAxeViolations(page);
   });
 });

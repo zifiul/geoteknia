@@ -2,6 +2,10 @@
  * E2E GTK-53 — detalle de caso de estudio.
  */
 import { expect, test } from '@playwright/test';
+import {
+  assertNoCriticalAxeViolations,
+  dismissCookieBannerIfPresent,
+} from './helpers/axe-wcag';
 
 async function openFirstCaseDetail(
   page: import('@playwright/test').Page,
@@ -89,5 +93,20 @@ test.describe('GTK-53 detalle de caso', () => {
       return;
     }
     await expect(gallery).toBeVisible();
+  });
+
+  test('sin violaciones críticas axe en caso publicado', async ({ page, request }) => {
+    const lhci = await request.get('/proyectos/caso-lhci-seed');
+    if (lhci.status() === 200) {
+      await page.goto('/proyectos/caso-lhci-seed');
+    } else {
+      const href = await openFirstCaseDetail(page, request);
+      if (!href) {
+        test.skip(true, 'Sin casos publicados en BD');
+        return;
+      }
+    }
+    await dismissCookieBannerIfPresent(page);
+    await assertNoCriticalAxeViolations(page);
   });
 });

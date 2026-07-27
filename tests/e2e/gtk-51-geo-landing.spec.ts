@@ -2,6 +2,10 @@
  * E2E GTK-51 — geo-landing por zona, breadcrumbs, geología y CTAs.
  */
 import { expect, test } from '@playwright/test';
+import {
+  assertNoCriticalAxeViolations,
+  dismissCookieBannerIfPresent,
+} from './helpers/axe-wcag';
 
 test.describe('GTK-51 geo-landing', () => {
   test.beforeEach(async ({ context }) => {
@@ -68,5 +72,15 @@ test.describe('GTK-51 geo-landing', () => {
       const casesHref = await casesLink.getAttribute('href');
       expect(casesHref).toMatch(/^\/proyectos\?provincia=/);
     }
+  });
+
+  test('sin violaciones críticas axe en geo-landing publicada', async ({ page }) => {
+    const response = await page.goto('/zonas/madrid');
+    if (response?.status() === 404) {
+      test.skip(true, 'Geo-landing madrid no publicada (ejecutar prisma db seed)');
+      return;
+    }
+    await dismissCookieBannerIfPresent(page);
+    await assertNoCriticalAxeViolations(page);
   });
 });

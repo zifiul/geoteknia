@@ -5,6 +5,9 @@ import { execSync } from 'node:child_process';
 import { config } from 'dotenv';
 import { generateSync } from 'otplib';
 import { expect, test } from '@playwright/test';
+import {
+  assertNoCriticalAxeViolations,
+} from './helpers/axe-wcag';
 
 config();
 
@@ -155,5 +158,10 @@ test.describe('GTK-69 Admin login', () => {
     await expect(
       page.locator('[role="alert"]').filter({ hasText: /demasiados intentos/i }),
     ).toBeVisible();
+  });
+
+  test('sin violaciones críticas axe WCAG 2.1 AA', async ({ page }) => {
+    await page.goto('/admin/login');
+    await assertNoCriticalAxeViolations(page);
   });
 });

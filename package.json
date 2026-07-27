@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "test": "vitest run tests/unit",
     "test:e2e": "playwright test",
+    "test:e2e:a11y": "playwright test --grep \"sin violaciones críticas axe|teclado: foco en primer error\"",
     "lhci": "lhci autorun",
     "lighthouse": "lhci autorun",
     "ci:lighthouse": "lhci autorun",

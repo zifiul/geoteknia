@@ -2,6 +2,10 @@
  * E2E GTK-64 — /calculadora widget.
  */
 import { expect, test } from '@playwright/test';
+import {
+  assertNoCriticalAxeViolations,
+  dismissCookieBannerIfPresent,
+} from './helpers/axe-wcag';
 
 async function findJsonLdByType(
   page: import('@playwright/test').Page,
@@ -106,5 +110,11 @@ test.describe('GTK-64 Calculadora de alcance', () => {
     await expect(page.getByTestId('calculator-cta-presupuesto')).toBeVisible();
     const href = await page.getByTestId('calculator-cta-presupuesto').getAttribute('href');
     expect(href).toContain('servicio=sondeos');
+  });
+
+  test('sin violaciones críticas axe WCAG 2.1 AA', async ({ page }) => {
+    await page.goto('/calculadora');
+    await dismissCookieBannerIfPresent(page);
+    await assertNoCriticalAxeViolations(page);
   });
 });

@@ -2,6 +2,10 @@
  * E2E GTK-66 — /presupuesto wizard y POST /api/leads/presupuesto.
  */
 import { expect, test } from '@playwright/test';
+import {
+  assertNoCriticalAxeViolations,
+  dismissCookieBannerIfPresent,
+} from './helpers/axe-wcag';
 
 test.describe('GTK-66 formulario presupuesto', () => {
   test.beforeEach(async ({ context }) => {
@@ -115,5 +119,21 @@ test.describe('GTK-66 formulario presupuesto', () => {
     await page.getByTestId('budget-form-next').click();
     await page.getByRole('button', { name: /atrás/i }).click();
     await expect(servicioSelect).toHaveValue(selectedServicio);
+  });
+
+  test('sin violaciones críticas axe WCAG 2.1 AA', async ({ page }) => {
+    await page.goto('/presupuesto');
+    await dismissCookieBannerIfPresent(page);
+    await assertNoCriticalAxeViolations(page);
+  });
+
+  test('teclado: foco en primer error al avanzar sin paso 1 completo', async ({ page }) => {
+    await page.goto('/presupuesto');
+    await dismissCookieBannerIfPresent(page);
+    await page.getByTestId('budget-form-next').click();
+    const alert = page.getByRole('alert').first();
+    await expect(alert).toBeVisible();
+    const invalid = page.locator('[aria-invalid="true"]').first();
+    await expect(invalid).toBeFocused();
   });
 });

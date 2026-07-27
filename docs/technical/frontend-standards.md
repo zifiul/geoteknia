@@ -494,7 +494,7 @@ Los formularios críticos deben anunciar errores por campo y resumen de error cu
 
 Lighthouse CI (`pnpm run ci:lighthouse` / workflow `.github/workflows/lighthouse.yml`) ejecuta en cada PR con assertions en nivel **`error`** (fallo bloqueante). Configuración: `lighthouserc.cjs`, `budget.json` y `lib/perf/lighthouse-phase1.cjs`.
 
-**Fase 1 (GTK-77):** home, servicio (`/servicios/sondeos`), índice de blog y artículo de referencia. **Fase 2 (seguimiento):** geo-landing, caso de estudio, intersección, presupuesto y login `/admin` cuando el alcance lo amplíe.
+**Fase 1 (GTK-77) y Fase 2 (GTK-76):** las rutas de `lib/perf/lighthouse-phase1.cjs` cubren home, servicio, geo-landing (`/zonas/madrid`), caso (`/proyectos/caso-lhci-seed`), blog (índice y artículo), presupuesto, calculadora, contacto y login `/admin/login`. Gate axe en CI: workflow `.github/workflows/e2e-a11y.yml` (`pnpm run test:e2e:a11y`).
 
 Debe cubrir al menos (objetivo completo del producto):
 
@@ -624,7 +624,7 @@ Playwright debe cubrir flujos críticos:
 
 - Validar presencia de canonical, metadata básica y JSON-LD en plantillas críticas.
 - Comprobar que `/admin` y thank you pages no se indexan.
-- Ejecutar checks de accesibilidad en flujos principales.
+- Ejecutar checks de accesibilidad en flujos principales con `@axe-core/playwright` (tags WCAG 2.1 AA) en las specs `tests/e2e/gtk-*.spec.ts`; el gate de PR es `pnpm run test:e2e:a11y` (workflow `e2e-a11y.yml`).
 - Incluir pruebas de sitemap/robots cuando cambie la lógica de indexación.
 
 ---

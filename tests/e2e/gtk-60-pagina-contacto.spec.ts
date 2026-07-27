@@ -2,6 +2,10 @@
  * E2E GTK-60 — /contacto NAP, canales, JSON-LD y mapa diferido.
  */
 import { expect, test } from '@playwright/test';
+import {
+  assertNoCriticalAxeViolations,
+  dismissCookieBannerIfPresent,
+} from './helpers/axe-wcag';
 
 async function findJsonLdByType(
   page: import('@playwright/test').Page,
@@ -72,5 +76,11 @@ test.describe('GTK-60 Página de contacto', () => {
     await expect(container).toBeVisible();
     await container.scrollIntoViewIfNeeded();
     await expect(page.getByTestId('contact-map-iframe')).toBeVisible({ timeout: 15000 });
+  });
+
+  test('sin violaciones críticas axe WCAG 2.1 AA', async ({ page }) => {
+    await page.goto('/contacto');
+    await dismissCookieBannerIfPresent(page);
+    await assertNoCriticalAxeViolations(page);
   });
 });
