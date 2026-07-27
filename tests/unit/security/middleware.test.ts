@@ -31,6 +31,15 @@ describe('middleware — protección /admin', () => {
     expect(location).toMatch(/\/admin\/login/);
   });
 
+  it('GTK-69: /admin/login sin sesión continúa (no redirige)', async () => {
+    authMock.mockResolvedValue(null);
+
+    const response = await middleware(buildRequest('/admin/login'));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+  });
+
   it('SEC-2: API /api/admin sin sesión responde 401 JSON', async () => {
     authMock.mockResolvedValue(null);
 
