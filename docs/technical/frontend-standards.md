@@ -377,6 +377,7 @@ Reglas de aplicación:
 - Los templates deben recibir datos ya preparados o view models y componer organismos sin conocer detalles de fetching.
 - Las pages del App Router son responsables de `generateMetadata`, carga de datos, `notFound`, ISR y composición final.
 - Si un componente solo se usa en un dominio, puede vivir en una subcarpeta de su nivel: `components/organisms/leads/BudgetLeadForm.tsx`.
+- Portal admin (GTK-68+): shell, sidebar, topbar y gates en `components/organisms/admin/` (p. ej. `AdminPortalLayout`, `AdminSidebar`, `LoginForm`).
 - Evitar carpetas genéricas como `misc`, `common` o `shared` para componentes sin clasificación clara.
 
 Ejemplo recomendado:

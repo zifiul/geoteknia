@@ -30,6 +30,7 @@ export async function middleware(request: NextRequest) {
 
   if (pathname === LOGIN_PATH) {
     const next = NextResponse.next();
+    next.headers.set('x-pathname', pathname);
     return applySecurityHeadersToNextResponse(next);
   }
 
@@ -56,9 +57,16 @@ export async function middleware(request: NextRequest) {
   }
 
   const next = NextResponse.next();
+  next.headers.set('x-pathname', pathname);
   return applySecurityHeadersToNextResponse(next);
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*'],
+  matcher: [
+    '/admin/:path*',
+    '/api/admin/:path*',
+    '/contenido/:path*',
+    '/ia/:path*',
+    '/perfil/:path*',
+  ],
 };

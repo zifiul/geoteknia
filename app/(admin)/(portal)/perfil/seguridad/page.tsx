@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
-import { TotpSetupForm } from '@/app/(admin)/perfil/seguridad/totp-setup-form';
+import { TotpSetupForm } from '@/app/(admin)/(portal)/perfil/seguridad/totp-setup-form';
 import { InvalidSessionError, getPortalSession } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 

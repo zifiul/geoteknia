@@ -66,6 +66,7 @@ enum AuditAction {
   delete
   login
   login_failed
+  access_denied
   role_change
   ai_generate
   export
