@@ -3,6 +3,8 @@
 import { AuthError } from 'next-auth';
 
 import { signIn } from '@/lib/auth/config';
+import { readLoginClientIp } from '@/lib/auth/login-client-ip';
+import { loginRateLimitResult } from '@/lib/auth/login-rate-limit';
 import {
   LOGIN_INVALID_CREDENTIALS_MESSAGE,
   loginInputSchema,
@@ -10,6 +12,12 @@ import {
 } from '@/lib/auth/login-schemas';
 
 export async function loginAction(formData: FormData): Promise<LoginActionResult> {
+  const ip = await readLoginClientIp();
+  const rateLimited = loginRateLimitResult(ip);
+  if (rateLimited) {
+    return rateLimited;
+  }
+
   const totpRaw = formData.get('totp');
   const parsed = loginInputSchema.safeParse({
     email: formData.get('email'),

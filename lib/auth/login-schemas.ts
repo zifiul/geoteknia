@@ -4,6 +4,9 @@ import { z } from 'zod';
 export const LOGIN_INVALID_CREDENTIALS_MESSAGE =
   'Credenciales incorrectas. Comprueba email y contraseña.';
 
+export const LOGIN_RATE_LIMITED_MESSAGE =
+  'Demasiados intentos de inicio de sesión. Espera un momento e inténtalo de nuevo.';
+
 const emailField = z
   .string()
   .trim()
