@@ -1,0 +1,82 @@
+name: E2E accessibility (axe)
+
+on:
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-a11y-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-a11y:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: geoteknia
+          POSTGRES_PASSWORD: geoteknia
+          POSTGRES_DB: geoteknia_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U geoteknia -d geoteknia_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://geoteknia:geoteknia@localhost:5432/geoteknia_ci
+      DIRECT_URL: postgresql://geoteknia:geoteknia@localhost:5432/geoteknia_ci
+      NEXTAUTH_SECRET: ci-e2e-nextauth-secret-min-32-chars!!!!!!
+      NEXTAUTH_URL: http://localhost:3010
+      NEXT_PUBLIC_SITE_URL: http://localhost:3010
+      ANTHROPIC_API_KEY: sk-ant-ci-placeholder-not-used-in-e2e-run
+      RESEND_API_KEY: re_ci_placeholder_not_used
+      EMAIL_FROM: Geoteknia CI <ci@example.com>
+      EMAIL_REPLY_TO: ci@example.com
+      TURNSTILE_SECRET_KEY: 0x4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: 0x4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+      NODE_ENV: production
+      SESSION_TTL_MINUTES: '60'
+      TWOFA_ENCRYPTION_KEY: '0000000000000000000000000000000000000000000000000000000000000000'
+      MEDIA_STORAGE_BASE_URL: http://localhost:3010
+      NEXT_PUBLIC_GTM_ID: ''
+      CI: 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.0.8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Apply database migrations
+        run: pnpm exec prisma migrate deploy
+
+      - name: Seed database
+        run: pnpm exec prisma db seed
+
+      - name: Build application
+        run: pnpm build
+
+      - name: Playwright axe gate (plantillas críticas GTK-76)
+        run: pnpm run test:e2e:a11y

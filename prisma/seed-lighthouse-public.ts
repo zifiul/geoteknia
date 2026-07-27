@@ -12,6 +12,8 @@ export const LIGHTHOUSE_PUBLIC_SEED_IDS = {
   service: 'b7777777-7777-4777-8777-777777770003',
   blogCategory: 'b7777777-7777-4777-8777-777777770004',
   blogPost: 'b7777777-7777-4777-8777-777777770005',
+  geoZoneMadrid: 'b7777777-7777-4777-8777-777777770006',
+  caseStudy: 'b7777777-7777-4777-8777-777777770007',
 } as const;
 
 const HERO_FILE_NAME = '/images/lighthouse-seed-hero.svg';
@@ -116,6 +118,66 @@ export async function seedLighthousePublicFixtures(db: PrismaClient): Promise<vo
     },
     update: {
       heroImageId: LIGHTHOUSE_PUBLIC_SEED_IDS.heroMedia,
+      workflowStatus: WorkflowStatus.publicado,
+      publishedAt: now,
+      deletedAt: null,
+    },
+  });
+
+  const madridProvince = await db.province.findUniqueOrThrow({
+    where: { slug: 'madrid' },
+  });
+  const edificacionTypology = await db.workTypology.findUniqueOrThrow({
+    where: { slug: 'edificacion-residencial' },
+  });
+
+  await db.geoZone.upsert({
+    where: { slug: 'madrid' },
+    create: {
+      id: LIGHTHOUSE_PUBLIC_SEED_IDS.geoZoneMadrid,
+      provinceId: madridProvince.id,
+      name: 'Madrid',
+      slug: 'madrid',
+      localGeology: 'Arcillas y arenas del Mioceno en la cuenca de Madrid.',
+      operationalBase: 'Base operativa en Madrid.',
+      body: '<p>Geo-landing de referencia para Lighthouse CI y axe (GTK-76).</p>',
+      heroImageId: LIGHTHOUSE_PUBLIC_SEED_IDS.heroMedia,
+      schemaType: SchemaType.LocalBusiness,
+      metaTitle: 'Estudios geotécnicos en Madrid',
+      metaDescription: 'Geología local y estudios geotécnicos en Madrid.',
+      workflowStatus: WorkflowStatus.publicado,
+      publishedAt: now,
+    },
+    update: {
+      provinceId: madridProvince.id,
+      heroImageId: LIGHTHOUSE_PUBLIC_SEED_IDS.heroMedia,
+      workflowStatus: WorkflowStatus.publicado,
+      publishedAt: now,
+      deletedAt: null,
+    },
+  });
+
+  await db.caseStudy.upsert({
+    where: { slug: 'caso-lhci-seed' },
+    create: {
+      id: LIGHTHOUSE_PUBLIC_SEED_IDS.caseStudy,
+      title: 'Caso de referencia LHCI',
+      slug: 'caso-lhci-seed',
+      serviceId: LIGHTHOUSE_PUBLIC_SEED_IDS.service,
+      provinceId: madridProvince.id,
+      workTypologyId: edificacionTypology.id,
+      problem: 'Necesidad de caracterización geotécnica previa a obra.',
+      solution: 'Campaña de sondeos y ensayos de laboratorio.',
+      schemaType: SchemaType.Article,
+      metaTitle: 'Caso geotécnico LHCI',
+      metaDescription: 'Caso de estudio de referencia para CI.',
+      workflowStatus: WorkflowStatus.publicado,
+      publishedAt: now,
+    },
+    update: {
+      serviceId: LIGHTHOUSE_PUBLIC_SEED_IDS.service,
+      provinceId: madridProvince.id,
+      workTypologyId: edificacionTypology.id,
       workflowStatus: WorkflowStatus.publicado,
       publishedAt: now,
       deletedAt: null,

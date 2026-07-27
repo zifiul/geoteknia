@@ -2,6 +2,10 @@
  * E2E GTK-55 — plantilla de artículo de blog.
  */
 import { expect, test } from '@playwright/test';
+import {
+  assertNoCriticalAxeViolations,
+  dismissCookieBannerIfPresent,
+} from './helpers/axe-wcag';
 
 test.describe('GTK-55 artículo de blog', () => {
   test.beforeEach(async ({ context }) => {
@@ -70,5 +74,15 @@ test.describe('GTK-55 artículo de blog', () => {
     expect(href).toMatch(/^#/);
     await tocLink.click();
     await expect(page.locator(href!)).toBeVisible();
+  });
+
+  test('sin violaciones críticas axe en artículo de blog', async ({ page }) => {
+    const response = await page.goto('/blog/normativa/novedades-db-sec-2024');
+    if (response?.status() === 404) {
+      test.skip(true, 'Sin artículo de ejemplo en BD');
+      return;
+    }
+    await dismissCookieBannerIfPresent(page);
+    await assertNoCriticalAxeViolations(page);
   });
 });

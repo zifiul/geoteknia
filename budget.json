@@ -38,5 +38,45 @@
       { "resourceType": "image", "budget": 400 },
       { "resourceType": "total", "budget": 1150 }
     ]
+  },
+  {
+    "path": "/zonas/madrid",
+    "resourceSizes": [
+      { "resourceType": "script", "budget": 400 },
+      { "resourceType": "image", "budget": 700 },
+      { "resourceType": "total", "budget": 1250 }
+    ]
+  },
+  {
+    "path": "/proyectos/caso-lhci-seed",
+    "resourceSizes": [
+      { "resourceType": "script", "budget": 400 },
+      { "resourceType": "image", "budget": 700 },
+      { "resourceType": "total", "budget": 1250 }
+    ]
+  },
+  {
+    "path": "/presupuesto",
+    "resourceSizes": [
+      { "resourceType": "script", "budget": 420 },
+      { "resourceType": "image", "budget": 450 },
+      { "resourceType": "total", "budget": 1200 }
+    ]
+  },
+  {
+    "path": "/contacto",
+    "resourceSizes": [
+      { "resourceType": "script", "budget": 400 },
+      { "resourceType": "image", "budget": 500 },
+      { "resourceType": "total", "budget": 1200 }
+    ]
+  },
+  {
+    "path": "/admin/login",
+    "resourceSizes": [
+      { "resourceType": "script", "budget": 380 },
+      { "resourceType": "image", "budget": 400 },
+      { "resourceType": "total", "budget": 1100 }
+    ]
   }
 ]

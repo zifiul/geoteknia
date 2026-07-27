@@ -1,5 +1,5 @@
 /**
- * GTK-77 — configuración Lighthouse CI Fase 1 (gate bloqueante).
+ * GTK-77 / GTK-76 — configuración Lighthouse CI (plantillas críticas).
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -14,24 +14,27 @@ import {
 } from '../../../lib/perf/lighthouse-phase1.cjs';
 
 describe('GTK-77 Lighthouse CI config', () => {
-  it('expone las rutas Fase 1 (home, servicio, blog índice y artículo, calculadora)', () => {
+  it('expone las rutas de plantillas críticas (GTK-76 Fase 2)', () => {
     expect(LIGHTHOUSE_PHASE1_RELATIVE_PATHS).toEqual([
       '/',
       '/servicios/sondeos',
+      '/zonas/madrid',
+      '/proyectos/caso-lhci-seed',
       '/blog',
       '/blog/normativa/novedades-db-sec-2024',
+      '/presupuesto',
       '/calculadora',
+      '/contacto',
+      '/admin/login',
     ]);
   });
 
   it('construye URLs absolutas para el puerto E2E/LHCI', () => {
-    expect(lighthousePhase1Urls()).toEqual([
-      `http://localhost:${LIGHTHOUSE_CI_PORT}/`,
-      `http://localhost:${LIGHTHOUSE_CI_PORT}/servicios/sondeos`,
-      `http://localhost:${LIGHTHOUSE_CI_PORT}/blog`,
-      `http://localhost:${LIGHTHOUSE_CI_PORT}/blog/normativa/novedades-db-sec-2024`,
-      `http://localhost:${LIGHTHOUSE_CI_PORT}/calculadora`,
-    ]);
+    expect(lighthousePhase1Urls()).toEqual(
+      LIGHTHOUSE_PHASE1_RELATIVE_PATHS.map(
+        (path) => `http://localhost:${LIGHTHOUSE_CI_PORT}${path === '/' ? '/' : path}`,
+      ),
+    );
   });
 
   it('usa assertions en nivel error para categorías y CWV', () => {
@@ -50,7 +53,7 @@ describe('GTK-77 Lighthouse CI config', () => {
     expect(rc).not.toMatch(/'warn'/);
   });
 
-  it('budget.json define presupuestos para cada path Fase 1', () => {
+  it('budget.json define presupuestos para cada path LHCI', () => {
     const raw = readFileSync(join(process.cwd(), 'budget.json'), 'utf8');
     const budgets = JSON.parse(raw) as { path: string }[];
     const paths = budgets.map((b) => b.path);

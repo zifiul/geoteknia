@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   useCallback,
+  useEffect,
   useId,
   useRef,
   useState,
@@ -61,8 +62,10 @@ export function BudgetFormWizard({
 }: BudgetFormWizardProps) {
   const router = useRouter();
   const formId = useId();
+  const formRef = useRef<HTMLFormElement>(null);
   const stepHeadingRef = useRef<HTMLHeadingElement>(null);
   const formStartedRef = useRef(false);
+  const shouldFocusInvalidRef = useRef(false);
 
   const initial = createInitialBudgetDraft({
     servicio: prefill.servicio ?? '',
@@ -86,6 +89,14 @@ export function BudgetFormWizard({
 
   const [turnstileToken, setTurnstileToken] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!shouldFocusInvalidRef.current) return;
+    shouldFocusInvalidRef.current = false;
+    formRef.current
+      ?.querySelector<HTMLElement>('[aria-invalid="true"]')
+      ?.focus();
+  }, [fieldErrors]);
 
   const markFormStart = useCallback(() => {
     if (formStartedRef.current) return;
@@ -111,7 +122,10 @@ export function BudgetFormWizard({
 
   const handleNext = useCallback(() => {
     markFormStart();
-    if (!validateCurrentStep()) return;
+    if (!validateCurrentStep()) {
+      shouldFocusInvalidRef.current = true;
+      return;
+    }
     if (step < 3) {
       const next = (step + 1) as 1 | 2 | 3;
       pushFormStep(next);
@@ -130,7 +144,10 @@ export function BudgetFormWizard({
     markFormStart();
     setFieldErrors({});
 
-    if (!validateCurrentStep()) return;
+    if (!validateCurrentStep()) {
+      shouldFocusInvalidRef.current = true;
+      return;
+    }
 
     const attribution = readUtmParams();
     const parsed = validateFullBudgetLead(
@@ -245,6 +262,7 @@ export function BudgetFormWizard({
 
   return (
     <form
+      ref={formRef}
       id={formId}
       onSubmit={handleSubmit}
       className="rounded-sm border border-brand-secondary/15 bg-brand-surface p-6 shadow-sm md:p-8"
