@@ -174,6 +174,64 @@ export type ArticlePublisherInput = {
   url: string;
 };
 
+export type JsonLdAuthorInput = {
+  name: string;
+  url?: string | null;
+};
+
+export type JsonLdGeoLocationInput = {
+  latitude: number;
+  longitude: number;
+};
+
+function buildJsonLdAuthors(
+  authors?: JsonLdAuthorInput[] | null,
+  legacy?: { authorName?: string | null; authorUrl?: string | null },
+): Record<string, unknown> | Record<string, unknown>[] | undefined {
+  const fromList =
+    authors
+      ?.filter((entry) => entry.name.trim().length > 0)
+      .map((entry) =>
+        compact({
+          '@type': 'Person',
+          name: entry.name,
+          url: entry.url ?? undefined,
+        }),
+      ) ?? [];
+
+  if (fromList.length === 1) {
+    return fromList[0];
+  }
+  if (fromList.length > 1) {
+    return fromList;
+  }
+
+  if (legacy?.authorName || legacy?.authorUrl) {
+    return compact({
+      '@type': 'Person',
+      name: legacy.authorName ?? undefined,
+      url: legacy.authorUrl ?? undefined,
+    });
+  }
+  return undefined;
+}
+
+function buildContentLocation(
+  location?: JsonLdGeoLocationInput | null,
+): Record<string, unknown> | undefined {
+  if (!location) {
+    return undefined;
+  }
+  return compact({
+    '@type': 'Place',
+    geo: compact({
+      '@type': 'GeoCoordinates',
+      latitude: location.latitude,
+      longitude: location.longitude,
+    }),
+  });
+}
+
 export type ArticleSchemaInput = WithImage & {
   headline: string;
   description?: string | null;
@@ -182,21 +240,20 @@ export type ArticleSchemaInput = WithImage & {
   dateModified?: string | null;
   authorName?: string | null;
   authorUrl?: string | null;
+  authors?: JsonLdAuthorInput[] | null;
+  location?: JsonLdGeoLocationInput | null;
   publisher?: ArticlePublisherInput | null;
 };
 
 export function buildArticleSchema(input: ArticleSchemaInput): Record<string, unknown> {
-  const author =
-    input.authorName || input.authorUrl
-      ? compact({
-          '@type': 'Person',
-          name: input.authorName ?? undefined,
-          url: input.authorUrl ?? undefined,
-        })
-      : undefined;
+  const author = buildJsonLdAuthors(input.authors, {
+    authorName: input.authorName,
+    authorUrl: input.authorUrl,
+  });
   const publisher = input.publisher
     ? { '@type': 'Organization', name: input.publisher.name, url: input.publisher.url }
     : undefined;
+  const contentLocation = buildContentLocation(input.location);
   return compact({
     '@context': SCHEMA_CONTEXT,
     '@type': 'Article',
@@ -208,6 +265,7 @@ export function buildArticleSchema(input: ArticleSchemaInput): Record<string, un
     dateModified: input.dateModified,
     author,
     publisher,
+    contentLocation,
   });
 }
 
@@ -215,11 +273,17 @@ export type CreativeWorkSchemaInput = WithImage & {
   name: string;
   description?: string | null;
   url: string;
+  datePublished?: string | null;
+  dateModified?: string | null;
+  authors?: JsonLdAuthorInput[] | null;
+  location?: JsonLdGeoLocationInput | null;
 };
 
 export function buildCreativeWorkSchema(
   input: CreativeWorkSchemaInput,
 ): Record<string, unknown> {
+  const author = buildJsonLdAuthors(input.authors);
+  const contentLocation = buildContentLocation(input.location);
   return compact({
     '@context': SCHEMA_CONTEXT,
     '@type': 'CreativeWork',
@@ -227,6 +291,10 @@ export function buildCreativeWorkSchema(
     description: input.description,
     url: input.url,
     image: input.imageUrl,
+    datePublished: input.datePublished,
+    dateModified: input.dateModified,
+    author,
+    contentLocation,
   });
 }
 
