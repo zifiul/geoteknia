@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import { Suspense } from 'react';
+
 import { ServiceScrollDepthTracker } from '@/components/analytics/ServiceScrollDepthTracker';
+import { LocationWidget } from '@/components/organisms/conversion/LocationWidget';
 import { BudgetCta } from '@/components/organisms/cta/BudgetCta';
 import { ServiceContactStrip } from '@/components/organisms/service/ServiceContactStrip';
 import { ServiceCoverageLinks } from '@/components/organisms/service/CoverageLinks';
@@ -174,6 +177,9 @@ export default async function ServiceDetailPage({ params }: PageProps) {
           profile={profile}
           channel={channel}
         />
+        <Suspense fallback={null}>
+          <LocationWidget serviceSlug={service.slug} />
+        </Suspense>
       </div>
     </>
   );
