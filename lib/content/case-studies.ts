@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { WorkflowStatus, type Prisma } from '@prisma/client';
+import { WorkflowStatus, type Prisma, SchemaType } from '@prisma/client';
 import { z } from 'zod';
 
 import {
@@ -491,5 +491,164 @@ export async function listPublishedCaseStudiesCatalog(
     page: safePage,
     pageSize,
     totalPages,
+  };
+}
+
+export type PublishedCaseStudyTeamMember = {
+  fullName: string;
+  slug: string;
+  jobTitle: string;
+  role: string | null;
+};
+
+export type PublishedCaseStudyDetail = {
+  id: string;
+  title: string;
+  slug: string;
+  h1: string | null;
+  problem: string;
+  solution: string;
+  result: string | null;
+  testsSummary: string | null;
+  boreholesCount: number | null;
+  metersDrilled: number | null;
+  projectYear: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  clientName: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  canonicalUrl: string | null;
+  schemaType: SchemaType;
+  noindex: boolean;
+  publishedAt: Date | null;
+  updatedAt: Date;
+  ogImageId: string | null;
+  heroImageUrl: string | null;
+  heroImageAlt: string | null;
+  service: { id: string; name: string; slug: string };
+  province: { name: string; slug: string; ccaa: string };
+  workTypology: { name: string; slug: string };
+  teamMembers: PublishedCaseStudyTeamMember[];
+};
+
+const caseStudyDetailSelect = {
+  id: true,
+  title: true,
+  slug: true,
+  h1: true,
+  problem: true,
+  solution: true,
+  result: true,
+  testsSummary: true,
+  boreholesCount: true,
+  metersDrilled: true,
+  projectYear: true,
+  latitude: true,
+  longitude: true,
+  clientName: true,
+  clientIsPublic: true,
+  metaTitle: true,
+  metaDescription: true,
+  canonicalUrl: true,
+  schemaType: true,
+  noindex: true,
+  publishedAt: true,
+  updatedAt: true,
+  ogImageId: true,
+  service: { select: { id: true, name: true, slug: true } },
+  province: { select: { name: true, slug: true, ccaa: true } },
+  workTypology: { select: { name: true, slug: true } },
+  teamMembers: {
+    where: { teamMember: PUBLISHED_EDITORIAL_WHERE },
+    select: {
+      role: true,
+      teamMember: {
+        select: { fullName: true, slug: true, jobTitle: true },
+      },
+    },
+  },
+} as const;
+
+async function resolveCaseHeroImage(heroImageId: string | null): Promise<{
+  heroImageUrl: string | null;
+  heroImageAlt: string | null;
+}> {
+  if (!heroImageId) {
+    return { heroImageUrl: null, heroImageAlt: null };
+  }
+  const asset = await db.mediaAsset.findFirst({
+    where: { id: heroImageId, deletedAt: null },
+    select: { fileUrl: true, altText: true },
+  });
+  if (!asset) {
+    return { heroImageUrl: null, heroImageAlt: null };
+  }
+  return {
+    heroImageUrl: resolveMediaFileUrl(asset.fileUrl, env.MEDIA_STORAGE_BASE_URL),
+    heroImageAlt: asset.altText,
+  };
+}
+
+export async function listPublishedCaseStudySlugs(): Promise<{ slug: string }[]> {
+  return db.caseStudy.findMany({
+    where: PUBLISHED_EDITORIAL_WHERE,
+    select: { slug: true },
+  });
+}
+
+export async function getPublishedCaseStudyBySlug(
+  slug: string,
+): Promise<PublishedCaseStudyDetail | null> {
+  const row = await db.caseStudy.findFirst({
+    where: { ...PUBLISHED_EDITORIAL_WHERE, slug },
+    select: caseStudyDetailSelect,
+  });
+  if (!row) {
+    return null;
+  }
+
+  const { heroImageUrl, heroImageAlt } = await resolveCaseHeroImage(row.ogImageId);
+  const meters =
+    row.metersDrilled === null ? null : Number(row.metersDrilled.toString());
+  const lat =
+    row.latitude === null ? null : Number(row.latitude.toString());
+  const lon =
+    row.longitude === null ? null : Number(row.longitude.toString());
+
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    h1: row.h1,
+    problem: row.problem,
+    solution: row.solution,
+    result: row.result,
+    testsSummary: row.testsSummary,
+    boreholesCount: row.boreholesCount,
+    metersDrilled: Number.isFinite(meters) ? meters : null,
+    projectYear: row.projectYear,
+    latitude: Number.isFinite(lat) ? lat : null,
+    longitude: Number.isFinite(lon) ? lon : null,
+    clientName: row.clientIsPublic ? row.clientName : null,
+    metaTitle: row.metaTitle,
+    metaDescription: row.metaDescription,
+    canonicalUrl: row.canonicalUrl,
+    schemaType: row.schemaType,
+    noindex: row.noindex,
+    publishedAt: row.publishedAt,
+    updatedAt: row.updatedAt,
+    ogImageId: row.ogImageId,
+    heroImageUrl,
+    heroImageAlt,
+    service: row.service,
+    province: row.province,
+    workTypology: row.workTypology,
+    teamMembers: row.teamMembers.map((link) => ({
+      fullName: link.teamMember.fullName,
+      slug: link.teamMember.slug,
+      jobTitle: link.teamMember.jobTitle,
+      role: link.role,
+    })),
   };
 }

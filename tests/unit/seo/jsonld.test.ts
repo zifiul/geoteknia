@@ -142,6 +142,36 @@ describe('jsonld builders', () => {
     expect(json['@type']).toBe('CreativeWork');
   });
 
+  it('buildArticleSchema soporta authors múltiples y contentLocation', () => {
+    const json = buildArticleSchema({
+      headline: 'Caso',
+      url: 'https://geoteknia.es/proyectos/caso',
+      authors: [
+        { name: 'Ana', url: 'https://geoteknia.es/equipo/ana' },
+        { name: 'Luis', url: 'https://geoteknia.es/equipo/luis' },
+      ],
+      location: { latitude: 39.47, longitude: -0.38 },
+    });
+    const authors = json.author as Record<string, unknown>[];
+    expect(Array.isArray(authors)).toBe(true);
+    expect(authors).toHaveLength(2);
+    const place = json.contentLocation as Record<string, unknown>;
+    expect(place['@type']).toBe('Place');
+    const geo = place.geo as Record<string, unknown>;
+    expect(geo.latitude).toBe(39.47);
+  });
+
+  it('buildCreativeWorkSchema extiende authors y location', () => {
+    const json = buildCreativeWorkSchema({
+      name: 'Caso',
+      url: 'https://geoteknia.es/proyectos/caso',
+      authors: [{ name: 'Técnico' }],
+      location: { latitude: 40, longitude: -3 },
+    });
+    expect(json.author).toEqual({ '@type': 'Person', name: 'Técnico' });
+    expect(json.contentLocation).toBeDefined();
+  });
+
   it('buildPersonSchema mapea worksFor y alumniOf', () => {
     const json = buildPersonSchema({
       name: 'Técnico',

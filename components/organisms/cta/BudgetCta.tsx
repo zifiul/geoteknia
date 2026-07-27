@@ -11,12 +11,36 @@ export type BudgetCtaProps = {
   serviceSlug: string;
   serviceId: string;
   serviceName: string;
+  provinceSlug?: string;
   className?: string;
 };
 
-function trackBudgetEngagement(serviceId: string, serviceSlug: string) {
+function buildBudgetHref(serviceSlug: string, provinceSlug?: string): string {
+  const params = new URLSearchParams();
+  params.set('servicio', serviceSlug);
+  if (provinceSlug?.trim()) {
+    params.set('provincia', provinceSlug.trim());
+  }
+  return `/presupuesto?${params.toString()}`;
+}
+
+function trackBudgetEngagement(
+  serviceId: string,
+  serviceSlug: string,
+  provinceSlug?: string,
+) {
   const stored = readBrowserConsent();
   if (!stored || !hasAnalyticsConsent(stored.categories)) {
+    return;
+  }
+  if (provinceSlug?.trim()) {
+    pushRawDataLayer({
+      event: 'cta_click',
+      content_type: 'case_study',
+      link_text: 'presupuesto',
+      service_slug: serviceSlug,
+      province_slug: provinceSlug.trim(),
+    });
     return;
   }
   pushRawDataLayer({
@@ -28,8 +52,14 @@ function trackBudgetEngagement(serviceId: string, serviceSlug: string) {
   });
 }
 
-export function BudgetCta({ serviceSlug, serviceId, serviceName, className }: BudgetCtaProps) {
-  const href = `/presupuesto?servicio=${encodeURIComponent(serviceSlug)}`;
+export function BudgetCta({
+  serviceSlug,
+  serviceId,
+  serviceName,
+  provinceSlug,
+  className,
+}: BudgetCtaProps) {
+  const href = buildBudgetHref(serviceSlug, provinceSlug);
   const label = `Solicitar presupuesto — ${serviceName}`;
 
   const buttonClass = cn(
@@ -43,7 +73,7 @@ export function BudgetCta({ serviceSlug, serviceId, serviceName, className }: Bu
         <Link
           href={href}
           className={buttonClass}
-          onClick={() => trackBudgetEngagement(serviceId, serviceSlug)}
+          onClick={() => trackBudgetEngagement(serviceId, serviceSlug, provinceSlug)}
         >
           Solicitar presupuesto
         </Link>
@@ -54,7 +84,7 @@ export function BudgetCta({ serviceSlug, serviceId, serviceName, className }: Bu
             href={href}
             className={buttonClass}
             aria-label={label}
-            onClick={() => trackBudgetEngagement(serviceId, serviceSlug)}
+            onClick={() => trackBudgetEngagement(serviceId, serviceSlug, provinceSlug)}
           >
             Solicitar presupuesto
           </Link>

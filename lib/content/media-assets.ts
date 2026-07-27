@@ -90,6 +90,49 @@ export async function updateMediaAsset(
   });
 }
 
+export type ContentMediaGalleryItem = {
+  url: string;
+  alt: string;
+  order: number;
+};
+
+export async function listContentMediaGallery(
+  contentType: string,
+  contentId: string,
+): Promise<ContentMediaGalleryItem[]> {
+  const rows = await db.contentMedia.findMany({
+    where: { contentType, contentId },
+    orderBy: { order: 'asc' },
+    select: {
+      order: true,
+      mediaAsset: {
+        select: {
+          fileUrl: true,
+          altText: true,
+          deletedAt: true,
+        },
+      },
+    },
+  });
+
+  const mediaBase = env.MEDIA_STORAGE_BASE_URL;
+  const items: ContentMediaGalleryItem[] = [];
+
+  for (const row of rows) {
+    if (row.mediaAsset.deletedAt != null) {
+      continue;
+    }
+    const alt = row.mediaAsset.altText?.trim() || 'Fotografía de campo';
+    items.push({
+      url: resolveMediaFileUrl(row.mediaAsset.fileUrl, mediaBase),
+      alt,
+      order: row.order,
+    });
+  }
+
+  return items;
+}
+
 export async function softDeleteMediaAsset(
   user: PortalSessionPayload,
   mediaId: string,
