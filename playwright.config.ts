@@ -23,5 +23,11 @@ export default defineConfig({
     url: E2E_BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    env: {
+      ...process.env,
+      NEXT_PUBLIC_SITE_URL: E2E_BASE_URL,
+      NEXTAUTH_URL: E2E_BASE_URL,
+      MEDIA_STORAGE_BASE_URL: E2E_BASE_URL,
+    },
   },
 });

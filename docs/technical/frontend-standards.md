@@ -492,7 +492,11 @@ Los formularios críticos deben anunciar errores por campo y resumen de error cu
 
 ### 10.3 Plantillas críticas
 
-Lighthouse CI debe cubrir al menos:
+Lighthouse CI (`pnpm run ci:lighthouse` / workflow `.github/workflows/lighthouse.yml`) ejecuta en cada PR con assertions en nivel **`error`** (fallo bloqueante). Configuración: `lighthouserc.cjs`, `budget.json` y `lib/perf/lighthouse-phase1.cjs`.
+
+**Fase 1 (GTK-77):** home, servicio (`/servicios/sondeos`), índice de blog y artículo de referencia. **Fase 2 (seguimiento):** geo-landing, caso de estudio, intersección, presupuesto y login `/admin` cuando el alcance lo amplíe.
+
+Debe cubrir al menos (objetivo completo del producto):
 
 - Home.
 - Landing de servicio.
