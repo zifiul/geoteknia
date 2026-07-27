@@ -14,12 +14,13 @@ import {
 } from '../../../lib/perf/lighthouse-phase1.cjs';
 
 describe('GTK-77 Lighthouse CI config', () => {
-  it('expone las rutas Fase 1 (home, servicio, blog índice y artículo)', () => {
+  it('expone las rutas Fase 1 (home, servicio, blog índice y artículo, calculadora)', () => {
     expect(LIGHTHOUSE_PHASE1_RELATIVE_PATHS).toEqual([
       '/',
       '/servicios/sondeos',
       '/blog',
       '/blog/normativa/novedades-db-sec-2024',
+      '/calculadora',
     ]);
   });
 
@@ -29,6 +30,7 @@ describe('GTK-77 Lighthouse CI config', () => {
       `http://localhost:${LIGHTHOUSE_CI_PORT}/servicios/sondeos`,
       `http://localhost:${LIGHTHOUSE_CI_PORT}/blog`,
       `http://localhost:${LIGHTHOUSE_CI_PORT}/blog/normativa/novedades-db-sec-2024`,
+      `http://localhost:${LIGHTHOUSE_CI_PORT}/calculadora`,
     ]);
   });
 

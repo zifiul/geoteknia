@@ -30,5 +30,13 @@
       { "resourceType": "image", "budget": 750 },
       { "resourceType": "total", "budget": 1300 }
     ]
+  },
+  {
+    "path": "/calculadora",
+    "resourceSizes": [
+      { "resourceType": "script", "budget": 380 },
+      { "resourceType": "image", "budget": 400 },
+      { "resourceType": "total", "budget": 1150 }
+    ]
   }
 ]
