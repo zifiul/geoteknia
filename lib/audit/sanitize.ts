@@ -36,6 +36,7 @@ export const METADATA_WHITELIST: Record<AuditAction, readonly string[]> = {
   ],
   login: [...COMMON_METADATA_KEYS, 'method', 'roleName'],
   login_failed: [...COMMON_METADATA_KEYS, 'method', 'attemptReason'],
+  access_denied: [...COMMON_METADATA_KEYS, 'pathname', 'roleName'],
   role_change: [
     ...COMMON_METADATA_KEYS,
     'targetUserId',

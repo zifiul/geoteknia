@@ -13,6 +13,8 @@ config();
 const TEST_EMAIL = 'gtk69-e2e@test.geoteknia.local';
 const TEST_PASSWORD = 'Gtk69E2eTest1!';
 const TEST_EMAIL_2FA = 'gtk69-2fa-e2e@test.geoteknia.local';
+const TEST_EMAIL_TECNICO = 'gtk68-tecnico-e2e@test.geoteknia.local';
+const TEST_EMAIL_EDITOR = 'gtk68-editor-e2e@test.geoteknia.local';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
@@ -38,6 +40,12 @@ async function main() {
   const adminRole = await db.role.findUniqueOrThrow({
     where: { name: RoleName.admin },
   });
+  const tecnicoRole = await db.role.findUniqueOrThrow({
+    where: { name: RoleName.tecnico },
+  });
+  const editorRole = await db.role.findUniqueOrThrow({
+    where: { name: RoleName.editor },
+  });
   const hash = await argon2.hash(TEST_PASSWORD, { type: argon2.argon2id });
 
   await db.user.upsert({
@@ -53,6 +61,48 @@ async function main() {
     },
     update: {
       passwordHash: hash,
+      isActive: true,
+      twofaEnabled: false,
+      twofaSecret: null,
+      deletedAt: null,
+    },
+  });
+
+  await db.user.upsert({
+    where: { email: TEST_EMAIL_TECNICO },
+    create: {
+      email: TEST_EMAIL_TECNICO,
+      fullName: 'GTK68 Técnico E2E',
+      passwordHash: hash,
+      roleId: tecnicoRole.id,
+      isActive: true,
+      twofaEnabled: false,
+      twofaSecret: null,
+    },
+    update: {
+      passwordHash: hash,
+      roleId: tecnicoRole.id,
+      isActive: true,
+      twofaEnabled: false,
+      twofaSecret: null,
+      deletedAt: null,
+    },
+  });
+
+  await db.user.upsert({
+    where: { email: TEST_EMAIL_EDITOR },
+    create: {
+      email: TEST_EMAIL_EDITOR,
+      fullName: 'GTK68 Editor E2E',
+      passwordHash: hash,
+      roleId: editorRole.id,
+      isActive: true,
+      twofaEnabled: false,
+      twofaSecret: null,
+    },
+    update: {
+      passwordHash: hash,
+      roleId: editorRole.id,
       isActive: true,
       twofaEnabled: false,
       twofaSecret: null,

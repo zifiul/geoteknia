@@ -8,6 +8,7 @@ export const AUDIT_ACTION_VALUES = [
   'delete',
   'login',
   'login_failed',
+  'access_denied',
   'role_change',
   'ai_generate',
   'export',

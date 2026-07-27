@@ -24,7 +24,7 @@ vi.mock('next/cache', () => ({
 
 import { ForbiddenError } from '@/lib/auth/rbac-errors';
 import { InvalidSessionError } from '@/lib/auth/session';
-import { transitionToPublish } from '@/app/(admin)/contenido/[type]/[id]/actions';
+import { transitionToPublish } from '@/app/(admin)/(portal)/contenido/[type]/[id]/actions';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
 
