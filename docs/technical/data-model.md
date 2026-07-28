@@ -55,7 +55,7 @@ Usado por contenido revisable y publicable.
 | `approved_by_id` | UUID? | nullable | Aprobador final. |
 | `approved_at` | DateTime? | nullable | Fecha de aprobación. |
 | `published_at` | DateTime? | nullable | Fecha de publicación. |
-| `scheduled_publish_at` | DateTime? | nullable | Programación de publicación. |
+| `scheduled_publish_at` | DateTime? | nullable | Programación de publicación (escritura vía GTK-75 `scheduleContentPublication`; lectura por cron GTK-40). |
 | `current_version` | Int | default 1 | Versión editorial vigente. |
 
 ## 3. Enums Principales

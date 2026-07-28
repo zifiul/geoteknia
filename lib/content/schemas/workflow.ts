@@ -26,3 +26,13 @@ export const regenerateBodySchema = z.object({
 });
 
 export type RegenerateBodyInput = z.infer<typeof regenerateBodySchema>;
+
+/** Fecha de publicación programada (debe ser estrictamente futura). */
+export const schedulePublishAtSchema = z
+  .string()
+  .datetime({ offset: true })
+  .refine((value) => new Date(value).getTime() > Date.now(), {
+    message: 'La fecha de publicación debe ser futura',
+  });
+
+export type SchedulePublishAtInput = z.infer<typeof schedulePublishAtSchema>;
