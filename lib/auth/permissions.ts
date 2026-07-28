@@ -3,7 +3,7 @@ import type { RoleName } from '@prisma/client';
 /** Permiso atómico RBAC — fuente canónica para seed y autorización (GTK-17 / RF-17). */
 export type PermissionDefinition = {
   code: string;
-  module: 'projects' | 'content' | 'users' | 'ai';
+  module: 'projects' | 'content' | 'users' | 'ai' | 'audit';
   description: string;
 };
 
@@ -32,6 +32,11 @@ export const PERMISSIONS: readonly PermissionDefinition[] = [
   { code: 'users.create', module: 'users', description: 'Dar de alta usuarios internos' },
   { code: 'users.update', module: 'users', description: 'Editar usuarios y roles' },
   { code: 'users.delete', module: 'users', description: 'Desactivar o eliminar usuarios' },
+  {
+    code: 'audit.read',
+    module: 'audit',
+    description: 'Consultar el registro de auditoría del portal',
+  },
 ] as const;
 
 export const ROLES: readonly RoleDefinition[] = [

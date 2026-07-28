@@ -33,6 +33,11 @@ export const ADMIN_NAV_SECTIONS: readonly AdminNavSection[] = [
     requiredPermission: 'users.read',
   },
   {
+    href: '/admin/auditoria',
+    label: 'Auditoría',
+    requiredPermission: 'audit.read',
+  },
+  {
     href: '/perfil/seguridad',
     label: 'Seguridad',
     requiredPermission: null,

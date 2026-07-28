@@ -128,6 +128,8 @@ Roles funcionales del portal interno.
 
 Relaciones: 1:N con `users`; M:N con `permissions` mediante `role_permissions`.
 
+**Código canónico (GTK-80):** el permiso `audit.read` (módulo `audit`) vive en `lib/auth/permissions.ts` y se asigna solo al rol `admin` vía regla `*`. La UI de consulta es `/admin/auditoria` (solo lectura sobre `audit_logs`).
+
 #### `permissions`
 
 Permisos atómicos por módulo.
@@ -136,7 +138,7 @@ Permisos atómicos por módulo.
 |---|---:|---|---|
 | `id` | UUID | PK | Permiso. |
 | `code` | String | unique | Código como `content.publish` o `projects.read`. |
-| `module` | String | indexed | Módulo funcional (`projects`, `content`, `users`, `ai`). |
+| `module` | String | indexed | Módulo funcional (`projects`, `content`, `users`, `ai`, `audit`). |
 | `description` | String? | nullable | Descripción del permiso. |
 | AUDIT | mixed | required | Trazabilidad. |
 

@@ -1,0 +1,143 @@
+'use client';
+
+import { AuditAction } from '@prisma/client';
+
+import { AUDIT_ACTION_LABELS } from '@/lib/admin/audit-labels';
+import type { AuditFilters } from '@/lib/admin/audit-filters-schema';
+
+type Props = {
+  filters: AuditFilters;
+  pageSize: number;
+  fieldErrors?: string[];
+};
+
+function formatDateInput(value: Date | undefined): string {
+  if (!value) return '';
+  const y = value.getFullYear();
+  const m = String(value.getMonth() + 1).padStart(2, '0');
+  const d = String(value.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function AuditFiltersForm({
+  filters,
+  pageSize,
+  fieldErrors = [],
+}: Props) {
+  const actions = Object.values(AuditAction);
+
+  return (
+    <section
+      aria-labelledby="audit-filters-heading"
+      className="rounded-xl border border-brand-primary/10 bg-brand-surface p-4 shadow-sm"
+    >
+      <h2
+        id="audit-filters-heading"
+        className="text-sm font-semibold text-brand-primary"
+      >
+        Filtros
+      </h2>
+      {fieldErrors.length > 0 ? (
+        <ul
+          className="mt-2 list-disc pl-5 text-sm text-red-700"
+          role="alert"
+        >
+          {fieldErrors.map((msg) => (
+            <li key={msg}>{msg}</li>
+          ))}
+        </ul>
+      ) : null}
+      <form method="get" className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <label className="block text-sm text-brand-secondary">
+          Acción
+          <select
+            name="action"
+            defaultValue={filters.action ?? ''}
+            className="mt-1 w-full rounded-md border border-brand-secondary/30 px-3 py-2 text-sm"
+          >
+            <option value="">Todas</option>
+            {actions.map((action) => (
+              <option key={action} value={action}>
+                {AUDIT_ACTION_LABELS[action]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-sm text-brand-secondary">
+          ID usuario (UUID)
+          <input
+            type="text"
+            name="userId"
+            defaultValue={filters.userId ?? ''}
+            placeholder="11111111-1111-4111-8111-111111111111"
+            className="mt-1 w-full rounded-md border border-brand-secondary/30 px-3 py-2 font-mono text-sm"
+            autoComplete="off"
+          />
+        </label>
+        <label className="block text-sm text-brand-secondary">
+          Tipo de entidad
+          <input
+            type="text"
+            name="entityType"
+            defaultValue={filters.entityType ?? ''}
+            placeholder="projects, service, …"
+            className="mt-1 w-full rounded-md border border-brand-secondary/30 px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block text-sm text-brand-secondary">
+          ID entidad (UUID)
+          <input
+            type="text"
+            name="entityId"
+            defaultValue={filters.entityId ?? ''}
+            className="mt-1 w-full rounded-md border border-brand-secondary/30 px-3 py-2 font-mono text-sm"
+            autoComplete="off"
+          />
+        </label>
+        <label className="block text-sm text-brand-secondary">
+          Desde
+          <input
+            type="date"
+            name="from"
+            defaultValue={formatDateInput(filters.from)}
+            className="mt-1 w-full rounded-md border border-brand-secondary/30 px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block text-sm text-brand-secondary">
+          Hasta
+          <input
+            type="date"
+            name="to"
+            defaultValue={formatDateInput(filters.to)}
+            className="mt-1 w-full rounded-md border border-brand-secondary/30 px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block text-sm text-brand-secondary">
+          Por página
+          <select
+            name="pageSize"
+            defaultValue={String(pageSize)}
+            className="mt-1 w-full rounded-md border border-brand-secondary/30 px-3 py-2 text-sm"
+          >
+            <option value="25">25</option>
+            <option value="50">50</option>
+          </select>
+        </label>
+        <div className="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-3">
+          <button
+            type="submit"
+            className="rounded-md bg-brand-accent px-4 py-2 text-sm font-semibold text-white hover:bg-brand-accent/90"
+          >
+            Aplicar filtros
+          </button>
+          <a
+            href="/admin/auditoria"
+            className="rounded-md border border-brand-secondary/30 px-4 py-2 text-sm font-medium hover:bg-brand-neutral"
+          >
+            Restablecer
+          </a>
+        </div>
+      </form>
+    </section>
+  );
+}
