@@ -377,7 +377,7 @@ Reglas de aplicación:
 - Los templates deben recibir datos ya preparados o view models y componer organismos sin conocer detalles de fetching.
 - Las pages del App Router son responsables de `generateMetadata`, carga de datos, `notFound`, ISR y composición final.
 - Si un componente solo se usa en un dominio, puede vivir en una subcarpeta de su nivel: `components/organisms/leads/BudgetLeadForm.tsx`.
-- Portal admin (GTK-68+): shell, sidebar, topbar y gates en `components/organisms/admin/` (p. ej. `AdminPortalLayout`, `AdminSidebar`, `LoginForm`). Widgets de dashboard home (GTK-79) en `components/organisms/admin/dashboard/` (`KpiGrid`, `AlertsPanel`, `QuickActions`, `RecentActivity`); datos vía `lib/admin/dashboard-metrics.ts` (RSC, sin fetch cliente).
+- Portal admin (GTK-68+): shell, sidebar, topbar y gates en `components/organisms/admin/` (p. ej. `AdminPortalLayout`, `AdminSidebar`, `LoginForm`). Widgets de dashboard home (GTK-79) en `components/organisms/admin/dashboard/` (`KpiGrid`, `AlertsPanel`, `QuickActions`, `RecentActivity`); datos vía `lib/admin/dashboard-metrics.ts` (RSC, sin fetch cliente). Gestión de usuarios (GTK-81) en `components/organisms/admin/users/` (`UsersTable`, `UserFilters`, `CreateUserForm`, `EditUserClient`); datos y mutaciones en `lib/admin/users-queries.ts` y `lib/admin/users-actions.ts`.
 - Evitar carpetas genéricas como `misc`, `common` o `shared` para componentes sin clasificación clara.
 
 Ejemplo recomendado:

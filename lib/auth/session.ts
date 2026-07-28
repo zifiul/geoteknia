@@ -98,6 +98,16 @@ export async function getServerSession(): Promise<PortalSessionPayload | null> {
  * autorización (rbac.ts). A diferencia de getServerSession(), sí comprueba
  * el espejo de sesión en BD (revocación/expiración), no solo el JWT.
  */
+/** Revoca todas las sesiones activas de un usuario (GTK-81). */
+export async function revokeAllSessionsForUser(userId: string): Promise<number> {
+  const { db } = await import('@/lib/db');
+  const result = await db.session.updateMany({
+    where: { userId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+  return result.count;
+}
+
 export async function getPortalSession(): Promise<PortalSessionPayload> {
   return requireSession({
     getAuthSession: async () => {
