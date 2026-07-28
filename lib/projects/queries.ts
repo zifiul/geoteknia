@@ -27,6 +27,7 @@ const boardStateSelect = {
   slug: true,
   name: true,
   order: true,
+  isTerminal: true,
 } satisfies Prisma.ProjectStateSelect;
 
 export type PipelineBoardState = Prisma.ProjectStateGetPayload<{
