@@ -60,3 +60,8 @@ export {
   resolvePipelineView,
   type PipelineView,
 } from './pipeline-view';
+export {
+  listAllowedStateTransitionTargets,
+  type CurrentProjectState,
+  type PipelineStateOption,
+} from './state-transition-targets';

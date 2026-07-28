@@ -2,8 +2,23 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { CrmDetailSection } from '@/components/organisms/admin/crm/CrmDetailSection';
+import { Documents } from '@/components/organisms/admin/crm/Documents';
+import { Milestones } from '@/components/organisms/admin/crm/Milestones';
+import { Notes } from '@/components/organisms/admin/crm/Notes';
+import { ProjectHeader } from '@/components/organisms/admin/crm/ProjectHeader';
 import { runWithPortalReadAccess } from '@/lib/admin/portal-page-errors';
-import { getProjectDetail, ProjectNotFoundError } from '@/lib/projects';
+import { resolvePermissionCodesForRole } from '@/lib/auth/permissions';
+import { getPortalSession } from '@/lib/auth/session';
+import { resolveMediaFileUrl } from '@/lib/content/slug';
+import { env } from '@/lib/env';
+import {
+  getProjectDetail,
+  listPipelineBoardStates,
+  listPipelineFilterOptions,
+  ProjectNotFoundError,
+} from '@/lib/projects';
+import type { RoleName } from '@prisma/client';
 
 export const metadata: Metadata = {
   title: 'Detalle de proyecto — Portal Geoteknia',
@@ -18,8 +33,30 @@ export default async function AdminProyectoDetallePage({ params }: PageProps) {
   const { id } = await params;
 
   let project;
+  let boardStates;
+  let technicians;
+  let permissions: string[];
+
   try {
-    project = await runWithPortalReadAccess(() => getProjectDetail(id));
+    const data = await runWithPortalReadAccess(async () => {
+      const user = await getPortalSession();
+      const perms = resolvePermissionCodesForRole(user.roleName as RoleName);
+      const [detail, states, filterOptions] = await Promise.all([
+        getProjectDetail(id),
+        listPipelineBoardStates(),
+        listPipelineFilterOptions(),
+      ]);
+      return {
+        project: detail,
+        boardStates: states,
+        technicians: filterOptions.technicians,
+        permissions: perms,
+      };
+    });
+    project = data.project;
+    boardStates = data.boardStates;
+    technicians = data.technicians;
+    permissions = data.permissions;
   } catch (error) {
     if (error instanceof ProjectNotFoundError) {
       notFound();
@@ -27,53 +64,164 @@ export default async function AdminProyectoDetallePage({ params }: PageProps) {
     throw error;
   }
 
+  const canUpdate = permissions.includes('projects.update');
+  const canAssign = permissions.includes('projects.assign');
+  const canDelete = permissions.includes('projects.delete');
+  const canChangeState = canUpdate;
+
+  const firstResponseLabel = project.firstResponseAt
+    ? project.firstResponseAt.toLocaleDateString('es-ES')
+    : null;
+
+  const documentItems = project.documents.map((doc) => ({
+    id: doc.id,
+    docType: doc.docType,
+    createdAt: doc.createdAt.toISOString(),
+    downloadUrl: doc.fileUrl
+      ? resolveMediaFileUrl(doc.fileUrl, env.MEDIA_STORAGE_BASE_URL)
+      : null,
+  }));
+
   return (
-    <main>
+    <main className="mx-auto max-w-[1200px] space-y-6 px-4 py-6 lg:px-6">
       <p>
-        <Link href="/admin/proyectos">← Volver al pipeline</Link>
+        <Link
+          href="/admin/proyectos"
+          className="text-sm font-medium text-brand-accent hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
+        >
+          ← Volver al pipeline
+        </Link>
       </p>
-      <h1>{project.title}</h1>
-      <p>Estado: {project.state.name}</p>
-      <p>
-        Técnico:{' '}
-        {project.assignedTechnician?.fullName ?? 'Sin asignar'}
-      </p>
-      <p>Cualificado: {project.isQualified ? 'Sí' : 'No'}</p>
 
-      <section aria-labelledby="lead-heading">
-        <h2 id="lead-heading">Lead de origen</h2>
-        <p>Referencia: {project.lead.referenceNumber}</p>
-      </section>
+      <ProjectHeader
+        projectId={project.id}
+        title={project.title}
+        referenceNumber={project.lead.referenceNumber}
+        state={{
+          slug: project.state.slug,
+          name: project.state.name,
+          isTerminal: project.state.isTerminal,
+        }}
+        assignedTechnicianName={project.assignedTechnician?.fullName ?? null}
+        assignedTechnicianId={project.assignedTechnician?.id ?? null}
+        isQualified={project.isQualified}
+        leadType={project.lead.leadType}
+        leadSource={project.lead.source}
+        firstResponseLabel={firstResponseLabel}
+        allStates={boardStates}
+        technicians={technicians}
+        canChangeState={canChangeState}
+        canAssign={canAssign}
+      />
 
-      {project.contact ? (
-        <section aria-labelledby="contacto-heading">
-          <h2 id="contacto-heading">Contacto</h2>
-          <p>{project.contact.fullName ?? 'Sin nombre'}</p>
-        </section>
-      ) : null}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <CrmDetailSection id="lead" title="Lead de origen" defaultOpen>
+          <dl className="space-y-2 text-sm">
+            <div>
+              <dt className="text-brand-secondary">Referencia</dt>
+              <dd className="font-medium text-brand-on-surface">
+                {project.lead.referenceNumber}
+              </dd>
+            </div>
+            {project.contact ? (
+              <>
+                <div>
+                  <dt className="text-brand-secondary">Contacto</dt>
+                  <dd className="text-brand-on-surface">
+                    {project.contact.fullName ?? 'Sin nombre'}
+                  </dd>
+                </div>
+                {project.contact.email ? (
+                  <div>
+                    <dt className="text-brand-secondary">Email</dt>
+                    <dd className="text-brand-on-surface">{project.contact.email}</dd>
+                  </div>
+                ) : null}
+                {project.contact.phone ? (
+                  <div>
+                    <dt className="text-brand-secondary">Teléfono</dt>
+                    <dd className="text-brand-on-surface">{project.contact.phone}</dd>
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <p className="text-brand-secondary">Sin contacto vinculado.</p>
+            )}
+          </dl>
+        </CrmDetailSection>
 
-      <section aria-labelledby="hitos-heading">
-        <h2 id="hitos-heading">Hitos ({project.milestones.length})</h2>
-        <ul>
-          {project.milestones.map((milestone) => (
-            <li key={milestone.id}>{milestone.title}</li>
-          ))}
-        </ul>
-      </section>
+        <CrmDetailSection
+          id="historial"
+          title="Historial de estado"
+          count={project.stateHistory.length}
+        >
+          <ol className="space-y-2 text-sm">
+            {project.stateHistory.length === 0 ? (
+              <li className="text-brand-secondary">Sin cambios registrados.</li>
+            ) : (
+              project.stateHistory.map((entry) => (
+                <li
+                  key={entry.id}
+                  className="border-b border-brand-primary/5 pb-2 last:border-0"
+                >
+                  <time
+                    className="text-xs text-brand-secondary"
+                    dateTime={entry.createdAt.toISOString()}
+                  >
+                    {entry.createdAt.toLocaleString('es-ES')}
+                  </time>
+                  {entry.note ? (
+                    <p className="mt-1 text-brand-on-surface">{entry.note}</p>
+                  ) : null}
+                </li>
+              ))
+            )}
+          </ol>
+        </CrmDetailSection>
+      </div>
 
-      <section aria-labelledby="notas-heading">
-        <h2 id="notas-heading">Notas ({project.notes.length})</h2>
-      </section>
+      <CrmDetailSection
+        id="hitos"
+        title="Hitos"
+        count={project.milestones.length}
+      >
+        <Milestones
+          projectId={project.id}
+          canUpdate={canUpdate}
+          milestones={project.milestones.map((m) => ({
+            id: m.id,
+            title: m.title,
+            dueDate: m.dueDate ? m.dueDate.toISOString() : null,
+            completedAt: m.completedAt ? m.completedAt.toISOString() : null,
+          }))}
+        />
+      </CrmDetailSection>
 
-      <section aria-labelledby="docs-heading">
-        <h2 id="docs-heading">Documentos ({project.documents.length})</h2>
-      </section>
+      <CrmDetailSection id="notas" title="Notas internas" count={project.notes.length}>
+        <Notes
+          projectId={project.id}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
+          notes={project.notes.map((n) => ({
+            id: n.id,
+            body: n.body,
+            createdAt: n.createdAt.toISOString(),
+          }))}
+        />
+      </CrmDetailSection>
 
-      <section aria-labelledby="historial-heading">
-        <h2 id="historial-heading">
-          Historial de estado ({project.stateHistory.length})
-        </h2>
-      </section>
+      <CrmDetailSection
+        id="documentos"
+        title="Documentos"
+        count={project.documents.length}
+      >
+        <Documents
+          projectId={project.id}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
+          documents={documentItems}
+        />
+      </CrmDetailSection>
     </main>
   );
 }
