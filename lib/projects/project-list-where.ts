@@ -6,7 +6,13 @@ import type { ProjectFilters } from './project-filters-schema';
 
 export type ProjectListFilterInput = Pick<
   ProjectFilters,
-  'stateSlug' | 'technicianId' | 'serviceSlug' | 'provinceSlug' | 'from' | 'to'
+  | 'stateSlug'
+  | 'technicianId'
+  | 'serviceSlug'
+  | 'provinceSlug'
+  | 'from'
+  | 'to'
+  | 'slaOverdue'
 >;
 
 /** Construye el `where` de listado/métricas con scoping por rol (GTK-34 / SEC-2). */
@@ -42,6 +48,16 @@ export function buildProjectListWhere(
     if (filters.to) {
       where.createdAt.lte = filters.to;
     }
+  }
+
+  if (filters.slaOverdue) {
+    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    where.firstResponseAt = null;
+    const createdAt =
+      typeof where.createdAt === 'object' && where.createdAt !== null
+        ? { ...where.createdAt }
+        : {};
+    where.createdAt = { ...createdAt, lte: cutoff };
   }
 
   return where;

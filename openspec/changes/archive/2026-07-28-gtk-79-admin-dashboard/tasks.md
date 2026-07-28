@@ -1,0 +1,52 @@
+# Tasks — gtk-79-admin-dashboard
+
+## Paso 0: rama de feature (OBLIGATORIO)
+
+- [x] Rama `feature/frontend-gtk-79-admin-dashboard` creada y verificada.
+
+## Fase 1 — SDD
+
+- [x] `proposal.md`, `design.md`, delta spec, este `tasks.md`.
+- [x] `openspec validate gtk-79-admin-dashboard --strict`.
+
+## Gate 1 — revisión humana
+
+- [x] OK implícito por solicitud de implementación (`reports/2026-07-28-gate-1.md`).
+
+## Fase 2 — Contrato
+
+- [x] Extensión Zod `slaOverdue` + informe (`reports/2026-07-28-phase-2-contract.md`).
+
+## Fase 3 — TDD-RED
+
+- [x] Tests `tests/unit/admin/dashboard-metrics.test.ts` (RED→GREEN verificado).
+
+## Fase 4 — Implementación
+
+- [x] `lib/admin/dashboard-metrics.ts` y widgets Stitch.
+- [x] `app/(admin)/(portal)/admin/page.tsx` compuesto por rol.
+
+## Paso N+1: unit + BD (OBLIGATORIO)
+
+- [x] `reports/2026-07-28-step-N+1-unit-test-and-db-verification.md`.
+
+## Paso N+3: E2E Playwright (OBLIGATORIO)
+
+- [x] `tests/e2e/gtk-79-admin-dashboard.spec.ts` + `reports/2026-07-28-step-N+3-e2e.md`.
+
+## Fase 5b — Security scan
+
+- [x] `reports/security.md`.
+
+## Fase 6 — Code review
+
+- [x] `reports/code-review.md` con `Veredicto: APTO`.
+
+## Fase 7 — Docs
+
+- [x] `frontend-standards.md` (widgets dashboard).
+
+## Gate 2 + Fase 8 — Archive
+
+- [x] OK humano (`reports/2026-07-28-gate-2.md`).
+- [x] Archive ejecutado; spec viva `openspec/specs/admin-dashboard/spec.md`.
