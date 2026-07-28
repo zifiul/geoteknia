@@ -16,6 +16,7 @@ import {
 } from '@/lib/cms/editor/service-form-schema';
 
 import { BodyEditor } from './BodyEditor';
+import { AiGeneratePanel } from './AiGeneratePanel';
 import { PreviewPane } from './PreviewPane';
 import { RelationsPicker } from './RelationsPicker';
 import { SeoBlock } from './SeoBlock';
@@ -30,6 +31,7 @@ export function ContentEditor({ page }: Props) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit');
+  const [workspaceTab, setWorkspaceTab] = useState<'editor' | 'ai'>('editor');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [values, setValues] = useState<CmsServiceFormValues>(() => ({
     ...(page.initial as CmsServiceFormValues),
@@ -139,6 +141,34 @@ export function ContentEditor({ page }: Props) {
         </div>
       </div>
 
+      {page.canUseAi && page.promptPageType ? (
+        <div className="mb-4 flex gap-2 border-b border-brand-primary/10 pb-2">
+          <button
+            type="button"
+            className={`min-h-11 rounded-md px-4 py-2 text-sm font-medium ${
+              workspaceTab === 'editor'
+                ? 'bg-brand-primary text-white'
+                : 'text-brand-accent hover:bg-brand-surface'
+            }`}
+            onClick={() => setWorkspaceTab('editor')}
+          >
+            Editor
+          </button>
+          <button
+            type="button"
+            className={`min-h-11 rounded-md px-4 py-2 text-sm font-medium ${
+              workspaceTab === 'ai'
+                ? 'bg-brand-primary text-white'
+                : 'text-brand-accent hover:bg-brand-surface'
+            }`}
+            data-testid="cms-ai-tab"
+            onClick={() => setWorkspaceTab('ai')}
+          >
+            Generar con IA
+          </button>
+        </div>
+      ) : null}
+
       {saveError ? (
         <p role="alert" className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-800">
           {saveError}
@@ -150,6 +180,16 @@ export function ContentEditor({ page }: Props) {
         </p>
       ) : null}
 
+      {workspaceTab === 'ai' && page.canUseAi && page.promptPageType ? (
+        <AiGeneratePanel
+          pageType={page.promptPageType}
+          pageTypeLabel={page.typeLabel}
+          targetContentType={page.contentType}
+          targetContentId={page.entityId}
+          formValues={values}
+          onApplyToForm={(partial) => patch(partial)}
+        />
+      ) : (
       <div className="grid gap-6 lg:grid-cols-2">
         <form
           className={`space-y-6 ${mobileTab === 'preview' ? 'hidden lg:block' : ''}`}
@@ -226,6 +266,7 @@ export function ContentEditor({ page }: Props) {
           />
         </div>
       </div>
+      )}
     </div>
   );
 }

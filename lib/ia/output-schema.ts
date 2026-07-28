@@ -24,7 +24,7 @@ export const generationOutputSchema = z
 
 export type GenerationOutput = z.infer<typeof generationOutputSchema>;
 
-const SECTION_KEYS = {
+export const REGENERATION_SECTION_KEYS = {
   h1: ['h1'],
   body: ['body'],
   h2h3: ['h2h3'],
@@ -35,10 +35,31 @@ const SECTION_KEYS = {
   internalLinks: ['internalLinks'],
 } as const;
 
-export type RegenerationSection = keyof typeof SECTION_KEYS;
+export type RegenerationSection = keyof typeof REGENERATION_SECTION_KEYS;
 
 export function isRegenerationSection(value: string): value is RegenerationSection {
-  return value in SECTION_KEYS;
+  return value in REGENERATION_SECTION_KEYS;
+}
+
+export function getKeysForRegenerationSection(
+  section: RegenerationSection,
+): readonly (keyof GenerationOutput)[] {
+  return REGENERATION_SECTION_KEYS[section];
+}
+
+export function mergeRegenerationIntoOutput(
+  base: GenerationOutput,
+  section: RegenerationSection,
+  partial: Partial<GenerationOutput>,
+): GenerationOutput {
+  const next = { ...base };
+  for (const key of REGENERATION_SECTION_KEYS[section]) {
+    const value = partial[key];
+    if (value !== undefined) {
+      Object.assign(next, { [key]: value });
+    }
+  }
+  return generationOutputSchema.parse(next);
 }
 
 export function sectionOutputSchema(section: RegenerationSection): z.ZodType<Partial<GenerationOutput>> {

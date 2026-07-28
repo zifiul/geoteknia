@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { SchemaType } from '@prisma/client';
+import { PromptPageType, SchemaType } from '@prisma/client';
 
 import { getCmsContentTypeMeta } from '@/lib/admin/cms-content-types';
 import type { PortalSessionPayload } from '@/lib/auth/session';
@@ -12,6 +12,7 @@ import { ContentNotFoundError } from '@/lib/content/errors';
 import { env } from '@/lib/env';
 import { db } from '@/lib/db';
 import { resolveMediaFileUrl } from '@/lib/content/slug';
+import { editorialContentTypeToPromptPageType } from '@/lib/cms/ia/prompt-page-type-map';
 
 export type GeoZoneOption = { id: string; name: string; slug: string };
 
@@ -25,6 +26,8 @@ export type CmsEditorPageData = {
   zoneOptions: GeoZoneOption[];
   heroImageUrl: string | null;
   heroImageAlt: string | null;
+  canUseAi: boolean;
+  promptPageType: PromptPageType | null;
 };
 
 async function resolveHero(heroImageId: string | null | undefined) {
@@ -59,6 +62,8 @@ export async function loadCmsEditorPage(
   const canSave = isNew
     ? can(session, 'content.create')
     : can(session, 'content.update');
+  const canUseAi = can(session, 'ai.generate');
+  const promptPageType = editorialContentTypeToPromptPageType(contentType);
 
   const zoneOptions =
     contentType === 'service'
@@ -89,6 +94,8 @@ export async function loadCmsEditorPage(
         zoneOptions,
         heroImageUrl: null,
         heroImageAlt: null,
+        canUseAi,
+        promptPageType,
         initial: {
           ...base,
           schemaType: SchemaType.Service,
@@ -122,6 +129,8 @@ export async function loadCmsEditorPage(
         zoneOptions,
         heroImageUrl: hero.heroImageUrl,
         heroImageAlt: hero.heroImageAlt,
+        canUseAi,
+        promptPageType,
         initial: {
           name: row.name,
           summary: row.summary,
