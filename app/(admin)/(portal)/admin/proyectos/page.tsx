@@ -1,11 +1,26 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { Suspense } from 'react';
 
+import { CrmEmptyState } from '@/components/organisms/admin/crm/CrmEmptyState';
+import { CrmFilters } from '@/components/organisms/admin/crm/CrmFilters';
+import { buildPageQuery, CrmPagination } from '@/components/organisms/admin/crm/CrmPagination';
+import { MetricsPanel } from '@/components/organisms/admin/crm/MetricsPanel';
+import { PipelineBoard } from '@/components/organisms/admin/crm/PipelineBoard';
+import { PipelineViewToggle } from '@/components/organisms/admin/crm/PipelineViewToggle';
+import { ProjectList } from '@/components/organisms/admin/crm/ProjectList';
 import { runWithPortalReadAccess } from '@/lib/admin/portal-page-errors';
+import { ROLES, resolvePermissionCodesForRole } from '@/lib/auth/permissions';
+import { getPortalSession } from '@/lib/auth/session';
+import type { RoleName } from '@prisma/client';
 import {
   getPipelineMetrics,
+  groupProjectsByState,
+  listPipelineBoardStates,
+  listPipelineFilterOptions,
   listProjects,
   parseProjectFiltersFromSearchParams,
+  firstSearchParam,
+  resolvePipelineView,
 } from '@/lib/projects';
 
 export const metadata: Metadata = {
@@ -17,144 +32,120 @@ type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
+function hasActiveProjectFilters(
+  filters: ReturnType<typeof parseProjectFiltersFromSearchParams>,
+): boolean {
+  return Boolean(
+    filters.stateSlug ||
+      filters.technicianId ||
+      filters.serviceSlug ||
+      filters.provinceSlug ||
+      filters.from ||
+      filters.to ||
+      filters.slaOverdue,
+  );
+}
+
 export default async function AdminProyectosPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const filters = parseProjectFiltersFromSearchParams(params);
 
-  const { items, total, page, pageSize } = await runWithPortalReadAccess(() =>
-    listProjects(filters),
-  );
-  const metrics = await runWithPortalReadAccess(() => getPipelineMetrics(filters));
+  return runWithPortalReadAccess(async () => {
+    const user = await getPortalSession();
+    const roleMeta = ROLES.find((r) => r.name === user.roleName);
+    const view = resolvePipelineView(
+      user.roleName,
+      firstSearchParam(params.view),
+    );
+    const isTechnician = user.roleName === 'tecnico';
+    const canChangeState =
+      !isTechnician &&
+      resolvePermissionCodesForRole(user.roleName as RoleName).includes(
+        'projects.update',
+      );
+    const showMetrics = !isTechnician;
+    const showBoardToggle = !isTechnician;
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const [listResult, metrics, boardStates, filterOptions] = await Promise.all([
+      listProjects(filters),
+      showMetrics ? getPipelineMetrics(filters) : Promise.resolve(null),
+      view === 'board' ? listPipelineBoardStates() : Promise.resolve([]),
+      listPipelineFilterOptions(),
+    ]);
 
-  return (
-    <main>
-      <h1>Pipeline de proyectos</h1>
-      <p>
-        {total} proyecto{total === 1 ? '' : 's'} · página {page} de {totalPages}
-      </p>
+    const { items, total, page, pageSize } = listResult;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const columns =
+      view === 'board'
+        ? groupProjectsByState(boardStates, items)
+        : [];
+    const stateOptions = filterOptions.states;
 
-      <section aria-labelledby="metricas-heading">
-        <h2 id="metricas-heading">Métricas</h2>
-        <p>
-          Tasa de cualificación:{' '}
-          {metrics.qualificationRate === null
-            ? 'sin datos'
-            : `${(metrics.qualificationRate * 100).toFixed(1)} %`}
-        </p>
-        <p>
-          Tiempo medio 1.ª respuesta:{' '}
-          {metrics.avgFirstResponseHours === null
-            ? 'sin datos'
-            : `${metrics.avgFirstResponseHours.toFixed(1)} h`}
-        </p>
-        <ul>
-          {metrics.byService.map((row) => (
-            <li key={row.serviceId ?? 'none'}>
-              {row.label}: {row.count}
-            </li>
-          ))}
-        </ul>
-        <ul>
-          {metrics.byProvince.map((row) => (
-            <li key={row.provinceId ?? 'none'}>
-              {row.label}: {row.count}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section aria-labelledby="filtros-heading">
-        <h2 id="filtros-heading">Filtros</h2>
-        <form method="get">
-          <label>
-            Estado (slug)
-            <input name="stateSlug" defaultValue={filters.stateSlug ?? ''} />
-          </label>
-          <label>
-            Servicio (slug)
-            <input name="serviceSlug" defaultValue={filters.serviceSlug ?? ''} />
-          </label>
-          <label>
-            Provincia (slug)
-            <input name="provinceSlug" defaultValue={filters.provinceSlug ?? ''} />
-          </label>
-          <label>
-            Técnico (UUID)
-            <input name="technicianId" defaultValue={filters.technicianId ?? ''} />
-          </label>
-          <label>
-            Desde
-            <input
-              name="from"
-              type="date"
-              defaultValue={
-                filters.from ? filters.from.toISOString().slice(0, 10) : ''
-              }
-            />
-          </label>
-          <label>
-            Hasta
-            <input
-              name="to"
-              type="date"
-              defaultValue={filters.to ? filters.to.toISOString().slice(0, 10) : ''}
-            />
-          </label>
-          <input type="hidden" name="pageSize" value={String(pageSize)} />
-          <button type="submit">Aplicar</button>
-        </form>
-      </section>
-
-      <section aria-labelledby="listado-heading">
-        <h2 id="listado-heading">Listado</h2>
-        <ul>
-          {items.map((project) => (
-            <li key={project.id}>
-              <Link href={`/admin/proyectos/${project.id}`}>{project.title}</Link>
-              {' — '}
-              {project.state.name}
-              {project.assignedTechnician
-                ? ` · ${project.assignedTechnician.fullName}`
-                : ''}
-            </li>
-          ))}
-        </ul>
-        {items.length === 0 ? <p>No hay proyectos con estos filtros.</p> : null}
-        <nav aria-label="Paginación">
-          {page > 1 ? (
-            <Link
-              href={`?${buildPageQuery(params, page - 1, pageSize)}`}
+    return (
+      <div className="mx-auto max-w-[1600px] space-y-6">
+        <header className="flex flex-col gap-4 border-b border-brand-primary/10 pb-6 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-medium uppercase tracking-wide text-brand-secondary">
+              {isTechnician ? 'Mis proyectos' : (roleMeta?.label ?? user.roleName)}
+            </p>
+            <h1 className="text-headline-sm font-semibold text-brand-primary">
+              {isTechnician ? 'Mis proyectos' : 'Pipeline de proyectos'}
+            </h1>
+            <p
+              className="text-body-md text-brand-secondary"
+              aria-live="polite"
+              aria-atomic="true"
+              data-testid="crm-result-count"
             >
-              Anterior
-            </Link>
-          ) : null}
-          {page < totalPages ? (
-            <Link
-              href={`?${buildPageQuery(params, page + 1, pageSize)}`}
-            >
-              Siguiente
-            </Link>
-          ) : null}
-        </nav>
-      </section>
-    </main>
-  );
-}
+              {total} proyecto{total === 1 ? '' : 's'}
+            </p>
+          </div>
+          <Suspense fallback={null}>
+            <PipelineViewToggle view={view} showBoardToggle={showBoardToggle} />
+          </Suspense>
+        </header>
 
-function buildPageQuery(
-  params: Record<string, string | string[] | undefined>,
-  page: number,
-  pageSize: number,
-): string {
-  const q = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (key === 'page') continue;
-    const v = Array.isArray(value) ? value[0] : value;
-    if (v) q.set(key, v);
-  }
-  q.set('page', String(page));
-  q.set('pageSize', String(pageSize));
-  return q.toString();
+        {showMetrics && metrics ? <MetricsPanel metrics={metrics} /> : null}
+
+        <CrmFilters
+          filters={filters}
+          options={filterOptions}
+          pageSize={pageSize}
+          showTechnicianFilter={!isTechnician}
+          view={view}
+        />
+
+        {items.length === 0 ? (
+          <CrmEmptyState hasActiveFilters={hasActiveProjectFilters(filters)} />
+        ) : view === 'board' ? (
+          <PipelineBoard
+            columns={columns}
+            allStates={stateOptions}
+            canChangeState={canChangeState}
+          />
+        ) : (
+          <ProjectList
+            items={items}
+            allStates={stateOptions}
+            canChangeState={canChangeState}
+          />
+        )}
+
+        {items.length > 0 ? (
+          <CrmPagination
+            page={page}
+            totalPages={totalPages}
+            prevHref={
+              page > 1 ? `?${buildPageQuery(params, page - 1, pageSize)}` : undefined
+            }
+            nextHref={
+              page < totalPages
+                ? `?${buildPageQuery(params, page + 1, pageSize)}`
+                : undefined
+            }
+          />
+        ) : null}
+      </div>
+    );
+  });
 }

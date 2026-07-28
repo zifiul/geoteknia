@@ -42,7 +42,21 @@ export {
 export { buildProjectListWhere } from './project-list-where';
 export {
   getProjectDetail,
+  listPipelineBoardStates,
   listProjects,
+  type PipelineBoardState,
   type ProjectDetail,
   type ProjectListItem,
 } from './queries';
+export { groupProjectsByState, type PipelineBoardColumn } from './board-utils';
+export { listPipelineFilterOptions, type CrmFilterOptions } from './crm-filter-options';
+export {
+  formatLeadSource,
+  formatLeadType,
+  formatProjectAgeDays,
+} from './lead-labels';
+export {
+  firstSearchParam,
+  resolvePipelineView,
+  type PipelineView,
+} from './pipeline-view';
