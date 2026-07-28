@@ -66,6 +66,27 @@ describe('listProjects RBAC (GTK-34 / SEC-1)', () => {
     ).rejects.toBeInstanceOf(ForbiddenError);
     expect(transaction).not.toHaveBeenCalled();
   });
+
+  it('incluye lead.leadType y lead.source en el select (GTK-70)', async () => {
+    requirePermission.mockResolvedValue(makeUser('admin'));
+    findMany.mockResolvedValue([
+      {
+        id: 'p1',
+        title: 'P',
+        lead: { leadType: 'presupuesto', source: 'organico' },
+      },
+    ]);
+    count.mockResolvedValue(1);
+    const result = await listProjects({ page: 1, pageSize: 20 });
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          lead: { select: { leadType: true, source: true } },
+        }),
+      }),
+    );
+    expect(result.items[0]?.lead?.leadType).toBe('presupuesto');
+  });
 });
 
 describe('getProjectDetail (GTK-34 / SEC-3, SEC-5)', () => {

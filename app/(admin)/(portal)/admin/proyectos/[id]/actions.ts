@@ -28,6 +28,7 @@ import { changeProjectState } from '@/lib/projects/transitions';
 
 function revalidateProjectDetail(projectId: string) {
   revalidatePath(`/admin/proyectos/${projectId}`);
+  revalidatePath('/admin/proyectos');
 }
 
 export const changeStateAction = withPermission(

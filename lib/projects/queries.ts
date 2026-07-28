@@ -20,7 +20,18 @@ const listSelect = {
   assignedTechnician: { select: { id: true, fullName: true } },
   service: { select: { name: true, slug: true } },
   province: { select: { name: true, slug: true } },
+  lead: { select: { leadType: true, source: true } },
 } satisfies Prisma.ProjectSelect;
+
+const boardStateSelect = {
+  slug: true,
+  name: true,
+  order: true,
+} satisfies Prisma.ProjectStateSelect;
+
+export type PipelineBoardState = Prisma.ProjectStateGetPayload<{
+  select: typeof boardStateSelect;
+}>;
 
 export type ProjectListItem = Prisma.ProjectGetPayload<{ select: typeof listSelect }>;
 
@@ -45,6 +56,15 @@ export async function listProjects(filters: ProjectFilters) {
     page: filters.page,
     pageSize: filters.pageSize,
   };
+}
+
+export async function listPipelineBoardStates(): Promise<PipelineBoardState[]> {
+  await requirePermission('projects.read');
+  return db.projectState.findMany({
+    where: { deletedAt: null },
+    select: boardStateSelect,
+    orderBy: { order: 'asc' },
+  });
 }
 
 const detailInclude = {
