@@ -61,6 +61,8 @@ export const METADATA_WHITELIST: Record<AuditAction, readonly string[]> = {
     ...COMMON_METADATA_KEYS,
     'fromState',
     'toState',
+    'event',
+    'targetUserId',
   ],
   assign: [...COMMON_METADATA_KEYS, 'technicianId'],
   content_update: [
