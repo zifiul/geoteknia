@@ -17,6 +17,7 @@ import {
 
 import { BodyEditor } from './BodyEditor';
 import { AiGeneratePanel } from './AiGeneratePanel';
+import { EditorialWorkflowPanel } from './EditorialWorkflowPanel';
 import { PreviewPane } from './PreviewPane';
 import { RelationsPicker } from './RelationsPicker';
 import { SeoBlock } from './SeoBlock';
@@ -167,6 +168,19 @@ export function ContentEditor({ page }: Props) {
             Generar con IA
           </button>
         </div>
+      ) : null}
+
+      {page.editorial && page.entityId ? (
+        <EditorialWorkflowPanel
+          contentType={page.contentType}
+          contentId={page.entityId}
+          workflowStatus={page.editorial.workflowStatus}
+          scheduledPublishAt={page.editorial.scheduledPublishAt}
+          publicPath={page.editorial.publicPath}
+          canUpdate={page.editorial.canUpdate}
+          canPublish={page.editorial.canPublish}
+          revisions={page.editorial.revisions}
+        />
       ) : null}
 
       {saveError ? (

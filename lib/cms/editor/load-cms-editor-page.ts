@@ -1,20 +1,30 @@
 import 'server-only';
 
-import { PromptPageType, SchemaType } from '@prisma/client';
+import { PromptPageType, SchemaType, WorkflowStatus } from '@prisma/client';
 
 import { getCmsContentTypeMeta } from '@/lib/admin/cms-content-types';
 import type { PortalSessionPayload } from '@/lib/auth/session';
 import { can } from '@/lib/auth/rbac';
-import { getServiceById } from '@/lib/content/services';
+import { listContentRevisions } from '@/lib/content/revisions';
 import { editorialContentTypeSchema } from '@/lib/content/schemas/workflow';
 import type { EditorialContentType } from '@/lib/content/schemas/workflow';
 import { ContentNotFoundError } from '@/lib/content/errors';
 import { env } from '@/lib/env';
 import { db } from '@/lib/db';
 import { resolveMediaFileUrl } from '@/lib/content/slug';
+import { getServiceById } from '@/lib/content/services';
+import { buildSiloPath } from '@/lib/seo/silo-urls';
 import { editorialContentTypeToPromptPageType } from '@/lib/cms/ia/prompt-page-type-map';
 
 export type GeoZoneOption = { id: string; name: string; slug: string };
+
+export type CmsEditorRevisionItem = {
+  versionNumber: number;
+  workflowStatusAt: WorkflowStatus;
+  editorName: string;
+  changeSummary: string | null;
+  createdAt: string;
+};
 
 export type CmsEditorPageData = {
   contentType: EditorialContentType;
@@ -28,6 +38,14 @@ export type CmsEditorPageData = {
   heroImageAlt: string | null;
   canUseAi: boolean;
   promptPageType: PromptPageType | null;
+  editorial: {
+    workflowStatus: WorkflowStatus;
+    scheduledPublishAt: string | null;
+    publicPath: string | null;
+    canUpdate: boolean;
+    canPublish: boolean;
+    revisions: CmsEditorRevisionItem[];
+  } | null;
 };
 
 async function resolveHero(heroImageId: string | null | undefined) {
@@ -96,6 +114,7 @@ export async function loadCmsEditorPage(
         heroImageAlt: null,
         canUseAi,
         promptPageType,
+        editorial: null,
         initial: {
           ...base,
           schemaType: SchemaType.Service,
@@ -120,6 +139,11 @@ export async function loadCmsEditorPage(
     if (contentType === 'service') {
       const row = await getServiceById(idParam);
       const hero = await resolveHero(row.heroImageId);
+      const revisions = await listContentRevisions('service', row.id);
+      const publicPath =
+        row.workflowStatus === WorkflowStatus.publicado
+          ? buildSiloPath('service', { slug: row.slug })
+          : null;
       return {
         contentType,
         typeLabel: meta.label,
@@ -131,6 +155,20 @@ export async function loadCmsEditorPage(
         heroImageAlt: hero.heroImageAlt,
         canUseAi,
         promptPageType,
+        editorial: {
+          workflowStatus: row.workflowStatus,
+          scheduledPublishAt: row.scheduledPublishAt?.toISOString() ?? null,
+          publicPath,
+          canUpdate: can(session, 'content.update'),
+          canPublish: can(session, 'content.publish'),
+          revisions: revisions.map((r) => ({
+            versionNumber: r.versionNumber,
+            workflowStatusAt: r.workflowStatusAt,
+            editorName: r.editorName,
+            changeSummary: r.changeSummary,
+            createdAt: r.createdAt.toISOString(),
+          })),
+        },
         initial: {
           name: row.name,
           summary: row.summary,

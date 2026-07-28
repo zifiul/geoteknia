@@ -10,18 +10,23 @@ import {
   type ContentActionResult,
 } from '@/lib/content/content-action-result';
 import {
+  publishContent as publishContentEffect,
+  unpublishContent as unpublishContentEffect,
+} from '@/lib/content/publish';
+import {
+  cancelScheduledPublication as cancelScheduledPublicationEffect,
+  scheduleContentPublication as scheduleContentPublicationEffect,
+} from '@/lib/content/schedule';
+import {
   editorialContentTypeSchema,
   regenerateBodySchema,
+  schedulePublishAtSchema,
   workflowNoteSchema,
 } from '@/lib/content/schemas/workflow';
 import {
   applyEditorialTransition,
   type EditorialTransitionResult,
 } from '@/lib/content/workflow';
-import {
-  publishContent as publishContentEffect,
-  unpublishContent as unpublishContentEffect,
-} from '@/lib/content/publish';
 
 const contentIdSchema = z.uuid();
 
@@ -163,5 +168,45 @@ export async function regenerateToDraft(
     });
     revalidatePath('/admin/contenido');
     return result;
+  });
+}
+
+export async function scheduleContentPublication(
+  contentType: unknown,
+  contentId: unknown,
+  scheduledPublishAt: unknown,
+): Promise<
+  ContentActionResult<{ scheduledPublishAt: string }>
+> {
+  return runContentAction(async () => {
+    const user = await requirePermission('content.publish');
+    const type = editorialContentTypeSchema.parse(contentType);
+    const id = contentIdSchema.parse(contentId);
+    const parsedAt = schedulePublishAtSchema.parse(scheduledPublishAt);
+    const result = await scheduleContentPublicationEffect(user, {
+      contentType: type,
+      contentId: id,
+      scheduledPublishAt: new Date(parsedAt),
+    });
+    revalidatePath('/admin/contenido');
+    return {
+      scheduledPublishAt: result.scheduledPublishAt.toISOString(),
+    };
+  });
+}
+
+export async function cancelScheduledPublication(
+  contentType: unknown,
+  contentId: unknown,
+): Promise<ContentActionResult<void>> {
+  return runContentAction(async () => {
+    const user = await requirePermission('content.publish');
+    const type = editorialContentTypeSchema.parse(contentType);
+    const id = contentIdSchema.parse(contentId);
+    await cancelScheduledPublicationEffect(user, {
+      contentType: type,
+      contentId: id,
+    });
+    revalidatePath('/admin/contenido');
   });
 }
