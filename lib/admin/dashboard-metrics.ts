@@ -2,9 +2,9 @@ import 'server-only';
 
 import type { RoleName } from '@prisma/client';
 
+import { defaultCmsListHrefForRole } from '@/lib/admin/cms-list-href';
 import {
   countStaleAiDrafts,
-  findCmsQuickEditHref,
   getCmsWorkflowTotals,
 } from '@/lib/admin/cms-workflow-counts';
 import {
@@ -216,11 +216,11 @@ export async function getDashboardData(
   }
 
   if (scopes.cms) {
-    const [cms, staleDrafts, cmsHref] = await Promise.all([
+    const [cms, staleDrafts] = await Promise.all([
       getCmsWorkflowTotals(),
       countStaleAiDrafts(),
-      findCmsQuickEditHref(),
     ]);
+    const cmsHref = defaultCmsListHrefForRole(user.roleName);
 
     if (user.roleName === 'editor') {
       kpis.push(
@@ -259,7 +259,7 @@ export async function getDashboardData(
         severity: 'warning',
         title: 'Borradores IA pendientes',
         description: `${staleDrafts} borrador${staleDrafts === 1 ? '' : 'es'} sin revisión desde hace más de 7 días`,
-        href: cmsHref ?? undefined,
+        href: cmsHref,
       });
     }
 
@@ -267,11 +267,8 @@ export async function getDashboardData(
       quickActions.push({
         id: 'cms',
         label: 'Contenido editorial',
-        href: cmsHref ?? '/contenido/blog_post',
-        description: cmsHref
-          ? 'Última entrada de blog (listado GTK-72 pendiente)'
-          : 'Listado completo pendiente de GTK-72',
-        disabled: !cmsHref,
+        href: cmsHref,
+        description: 'Listado por tipo, estado y silo',
       });
     }
 
