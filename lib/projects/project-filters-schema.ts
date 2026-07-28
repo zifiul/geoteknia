@@ -11,6 +11,7 @@ export const projectFiltersSchema = z
     to: z.coerce.date().optional(),
     page: z.coerce.number().int().positive().default(1),
     pageSize: z.coerce.number().int().positive().max(100).default(20),
+    slaOverdue: z.boolean().optional(),
   })
   .strict();
 
@@ -38,5 +39,15 @@ export function parseProjectFiltersFromSearchParams(
     to: firstSearchParam(searchParams.to),
     page: firstSearchParam(searchParams.page),
     pageSize: firstSearchParam(searchParams.pageSize),
+    slaOverdue: parseOptionalBoolean(searchParams.slaOverdue),
   });
+}
+
+function parseOptionalBoolean(
+  value: string | string[] | undefined,
+): boolean | undefined {
+  const raw = firstSearchParam(value);
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
+  return undefined;
 }
