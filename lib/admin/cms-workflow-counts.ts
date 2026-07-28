@@ -123,16 +123,3 @@ export async function countStaleAiDrafts(): Promise<number> {
   return counts.reduce((a, b) => a + b, 0);
 }
 
-/** Primer blog post para CTA degradado mientras no exista listado CMS (GTK-72). */
-export async function findCmsQuickEditHref(): Promise<string | null> {
-  await requirePermission('content.read');
-  const row = await db.blogPost.findFirst({
-    where: notDeleted,
-    orderBy: { updatedAt: 'desc' },
-    select: { id: true },
-  });
-  if (!row) {
-    return null;
-  }
-  return `/contenido/blog_post/${row.id}`;
-}
