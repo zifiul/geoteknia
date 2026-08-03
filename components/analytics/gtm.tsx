@@ -35,17 +35,19 @@ gtag('consent', 'default', {
   );
 }
 
+function consentAllowsGtm(): boolean {
+  const stored = readBrowserConsent();
+  return stored !== null && shouldLoadGtm(stored.categories);
+}
+
 export function GtmContainer() {
-  const [loadContainer, setLoadContainer] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const stored = readBrowserConsent();
-    return stored !== null && shouldLoadGtm(stored.categories);
-  });
+  const [loadContainer, setLoadContainer] = useState(false);
 
   useEffect(() => {
+    setLoadContainer(consentAllowsGtm());
+
     const onUpdate = () => {
-      const stored = readBrowserConsent();
-      setLoadContainer(stored !== null && shouldLoadGtm(stored.categories));
+      setLoadContainer(consentAllowsGtm());
     };
     window.addEventListener(CONSENT_UPDATED_EVENT, onUpdate);
     return () => window.removeEventListener(CONSENT_UPDATED_EVENT, onUpdate);

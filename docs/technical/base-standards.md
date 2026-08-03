@@ -178,3 +178,13 @@ Antes de dar una tarea por completada, el agente debe:
 6. Informar qué se cambió, qué se verificó y qué riesgo o cobertura pendiente queda.
 
 Si una verificación no puede ejecutarse, explicar el motivo y el riesgo residual.
+
+## 12. graphify
+
+Este proyecto tiene un grafo de conocimiento en graphify-out/ con nodos dios, estructura de comunidades y relaciones entre archivos.
+
+Reglas:
+- Para preguntas sobre el código base, ejecutar primero `graphify query "<pregunta>"` cuando graphify-out/graph.json exista. Usar `graphify path "<A>" "<B>"` para relaciones y `graphify explain "<concepto>"` para conceptos focalizados. Estos devuelven un subgrafo acotado, normalmente mucho más pequeño que GRAPH_REPORT.md o salida de grep.
+- Si graphify-out/wiki/index.md existe, usarlo para navegación amplia en lugar de exploración directa del código fuente.
+- Leer graphify-out/GRAPH_REPORT.md solo para revisión arquitectónica amplia o cuando query/path/explain no proporcionen suficiente contexto.
+- Después de modificar código, ejecutar `graphify update .` para mantener el grafo actualizado (solo AST, sin coste de API).
