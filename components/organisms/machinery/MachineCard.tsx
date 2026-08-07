@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 import type { PublishedMachineryDetail } from '@/lib/content/machinery';
 import { buildSiloPath } from '@/lib/seo/silo-urls';
@@ -35,7 +36,14 @@ export function MachineCard({ item }: MachineCardProps) {
         </div>
       )}
       <div className="flex flex-1 flex-col p-5">
-        <h2 className="font-display text-xl font-semibold text-brand-on-surface">{item.name}</h2>
+        <h2 className="font-display text-xl font-semibold text-brand-on-surface">
+          <Link
+            href={buildSiloPath('machinery', { slug: item.slug })}
+            className="hover:text-brand-accent hover:underline"
+          >
+            {item.name}
+          </Link>
+        </h2>
         {item.hasEnacLab === true ? (
           <p className="mt-2 inline-flex w-fit rounded-full bg-brand-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-accent">
             Laboratorio ENAC

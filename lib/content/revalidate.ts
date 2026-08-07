@@ -30,7 +30,10 @@ export async function resolveRevalidationPaths(
     case 'team_member':
       return [buildSiloPath('team_member', { slug: row.slug })];
     case 'machinery':
-      return [buildSiloPath('machinery', { slug: row.slug })];
+      return [
+        buildSiloPath('machinery', { slug: row.slug }),
+        '/maquinaria',
+      ];
     case 'service_zone_page': {
       const sz = await db.serviceZonePage.findFirst({
         where: { id: contentId, deletedAt: null },
