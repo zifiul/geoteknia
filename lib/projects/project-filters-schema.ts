@@ -26,17 +26,37 @@ function firstSearchParam(
   return Array.isArray(value) ? value[0] : value;
 }
 
+function emptyToUndefined(value: string | undefined): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? undefined : trimmed;
+}
+
+function parseOptionalDateParam(value: string | undefined): Date | undefined {
+  const normalized = emptyToUndefined(value);
+  if (!normalized) {
+    return undefined;
+  }
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) {
+    return undefined;
+  }
+  return parsed;
+}
+
 /** Parsea search params de RSC admin en filtros validados. */
 export function parseProjectFiltersFromSearchParams(
   searchParams: Record<string, string | string[] | undefined>,
 ): ProjectFilters {
   return projectFiltersSchema.parse({
-    stateSlug: firstSearchParam(searchParams.stateSlug),
-    technicianId: firstSearchParam(searchParams.technicianId),
-    serviceSlug: firstSearchParam(searchParams.serviceSlug),
-    provinceSlug: firstSearchParam(searchParams.provinceSlug),
-    from: firstSearchParam(searchParams.from),
-    to: firstSearchParam(searchParams.to),
+    stateSlug: emptyToUndefined(firstSearchParam(searchParams.stateSlug)),
+    technicianId: emptyToUndefined(firstSearchParam(searchParams.technicianId)),
+    serviceSlug: emptyToUndefined(firstSearchParam(searchParams.serviceSlug)),
+    provinceSlug: emptyToUndefined(firstSearchParam(searchParams.provinceSlug)),
+    from: parseOptionalDateParam(firstSearchParam(searchParams.from)),
+    to: parseOptionalDateParam(firstSearchParam(searchParams.to)),
     page: firstSearchParam(searchParams.page),
     pageSize: firstSearchParam(searchParams.pageSize),
     slaOverdue: parseOptionalBoolean(searchParams.slaOverdue),

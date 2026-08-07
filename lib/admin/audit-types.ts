@@ -1,5 +1,19 @@
 import type { AuditAction } from '@prisma/client';
 
+/** Opción de filtro por actor en auditoría. */
+export type AuditActorFilterOption = {
+  id: string;
+  label: string;
+};
+
+/** Opción de filtro por entidad en auditoría. */
+export type AuditEntityFilterOption = {
+  key: string;
+  label: string;
+  entityType: string;
+  entityId: string;
+};
+
 /** Forma serializable del detalle de auditoría (RSC → cliente). */
 export type AuditEventDetail = {
   id: string;

@@ -4,11 +4,17 @@ import { AuditAction } from '@prisma/client';
 
 import { AUDIT_ACTION_LABELS } from '@/lib/admin/audit-labels';
 import type { AuditFilters } from '@/lib/admin/audit-filters-schema';
+import type {
+  AuditActorFilterOption,
+  AuditEntityFilterOption,
+} from '@/lib/admin/audit-types';
 
 type Props = {
   filters: AuditFilters;
   pageSize: number;
   fieldErrors?: string[];
+  actorOptions: AuditActorFilterOption[];
+  entityOptions: AuditEntityFilterOption[];
 };
 
 function formatDateInput(value: Date | undefined): string {
@@ -23,13 +29,19 @@ export function AuditFiltersForm({
   filters,
   pageSize,
   fieldErrors = [],
+  actorOptions,
+  entityOptions,
 }: Props) {
   const actions = Object.values(AuditAction);
+  const selectedEntityKey =
+    filters.entityType && filters.entityId
+      ? `${filters.entityType}:${filters.entityId}`
+      : '';
 
   return (
     <section
       aria-labelledby="audit-filters-heading"
-      className="rounded-xl border border-brand-primary/10 bg-brand-surface p-4 shadow-sm"
+      className="min-w-0 max-w-full rounded-xl border border-brand-primary/10 bg-brand-surface p-4 shadow-sm"
     >
       <h2
         id="audit-filters-heading"
@@ -64,35 +76,34 @@ export function AuditFiltersForm({
           </select>
         </label>
         <label className="block text-sm text-brand-secondary">
-          ID usuario (UUID)
-          <input
-            type="text"
+          Usuario
+          <select
             name="userId"
             defaultValue={filters.userId ?? ''}
-            placeholder="11111111-1111-4111-8111-111111111111"
-            className="mt-1 w-full rounded-md border border-brand-secondary/30 px-3 py-2 font-mono text-sm"
-            autoComplete="off"
-          />
-        </label>
-        <label className="block text-sm text-brand-secondary">
-          Tipo de entidad
-          <input
-            type="text"
-            name="entityType"
-            defaultValue={filters.entityType ?? ''}
-            placeholder="projects, service, …"
             className="mt-1 w-full rounded-md border border-brand-secondary/30 px-3 py-2 text-sm"
-          />
+          >
+            <option value="">Todos</option>
+            {actorOptions.map((actor) => (
+              <option key={actor.id} value={actor.id}>
+                {actor.label}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="block text-sm text-brand-secondary">
-          ID entidad (UUID)
-          <input
-            type="text"
-            name="entityId"
-            defaultValue={filters.entityId ?? ''}
-            className="mt-1 w-full rounded-md border border-brand-secondary/30 px-3 py-2 font-mono text-sm"
-            autoComplete="off"
-          />
+          Entidad
+          <select
+            name="entityKey"
+            defaultValue={selectedEntityKey}
+            className="mt-1 w-full rounded-md border border-brand-secondary/30 px-3 py-2 text-sm"
+          >
+            <option value="">Todas</option>
+            {entityOptions.map((entity) => (
+              <option key={entity.key} value={entity.key}>
+                {entity.label}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="block text-sm text-brand-secondary">
           Desde
@@ -126,7 +137,7 @@ export function AuditFiltersForm({
         <div className="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-3">
           <button
             type="submit"
-            className="rounded-md bg-brand-accent px-4 py-2 text-sm font-semibold text-white hover:bg-brand-accent/90"
+            className="rounded-md bg-brand-accent px-4 py-2 text-sm font-semibold text-white hover:bg-brand-accent/90 cursor-pointer"
           >
             Aplicar filtros
           </button>

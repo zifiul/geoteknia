@@ -295,7 +295,7 @@ const machineryBodySchema = z.object({
   model: z.string().nullable().optional(),
   maxDepthM: z.coerce.number().nullable().optional(),
   diameters: z.string().nullable().optional(),
-  inSituTests: machineryInSituTestsSchema.optional(),
+  inSituTests: machineryInSituTestsSchema.nullable().optional(),
   hasEnacLab: z.boolean().nullable().optional(),
   photoId: z.uuid().nullable().optional(),
   serviceIds: z.array(z.uuid()).optional(),

@@ -9,7 +9,7 @@ import {
   parseStoredMachineryInSituTests,
   type MachineryInSituTestCode,
 } from '@/lib/content/schemas/machinery-in-situ-tests';
-import { resolveMediaFileUrl } from '@/lib/content/slug';
+import { resolveMediaFileUrl, resolveNextImageMediaSrc } from '@/lib/content/slug';
 
 export const EQUIPMENT_TYPE_LABELS: Record<EquipmentType, string> = {
   sonda_rotacion: 'Sonda de rotación',
@@ -89,6 +89,7 @@ export async function listMachineryByService(
       : [];
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
   const base = env.MEDIA_STORAGE_BASE_URL;
+  const siteUrl = env.NEXT_PUBLIC_SITE_URL;
 
   return rows.map((row) => {
     const photo = row.photoId ? assetById.get(row.photoId) : undefined;
@@ -97,7 +98,9 @@ export async function listMachineryByService(
       name: row.name,
       slug: row.slug,
       model: row.model,
-      photoUrl: photo ? resolveMediaFileUrl(photo.fileUrl, base) : null,
+      photoUrl: photo
+        ? resolveNextImageMediaSrc(photo.fileUrl, base, siteUrl)
+        : null,
       photoAlt: photo?.altText ?? null,
     };
   });
@@ -147,6 +150,7 @@ export async function listPublishedMachinery(): Promise<PublishedMachineryDetail
       : [];
   const assetById = new Map(assets.map((asset) => [asset.id, asset]));
   const base = env.MEDIA_STORAGE_BASE_URL;
+  const siteUrl = env.NEXT_PUBLIC_SITE_URL;
 
   return rows.map((row) => {
     const photo = row.photoId ? assetById.get(row.photoId) : undefined;
@@ -160,7 +164,9 @@ export async function listPublishedMachinery(): Promise<PublishedMachineryDetail
       diameters: row.diameters,
       inSituTests: parseStoredMachineryInSituTests(row.inSituTests),
       hasEnacLab: row.hasEnacLab,
-      photoUrl: photo ? resolveMediaFileUrl(photo.fileUrl, base) : null,
+      photoUrl: photo
+        ? resolveNextImageMediaSrc(photo.fileUrl, base, siteUrl)
+        : null,
       photoAlt: photo?.altText ?? null,
       services: row.services
         .map((link) => link.service)

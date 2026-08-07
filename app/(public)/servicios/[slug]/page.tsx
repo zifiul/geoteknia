@@ -14,8 +14,11 @@ import { ServiceFaqs } from '@/components/organisms/service/ServiceFaqs';
 import { ServiceHero } from '@/components/organisms/service/ServiceHero';
 import { ServiceMethodology } from '@/components/organisms/service/Methodology';
 import { ServiceRelatedCases } from '@/components/organisms/service/RelatedCases';
+import { RichTextContent } from '@/components/molecules/RichTextContent';
 import { JsonLd } from '@/components/seo/json-ld';
 import { listPublishedServices } from '@/lib/content/services';
+import { sanitizeCmsHtml } from '@/lib/content/sanitize-cms-html';
+import { htmlToPlainText } from '@/lib/content/html-to-plain-text';
 import { env } from '@/lib/env';
 import { loadServicePageData } from '@/lib/service/load-service-page';
 import {
@@ -91,12 +94,16 @@ export default async function ServiceDetailPage({ params }: PageProps) {
   const faqSchema =
     faqs.length > 0
       ? buildFaqPageSchema(
-          faqs.map((faq) => ({ question: faq.question, answer: faq.answer })),
+          faqs.map((faq) => ({
+            question: faq.question,
+            answer: htmlToPlainText(faq.answer),
+          })),
         )
       : null;
 
   const methodologySteps = parseServiceMethodology(service.methodology);
   const deliverables = parseServiceDeliverables(service.deliverables);
+  const sanitizedBody = service.body.trim() ? sanitizeCmsHtml(service.body) : '';
 
   return (
     <>
@@ -106,7 +113,7 @@ export default async function ServiceDetailPage({ params }: PageProps) {
       {faqSchema ? <JsonLd data={faqSchema} /> : null}
       <div className="pb-24 md:pb-0">
         <ServiceHero service={service} breadcrumbItems={breadcrumbItems} />
-        {service.body.trim() ? (
+        {sanitizedBody ? (
           <section
             className="bg-brand-surface py-12 md:py-16"
             aria-labelledby="service-definition-heading"
@@ -118,9 +125,7 @@ export default async function ServiceDetailPage({ params }: PageProps) {
               >
                 Definición técnica
               </h2>
-              <div className="mt-6 max-w-3xl whitespace-pre-line text-base leading-relaxed text-muted">
-                {service.body}
-              </div>
+              <RichTextContent html={sanitizedBody} className="mt-6 max-w-3xl text-muted" />
             </div>
           </section>
         ) : null}

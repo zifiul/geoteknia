@@ -9,9 +9,11 @@ import {
   AccordionTrigger,
 } from '@/components/molecules/Accordion';
 import { FaqInternalLink } from '@/components/organisms/faq/FaqInternalLink';
+import { RichTextContent } from '@/components/molecules/RichTextContent';
 import { hasAnalyticsConsent, readBrowserConsent } from '@/lib/analytics/consent';
 import { pushRawDataLayer } from '@/lib/analytics/datalayer';
 import type { PublishedFaqItem } from '@/lib/content/blog-faqs';
+import { sanitizeCmsHtmlClient } from '@/lib/content/sanitize-cms-html-client';
 
 export type FaqAccordionProps = {
   items: PublishedFaqItem[];
@@ -77,7 +79,10 @@ export function FaqAccordion({ items }: FaqAccordionProps) {
           <AccordionItem key={faq.id} value={anchorId} id={anchorId} className="border-none px-4 md:px-6">
             <AccordionTrigger className="text-base md:text-lg">{faq.question}</AccordionTrigger>
             <AccordionContent>
-              <p className="whitespace-pre-line text-muted">{faq.answer}</p>
+              <RichTextContent
+                html={sanitizeCmsHtmlClient(faq.answer)}
+                className="text-muted"
+              />
               {faq.internalLinkUrl ? (
                 <FaqInternalLink href={faq.internalLinkUrl} faqId={faq.id}>
                   Ver recurso relacionado

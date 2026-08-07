@@ -1,5 +1,6 @@
-import { PhoneLink } from '@/components/molecules/PhoneLink';
 import { ContactTrackLink } from '@/components/molecules/ContactTrackLink';
+import { PhoneLink } from '@/components/molecules/PhoneLink';
+import { BusinessIcon } from '@/components/organisms/contact/contact-icons';
 import type { PublicNapSnapshot } from '@/lib/contact/public-nap';
 
 export type ContactNapSectionProps = {
@@ -14,27 +15,35 @@ export function ContactNapSection({
   provinceSlug,
 }: ContactNapSectionProps) {
   return (
-    <section aria-labelledby="contact-nap-heading" className="space-y-4">
+    <section
+      aria-labelledby="contact-nap-heading"
+      className="w-full min-w-0 rounded-sm border border-brand-secondary/15 bg-brand-neutral/50 p-4 sm:p-6"
+    >
       <h2
         id="contact-nap-heading"
-        className="font-display text-xl font-semibold text-brand-on-surface md:text-2xl"
+        className="mb-4 flex items-center gap-2 font-display text-base font-semibold text-brand-on-surface"
       >
-        Sede central
+        <BusinessIcon className="text-brand-on-surface" />
+        Sede Central
       </h2>
-      <p className="text-sm font-semibold text-brand-on-surface">{nap.displayName}</p>
-      {nap.address ? (
-        <p className="text-sm text-muted" data-testid="contact-nap-address">{nap.address}</p>
-      ) : null}
-      <div className="flex flex-col gap-2">
+      <address className="space-y-2 not-italic text-sm text-muted">
+        <p className="font-semibold text-brand-on-surface">{nap.displayName}</p>
+        {nap.address ? (
+          <p className="break-words" data-testid="contact-nap-address">
+            {nap.address}
+          </p>
+        ) : null}
         {nap.phone ? (
-          <PhoneLink
-            phone={nap.phone}
-            trackEvent="click_tel"
-            serviceSlug={serviceSlug}
-            provinceSlug={provinceSlug}
-            ariaLabel={`Llamar a ${nap.displayName}`}
-            className="text-sm"
-          />
+          <p className="mt-4 flex items-center gap-2 border-t border-brand-secondary/15 pt-4">
+            <PhoneLink
+              phone={nap.phone}
+              trackEvent="click_tel"
+              serviceSlug={serviceSlug}
+              provinceSlug={provinceSlug}
+              ariaLabel={`Llamar a ${nap.displayName}`}
+              className="font-semibold text-brand-accent"
+            />
+          </p>
         ) : null}
         {nap.email ? (
           <ContactTrackLink
@@ -42,12 +51,12 @@ export function ContactNapSection({
             href={`mailto:${nap.email}`}
             serviceSlug={serviceSlug}
             provinceSlug={provinceSlug}
-            className="inline-flex min-h-11 items-center text-sm text-brand-accent underline-offset-2 hover:underline"
+            className="inline-flex min-h-11 max-w-full items-center break-all text-sm text-brand-accent underline-offset-2 hover:underline"
           >
             {nap.email}
           </ContactTrackLink>
         ) : null}
-      </div>
+      </address>
     </section>
   );
 }

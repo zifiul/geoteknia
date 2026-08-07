@@ -1,9 +1,37 @@
 import type { NextConfig } from 'next';
 
-import { buildMediaRemotePatterns } from '@/lib/seo/site-url';
+import {
+  buildMediaRemotePatterns,
+  type MediaRemotePattern,
+} from '@/lib/seo/site-url';
 
 const mediaBaseUrl =
   process.env.MEDIA_STORAGE_BASE_URL ?? 'https://cdn.example.com/media';
+
+function dedupeRemotePatterns(patterns: MediaRemotePattern[]): MediaRemotePattern[] {
+  const seen = new Set<string>();
+  return patterns.filter((pattern) => {
+    const key = JSON.stringify(pattern);
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+function buildImageRemotePatterns(): MediaRemotePattern[] {
+  const patterns = [...buildMediaRemotePatterns(mediaBaseUrl)];
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (siteUrl && siteUrl !== mediaBaseUrl) {
+    try {
+      patterns.push(...buildMediaRemotePatterns(siteUrl));
+    } catch {
+      // Ignorar URL de sitio inválida en tiempo de build.
+    }
+  }
+  return dedupeRemotePatterns(patterns);
+}
 
 const nextConfig: NextConfig = {
   experimental: {
@@ -11,7 +39,7 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ['image/avif', 'image/webp'],
-    remotePatterns: buildMediaRemotePatterns(mediaBaseUrl),
+    remotePatterns: buildImageRemotePatterns(),
   },
 };
 

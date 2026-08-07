@@ -80,7 +80,7 @@ export function ContentFiltersForm({ filters, pageSize }: Props) {
         <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-5">
           <button
             type="submit"
-            className="min-h-11 rounded-md bg-brand-accent px-4 py-2 text-sm font-semibold text-white hover:bg-brand-accent/90"
+            className="min-h-11 rounded-md bg-brand-accent px-4 py-2 text-sm font-semibold text-white hover:bg-brand-accent/90 cursor-pointer"
           >
             Aplicar filtros
           </button>

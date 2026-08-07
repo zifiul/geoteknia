@@ -34,7 +34,7 @@ test.describe('GTK-60 Página de contacto', () => {
   test('/contacto responde 200 con heading y breadcrumb JSON-LD', async ({ page }) => {
     const response = await page.goto('/contacto');
     expect(response?.status()).toBe(200);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(/equipo geotécnico/i);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/contacto/i);
     const breadcrumb = await findJsonLdByType(page, 'BreadcrumbList');
     expect(breadcrumb).not.toBeNull();
   });

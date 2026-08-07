@@ -11,6 +11,10 @@ import {
   getAuditLogById,
   listAuditLogs,
 } from '@/lib/admin/audit-queries';
+import {
+  listAuditActorFilterOptions,
+  listAuditEntityFilterOptions,
+} from '@/lib/admin/audit-filter-options';
 import { runWithPortalReadAccess } from '@/lib/admin/portal-page-errors';
 
 export const metadata: Metadata = {
@@ -36,8 +40,9 @@ function buildQueryForPagination(
   const q: Record<string, string> = {};
   if (filters.action) q.action = filters.action;
   if (filters.userId) q.userId = filters.userId;
-  if (filters.entityType) q.entityType = filters.entityType;
-  if (filters.entityId) q.entityId = filters.entityId;
+  if (filters.entityType && filters.entityId) {
+    q.entityKey = `${filters.entityType}:${filters.entityId}`;
+  }
   if (filters.from) q.from = filters.from.toISOString().slice(0, 10);
   if (filters.to) q.to = filters.to.toISOString().slice(0, 10);
   q.pageSize = String(pageSize);
@@ -55,9 +60,14 @@ export default async function AdminAuditoriaPage({ searchParams }: PageProps) {
     eventRaw && uuidSchema.safeParse(eventRaw).success ? eventRaw : undefined;
   const eventIdInvalid = Boolean(eventRaw && !eventId);
 
-  const { items, total, page, pageSize } = await runWithPortalReadAccess(() =>
-    listAuditLogs(filters),
-  );
+  const [{ items, total, page, pageSize }, actorOptions, entityOptions] =
+    await runWithPortalReadAccess(() =>
+      Promise.all([
+        listAuditLogs(filters),
+        listAuditActorFilterOptions(),
+        listAuditEntityFilterOptions(),
+      ]),
+    );
 
   let detail = null;
   if (eventId) {
@@ -87,7 +97,7 @@ export default async function AdminAuditoriaPage({ searchParams }: PageProps) {
     Boolean(filters.to);
 
   return (
-    <main className="space-y-6">
+    <main className="mx-auto w-full min-w-0 max-w-[1440px] space-y-6">
       <header>
         <h1 className="text-2xl font-semibold text-brand-primary">Auditoría</h1>
         <p className="mt-1 text-sm text-brand-secondary">
@@ -98,6 +108,8 @@ export default async function AdminAuditoriaPage({ searchParams }: PageProps) {
       <AuditFiltersForm
         filters={filters}
         pageSize={pageSize}
+        actorOptions={actorOptions}
+        entityOptions={entityOptions}
         fieldErrors={
           eventIdInvalid
             ? [...fieldErrors, 'event: identificador de evento no válido']

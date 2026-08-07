@@ -11,30 +11,6 @@ import { CONSENT_UPDATED_EVENT } from '@/lib/analytics/consent-events';
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID?.trim();
 
-/**
- * Bootstrap dataLayer + Consent Mode v2 denied (sin petición externa).
- */
-export function GtmConsentBootstrap() {
-  return (
-    // Consent default debe ejecutarse antes que GTM; excepción documentada GTK-46.
-    // eslint-disable-next-line @next/next/no-before-interactive-script-outside-document -- Consent Mode v2
-    <Script id="gtm-consent-bootstrap" strategy="beforeInteractive">
-      {`
-window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-window.gtag = gtag;
-gtag('consent', 'default', {
-  ad_storage: 'denied',
-  analytics_storage: 'denied',
-  ad_user_data: 'denied',
-  ad_personalization: 'denied',
-  wait_for_update: 500
-});
-`}
-    </Script>
-  );
-}
-
 function consentAllowsGtm(): boolean {
   const stored = readBrowserConsent();
   return stored !== null && shouldLoadGtm(stored.categories);
@@ -79,11 +55,3 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   );
 }
 
-export function GtmScript() {
-  return (
-    <>
-      <GtmConsentBootstrap />
-      <GtmContainer />
-    </>
-  );
-}

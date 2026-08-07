@@ -146,7 +146,7 @@ export function ConsentBanner() {
               </p>
             </div>
 
-            <div className="flex w-full shrink-0 flex-col gap-3 md:hidden">
+            <div className="flex w-full shrink-0 flex-col gap-3 md:hidden [&_button]:cursor-pointer">
               <Button type="button" className="w-full" onClick={acceptAll}>
                 Aceptar todas
               </Button>
@@ -167,7 +167,7 @@ export function ConsentBanner() {
                 Configurar preferencias
               </Button>
             </div>
-            <div className="hidden w-auto shrink-0 flex-row items-center gap-3 md:flex">
+            <div className="hidden w-auto shrink-0 flex-row items-center gap-3 md:flex [&_button]:cursor-pointer">
               <Button type="button" variant="ghost" onClick={openPreferences}>
                 Configurar preferencias
               </Button>
@@ -216,7 +216,7 @@ export function ConsentPreferencesTrigger() {
   return (
     <button
       type="button"
-      className="fixed bottom-4 left-4 z-20 rounded-sm border border-brand-secondary/30 bg-brand-surface px-3 py-2 text-body-sm text-brand-on-surface shadow-card hover:bg-brand-neutral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent max-md:bottom-24"
+      className="fixed bottom-4 left-4 z-20 cursor-pointer rounded-sm border border-brand-secondary/30 bg-brand-surface px-3 py-2 text-body-sm text-brand-on-surface shadow-card hover:bg-brand-neutral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent max-md:bottom-24"
       onClick={() => openConsentPreferences()}
       aria-label="Configurar cookies"
     >

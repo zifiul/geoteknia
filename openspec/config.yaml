@@ -9,12 +9,12 @@ context: |
   Stack:
   - Next.js 15 App Router + React 19 + TypeScript estricto.
   - Backend: Route Handlers en app/api/**/route.ts y Server Actions; lógica de negocio en /lib.
-  - ORM/BD: Prisma sobre PostgreSQL gestionado en Neon, región EU (RGPD).
+  - ORM/BD: Prisma sobre PostgreSQL — Docker 16 (local/CI) o Neon EU (producción).
   - Validación runtime: Zod, compartida entre frontend y backend.
   - Auth: Auth.js v5 (credenciales + TOTP 2FA + RBAC + audit log) para /admin.
   - IA: SDK oficial de Anthropic (Claude) solo server-side; clave nunca en cliente.
   - Email: Resend + React Email. Anti-spam: Cloudflare Turnstile.
-  - Infra: Vercel + Neon + Cloudflare. Gestor de paquetes: pnpm (lockfile pnpm-lock.yaml). Testing: Vitest (unidad/integración) + Playwright (E2E) + Lighthouse CI (gate CWV).
+  - Infra: Vercel + Neon (producción) + Docker Compose (local/CI) + Cloudflare. Gestor de paquetes: pnpm (lockfile pnpm-lock.yaml). Testing: Vitest (unidad/integración) + Playwright (E2E) + Lighthouse CI (gate CWV).
 
   Prioridades de producto que toda decisión debe proteger:
   1. SEO/ISR: SSG + ISR on-demand, JSON-LD, sitemap, Core Web Vitals en verde; publicar contenido sin redeploy.

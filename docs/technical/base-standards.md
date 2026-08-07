@@ -26,12 +26,12 @@ Stack base:
 
 - **Frontend y backend:** Next.js 15 App Router, React 19 y TypeScript estricto.
 - **Backend:** Route Handlers en `app/api/**/route.ts`, Server Actions cuando proceda y lógica de negocio fuera de los handlers.
-- **Base de datos:** PostgreSQL gestionado en Neon, región EU, con Prisma.
+- **Base de datos:** PostgreSQL con Prisma. **Desarrollo local y CI:** PostgreSQL 16 en Docker (`docker compose`). **Producción:** PostgreSQL gestionado en Neon, región EU.
 - **Validación:** Zod para contratos compartidos entre frontend y backend.
 - **Autenticación:** Auth.js v5 con credenciales, TOTP 2FA, RBAC y audit log para `/admin`.
 - **IA:** SDK oficial de Anthropic solo server-side. Nunca exponer claves ni PII al cliente.
 - **Email y anti-spam:** Resend, React Email y Cloudflare Turnstile.
-- **Infraestructura:** Vercel, Neon y Cloudflare.
+- **Infraestructura:** Vercel, Neon (producción), Docker Compose (local/CI) y Cloudflare.
 - **Testing:** Vitest para unidad/integración, Playwright para E2E y Lighthouse CI para Core Web Vitals cuando afecte a plantillas públicas.
 
 Prioridades que deben proteger todas las decisiones:
@@ -145,7 +145,7 @@ El proyecto mantiene integración con varios agentes. Para evitar divergencias:
 ## 9. Seguridad, privacidad y datos
 
 - No enviar PII de contactos, leads o proyectos a prompts de Claude ni guardarla en `ai_generations`.
-- Mantener datos personales y operativos en región EU.
+- Mantener datos personales y operativos en región EU en **producción** (Neon EU). En Docker local solo se usan datos sintéticos de seed y fixtures de test; no importar dumps de producción.
 - Nunca exponer secretos, tokens, claves API ni variables sensibles en cliente, logs públicos, documentación o commits.
 - Aislar `/admin` del frontal público y marcarlo como `noindex`.
 - Proteger acciones administrativas con RBAC, 2FA y auditoría cuando aplique.

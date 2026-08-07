@@ -12,7 +12,7 @@ import {
   PromptPageType,
 } from '@prisma/client';
 
-import { applyVitestEnv } from '../helpers/test-env';
+import { loadTestEnv } from '../helpers/test-env';
 
 const db = new PrismaClient();
 
@@ -22,7 +22,7 @@ describe('QA GTK-38 — ledger tras generación', () => {
   let userId: string | null = null;
 
   beforeAll(async () => {
-    applyVitestEnv();
+    loadTestEnv();
 
     const user = await db.user.create({
       data: {

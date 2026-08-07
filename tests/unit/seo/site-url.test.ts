@@ -7,6 +7,7 @@ import {
   buildMediaRemotePatterns,
   resolveMetadataBase,
 } from '@/lib/seo/site-url';
+import { resolveNextImageMediaSrc } from '@/lib/content/slug';
 
 describe('resolveMetadataBase', () => {
   it('resuelve una URL absoluta válida', () => {
@@ -34,7 +35,51 @@ describe('buildMediaRemotePatterns', () => {
     ]);
   });
 
+  it('incluye el puerto cuando la base de media no usa el puerto por defecto', () => {
+    const patterns = buildMediaRemotePatterns('http://localhost:3000');
+    expect(patterns).toEqual([
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3000',
+        pathname: '/**',
+      },
+    ]);
+  });
+
   it('rechaza URL inválida', () => {
     expect(() => buildMediaRemotePatterns('')).toThrow();
+  });
+});
+
+describe('resolveNextImageMediaSrc', () => {
+  it('devuelve ruta relativa cuando media y sitio comparten origen', () => {
+    expect(
+      resolveNextImageMediaSrc(
+        '/images/maquinaria/hilti.jpg',
+        'http://localhost:3000',
+        'http://localhost:3000',
+      ),
+    ).toBe('/images/maquinaria/hilti.jpg');
+  });
+
+  it('devuelve URL absoluta del CDN cuando el origen es distinto', () => {
+    expect(
+      resolveNextImageMediaSrc(
+        '/machinery/hutte.jpg',
+        'https://cdn.example.com/media',
+        'https://www.geoteknia.com',
+      ),
+    ).toBe('https://cdn.example.com/media/machinery/hutte.jpg');
+  });
+
+  it('normaliza URLs absolutas del mismo origen a ruta relativa', () => {
+    expect(
+      resolveNextImageMediaSrc(
+        'http://localhost:3000/images/maquinaria/hilti.jpg',
+        'http://localhost:3000',
+        'http://localhost:3000',
+      ),
+    ).toBe('/images/maquinaria/hilti.jpg');
   });
 });

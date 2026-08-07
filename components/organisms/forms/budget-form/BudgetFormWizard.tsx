@@ -239,7 +239,7 @@ export function BudgetFormWizard({
     <Button
       type="button"
       variant="primary"
-      className="min-h-11 w-full sm:w-auto"
+      className="min-h-11 w-full sm:w-auto cursor-pointer"
       onClick={handleNext}
       data-testid="budget-form-next"
     >
@@ -251,7 +251,7 @@ export function BudgetFormWizard({
     <Button
       type="submit"
       variant="primary"
-      className="min-h-11 w-full sm:w-auto"
+      className="min-h-11 w-full sm:w-auto cursor-pointer"
       disabled={submitting}
       aria-busy={submitting}
       data-testid="budget-form-submit"
@@ -561,7 +561,7 @@ export function BudgetFormWizard({
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         {step > 1 ? (
-          <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={handleBack}>
+          <Button type="button" variant="secondary" className="w-full sm:w-auto cursor-pointer" onClick={handleBack}>
             Atrás
           </Button>
         ) : null}
@@ -570,7 +570,9 @@ export function BudgetFormWizard({
         ) : (
           <>
             <div className="hidden md:block">{submitButton}</div>
-            <StickyCtaBar>{submitButton}</StickyCtaBar>
+            <div className="md:hidden">
+              <StickyCtaBar>{submitButton}</StickyCtaBar>
+            </div>
           </>
         )}
       </div>

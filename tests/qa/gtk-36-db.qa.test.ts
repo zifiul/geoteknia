@@ -12,7 +12,7 @@ import {
   PromptPageType,
 } from '@prisma/client';
 
-import { applyVitestEnv } from '../helpers/test-env';
+import { loadTestEnv } from '../helpers/test-env';
 
 const db = new PrismaClient();
 
@@ -23,7 +23,7 @@ describe('QA GTK-36 — ledger ai_token_usage', () => {
   let billingPeriod: string;
 
   beforeAll(async () => {
-    applyVitestEnv();
+    loadTestEnv();
 
     const user = await db.user.create({
       data: {

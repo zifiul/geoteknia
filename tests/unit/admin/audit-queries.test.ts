@@ -29,6 +29,7 @@ vi.mock('@/lib/db', () => ({
 }));
 
 import { ForbiddenError } from '@/lib/auth/rbac-errors';
+import { AUDIT_SYSTEM_ACTOR_ID } from '@/lib/admin/audit-labels';
 import { getAuditLogById, listAuditLogs } from '@/lib/admin/audit-queries';
 
 describe('listAuditLogs (GTK-80 / SEC-1)', () => {
@@ -48,6 +49,22 @@ describe('listAuditLogs (GTK-80 / SEC-1)', () => {
       listAuditLogs({ page: 1, pageSize: 25 }),
     ).rejects.toBeInstanceOf(ForbiddenError);
     expect(transaction).not.toHaveBeenCalled();
+  });
+
+  it('filtra por actor Sistema', async () => {
+    await listAuditLogs({
+      page: 1,
+      pageSize: 10,
+      userId: AUDIT_SYSTEM_ACTOR_ID,
+    });
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          userId: null,
+        },
+      }),
+    );
   });
 
   it('filtra por action y entityType', async () => {

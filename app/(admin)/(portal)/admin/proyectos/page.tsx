@@ -82,7 +82,7 @@ export default async function AdminProyectosPage({ searchParams }: PageProps) {
     const stateOptions = filterOptions.states;
 
     return (
-      <div className="mx-auto max-w-[1600px] space-y-6">
+      <div className="mx-auto w-full min-w-0 max-w-[1600px] space-y-6">
         <header className="flex flex-col gap-4 border-b border-brand-primary/10 pb-6 md:flex-row md:items-end md:justify-between">
           <div className="space-y-1">
             <p className="text-sm font-medium uppercase tracking-wide text-brand-secondary">

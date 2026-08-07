@@ -1,3 +1,6 @@
+@import '../styles/_variables.scss';
+@import '../styles/_keyframe-animations.scss';
+
 @import "tailwindcss";
 
 @theme {
@@ -42,5 +45,62 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+.tiptap {
+  @apply space-y-3 text-base leading-relaxed text-brand-on-surface;
+
+  p {
+    @apply text-pretty;
+  }
+
+  h2 {
+    @apply mt-6 text-2xl font-semibold text-brand-on-surface;
+  }
+
+  h3 {
+    @apply mt-4 text-xl font-semibold text-brand-on-surface;
+  }
+
+  h4 {
+    @apply mt-3 text-lg font-semibold text-brand-on-surface;
+  }
+
+  ul {
+    @apply list-disc pl-4;
+  }
+
+  ol {
+    @apply list-decimal pl-4;
+  }
+
+  li {
+    @apply ml-4;
+  }
+
+  blockquote {
+    @apply border-l-4 border-brand-secondary/30 pl-4 italic;
+  }
+
+  a {
+    @apply font-medium text-brand-accent underline-offset-2 hover:underline;
+  }
+
+  img {
+    @apply max-w-full rounded-lg;
+  }
+
+  table {
+    @apply w-full border-collapse;
+  }
+
+  th,
+  td {
+    @apply border border-brand-secondary/20 p-2;
+  }
+
+  th {
+    @apply bg-brand-neutral/50 text-left;
   }
 }

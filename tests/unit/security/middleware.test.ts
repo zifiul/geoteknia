@@ -10,13 +10,13 @@ vi.mock('@/lib/auth/auth-edge', () => ({
   auth: (...args: unknown[]) => authMock(...args),
 }));
 
-import { middleware } from '@/middleware';
+import { proxy } from '@/proxy';
 
 function buildRequest(path: string): NextRequest {
   return new NextRequest(new URL(`http://localhost:3000${path}`));
 }
 
-describe('middleware — protección /admin', () => {
+describe('proxy — protección /admin', () => {
   beforeEach(() => {
     authMock.mockReset();
   });
@@ -24,7 +24,7 @@ describe('middleware — protección /admin', () => {
   it('SEC-1: página /admin sin sesión redirige a login', async () => {
     authMock.mockResolvedValue(null);
 
-    const response = await middleware(buildRequest('/admin'));
+    const response = await proxy(buildRequest('/admin'));
 
     expect(response.status).toBe(307);
     const location = response.headers.get('location');
@@ -34,7 +34,7 @@ describe('middleware — protección /admin', () => {
   it('GTK-69: /admin/login sin sesión continúa (no redirige)', async () => {
     authMock.mockResolvedValue(null);
 
-    const response = await middleware(buildRequest('/admin/login'));
+    const response = await proxy(buildRequest('/admin/login'));
 
     expect(response.status).toBe(200);
     expect(response.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
@@ -43,7 +43,7 @@ describe('middleware — protección /admin', () => {
   it('SEC-2: API /api/admin sin sesión responde 401 JSON', async () => {
     authMock.mockResolvedValue(null);
 
-    const response = await middleware(buildRequest('/api/admin/health'));
+    const response = await proxy(buildRequest('/api/admin/health'));
 
     expect(response.status).toBe(401);
     expect(response.headers.get('content-type')).toMatch(/application\/json/);
@@ -57,7 +57,7 @@ describe('middleware — protección /admin', () => {
       user: { id: 'user-1', email: 'a@test.com' },
     });
 
-    const response = await middleware(buildRequest('/admin/dashboard'));
+    const response = await proxy(buildRequest('/admin/dashboard'));
 
     expect(response.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
   });
@@ -67,7 +67,7 @@ describe('middleware — protección /admin', () => {
       user: { id: 'user-1', email: 'a@test.com' },
     });
 
-    const response = await middleware(buildRequest('/admin'));
+    const response = await proxy(buildRequest('/admin'));
 
     expect(response.status).toBe(200);
   });

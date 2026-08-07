@@ -1,11 +1,11 @@
 /**
  * E2E GTK-75 — flujo editorial en editor CMS (smoke + RBAC).
  */
-import { config } from 'dotenv';
+import { loadTestEnv } from '../helpers/test-env';
 import { generateSync } from 'otplib';
 import { expect, test } from '@playwright/test';
 
-config();
+loadTestEnv();
 
 const TEST_EMAIL_2FA = 'gtk69-2fa-e2e@test.geoteknia.local';
 const TEST_PASSWORD = 'Gtk69E2eTest1!';

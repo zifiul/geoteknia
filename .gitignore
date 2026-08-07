@@ -34,3 +34,8 @@ next-env.d.ts
 
 # Graphify
 /graphify-out/
+
+# Imágenes de producción (no versionar imágenes generadas por el build)
+/public/images/
+
+/.playwright-mcp/

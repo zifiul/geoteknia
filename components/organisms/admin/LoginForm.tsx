@@ -48,7 +48,7 @@ export function LoginForm({ callbackUrl, authErrorMessage }: Props) {
       }
 
       setFieldErrors({});
-      return loginAction(formData);
+      return loginAction(validation.data);
     },
     initialActionState,
   );
@@ -128,7 +128,7 @@ export function LoginForm({ callbackUrl, authErrorMessage }: Props) {
           <FieldError id="login-password-error">{fieldErrors.password}</FieldError>
         </FormField>
 
-        <FormField
+        {/* <FormField
           id="login-totp"
           label="Código de verificación (2FA)"
           hint="Si tienes verificación en dos pasos activada, introduce también tu código de 6 dígitos."
@@ -148,7 +148,7 @@ export function LoginForm({ callbackUrl, authErrorMessage }: Props) {
             }
           />
           <FieldError id="login-totp-error">{fieldErrors.totp}</FieldError>
-        </FormField>
+        </FormField> */}
 
         <Button type="submit" className="w-full" loading={pending} disabled={pending}>
           Entrar al portal

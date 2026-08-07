@@ -30,12 +30,55 @@ export function ContentTable({
   const baseQuery = new URLSearchParams(searchParams);
 
   return (
-    <section aria-labelledby="cms-table-heading" className="mt-6">
+    <section aria-labelledby="cms-table-heading" className="mt-6 min-w-0 w-full">
       <h2 id="cms-table-heading" className="sr-only">
         Listado de contenido editorial
       </h2>
-      <div className="overflow-x-auto rounded-xl border border-brand-primary/10 bg-brand-surface shadow-sm">
-        <table className="min-w-full text-left text-sm">
+
+      <ul className="space-y-3 md:hidden">
+        {items.map((row) => (
+          <li
+            key={`${row.contentType}-${row.id}`}
+            className="rounded-xl border border-brand-primary/10 bg-brand-surface p-4 shadow-sm"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <p className="font-medium break-words text-brand-primary">{row.title}</p>
+              <CmsStatusBadge status={row.workflowStatus} />
+            </div>
+            <dl className="mt-3 space-y-2 text-sm">
+              <div>
+                <dt className="text-xs font-medium text-brand-secondary">Tipo</dt>
+                <dd className="text-brand-on-surface">{row.typeLabel}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-brand-secondary">Silo</dt>
+                <dd className="text-brand-on-surface">{row.siloLabel}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-brand-secondary">Autor</dt>
+                <dd className="text-brand-on-surface">{row.authorName ?? '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-brand-secondary">Actualizado</dt>
+                <dd className="tabular-nums text-brand-secondary">
+                  {formatDate(row.updatedAt)}
+                </dd>
+              </div>
+            </dl>
+            {canEdit ? (
+              <Link
+                href={row.editHref}
+                className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-brand-accent hover:underline"
+              >
+                Editar
+              </Link>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+
+      <div className="hidden w-full min-w-0 max-w-full overflow-x-auto rounded-xl border border-brand-primary/10 bg-brand-surface shadow-sm md:block">
+        <table className="w-full min-w-[52rem] text-left text-sm">
           <thead className="border-b border-brand-primary/10 bg-brand-neutral/40 text-brand-secondary">
             <tr>
               <th scope="col" className="px-4 py-3 font-semibold">

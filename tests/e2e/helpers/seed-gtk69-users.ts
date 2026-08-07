@@ -4,11 +4,12 @@
 import { createCipheriv, randomBytes } from 'node:crypto';
 
 import argon2 from 'argon2';
-import { config } from 'dotenv';
 import { generateSecret } from 'otplib';
 import { PrismaClient, RoleName } from '@prisma/client';
 
-config();
+import { loadTestEnv } from '../../helpers/test-env';
+
+loadTestEnv();
 
 const TEST_EMAIL = 'gtk69-e2e@test.geoteknia.local';
 const TEST_PASSWORD = 'Gtk69E2eTest1!';

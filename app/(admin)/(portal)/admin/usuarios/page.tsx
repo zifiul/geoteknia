@@ -35,7 +35,7 @@ export default async function AdminUsuariosPage({ searchParams }: PageProps) {
   queryForPagination.pageSize = String(pageSize);
 
   return (
-    <main className="space-y-6">
+    <main className="mx-auto w-full min-w-0 max-w-[1440px] space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-brand-primary">Usuarios</h1>

@@ -1,0 +1,94 @@
+# Geoteknia — entorno Docker local y CI
+# Requiere Docker Desktop (WSL2) en Windows.
+# Producción sigue en Vercel + Neon; solo cambian variables de entorno.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-geoteknia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-geoteknia_dev_only}
+      POSTGRES_DB: ${POSTGRES_DB:-geoteknia_dev}
+    ports:
+      - '127.0.0.1:${POSTGRES_HOST_PORT:-5433}:5432'
+    volumes:
+      - geoteknia-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-geoteknia} -d ${POSTGRES_DB:-geoteknia_dev}',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  web:
+    profiles: [web]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+      args:
+        DATABASE_URL: postgresql://${POSTGRES_USER:-geoteknia}:${POSTGRES_PASSWORD:-geoteknia_dev_only}@host.docker.internal:${POSTGRES_HOST_PORT:-5433}/${POSTGRES_DB:-geoteknia_dev}?sslmode=disable
+        DIRECT_URL: postgresql://${POSTGRES_USER:-geoteknia}:${POSTGRES_PASSWORD:-geoteknia_dev_only}@host.docker.internal:${POSTGRES_HOST_PORT:-5433}/${POSTGRES_DB:-geoteknia_dev}?sslmode=disable
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-geoteknia}:${POSTGRES_PASSWORD:-geoteknia_dev_only}@db:5432/${POSTGRES_DB:-geoteknia_dev}?sslmode=disable
+      DIRECT_URL: postgresql://${POSTGRES_USER:-geoteknia}:${POSTGRES_PASSWORD:-geoteknia_dev_only}@db:5432/${POSTGRES_DB:-geoteknia_dev}?sslmode=disable
+      NODE_ENV: production
+    ports:
+      - '127.0.0.1:${WEB_HOST_PORT:-3000}:3000'
+    volumes:
+      - geoteknia-node-modules:/app/node_modules
+      - geoteknia-next-cache:/app/.next
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  web-dev:
+    profiles: [web-dev]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-geoteknia}:${POSTGRES_PASSWORD:-geoteknia_dev_only}@db:5432/${POSTGRES_DB:-geoteknia_dev}?sslmode=disable
+      DIRECT_URL: postgresql://${POSTGRES_USER:-geoteknia}:${POSTGRES_PASSWORD:-geoteknia_dev_only}@db:5432/${POSTGRES_DB:-geoteknia_dev}?sslmode=disable
+      NODE_ENV: development
+      WATCHPACK_POLLING: 'true'
+    ports:
+      - '127.0.0.1:${WEB_HOST_PORT:-3000}:3000'
+    volumes:
+      - .:/app
+      - geoteknia-node-modules:/app/node_modules
+      - geoteknia-next-cache:/app/.next
+
+volumes:
+  geoteknia-pgdata:
+  geoteknia-node-modules:
+  geoteknia-next-cache:

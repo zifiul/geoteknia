@@ -9,22 +9,17 @@ import {
   LOGIN_INVALID_CREDENTIALS_MESSAGE,
   loginInputSchema,
   type LoginActionResult,
+  type LoginInput,
 } from '@/lib/auth/login-schemas';
 
-export async function loginAction(formData: FormData): Promise<LoginActionResult> {
+export async function loginAction(input: LoginInput): Promise<LoginActionResult> {
   const ip = await readLoginClientIp();
   const rateLimited = loginRateLimitResult(ip);
   if (rateLimited) {
     return rateLimited;
   }
 
-  const totpRaw = formData.get('totp');
-  const parsed = loginInputSchema.safeParse({
-    email: formData.get('email'),
-    password: formData.get('password'),
-    totp:
-      typeof totpRaw === 'string' && totpRaw.length > 0 ? totpRaw : undefined,
-  });
+  const parsed = loginInputSchema.safeParse(input);
 
   if (!parsed.success) {
     return {
@@ -40,7 +35,7 @@ export async function loginAction(formData: FormData): Promise<LoginActionResult
     await signIn('credentials', {
       email: parsed.data.email,
       password: parsed.data.password,
-      totp: parsed.data.totp,
+      ...(parsed.data.totp ? { totp: parsed.data.totp } : {}),
       redirect: false,
     });
     return { ok: true };

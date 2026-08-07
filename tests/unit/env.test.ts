@@ -84,6 +84,42 @@ describe('lib/env.ts — validación de variables de entorno', () => {
     expect(error?.message).toMatch(/ANTHROPIC_API_KEY/);
   });
 
+  it('acepta cadena Neon con sslmode=require', async () => {
+    setEnv({
+      ...REQUIRED_VARS,
+      DATABASE_URL:
+        'postgresql://user:pass@host.eu-central-1.aws.neon.tech/geoteknia?sslmode=require',
+      DIRECT_URL:
+        'postgresql://user:pass@host.eu-central-1.aws.neon.tech/geoteknia?sslmode=require',
+    });
+
+    const { env } = await import('@/lib/env');
+
+    expect(env.DATABASE_URL).toContain('neon.tech');
+    expect(env.DATABASE_URL).toContain('sslmode=require');
+  });
+
+  it('acepta cadena Docker local con sslmode=disable', async () => {
+    setEnv({
+      ...REQUIRED_VARS,
+      DATABASE_URL:
+        'postgresql://geoteknia:geoteknia_dev_only@localhost:5433/geoteknia_dev?sslmode=disable',
+      DIRECT_URL:
+        'postgresql://geoteknia:geoteknia_dev_only@localhost:5433/geoteknia_dev?sslmode=disable',
+    });
+
+    const { env } = await import('@/lib/env');
+
+    expect(env.DATABASE_URL).toContain('localhost:5433');
+    expect(env.DATABASE_URL).toContain('sslmode=disable');
+  });
+
+  it('rechaza DATABASE_URL sin esquema PostgreSQL', async () => {
+    setEnv({ ...REQUIRED_VARS, DATABASE_URL: 'mysql://localhost/db' });
+
+    await expect(import('@/lib/env')).rejects.toThrow(/DATABASE_URL/);
+  });
+
   it('SEC-4: el mensaje de error no contiene valores de otras variables', async () => {
     setEnv({ ...REQUIRED_VARS, DATABASE_URL: undefined });
 

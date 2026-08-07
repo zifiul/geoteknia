@@ -51,3 +51,44 @@ export function resolveMediaFileUrl(fileUrl: string, baseUrl: string): string {
   const path = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
   return `${base}${path}`;
 }
+
+function safeOrigin(url: string): string | null {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * `src` para `next/image`: rutas servidas desde `public/` en el mismo origen
+ * deben quedarse relativas (p. ej. `/images/...`) para no pasar por remotePatterns.
+ */
+export function resolveNextImageMediaSrc(
+  fileUrl: string,
+  mediaBaseUrl: string,
+  siteUrl?: string,
+): string {
+  const mediaOrigin = safeOrigin(mediaBaseUrl);
+  const siteOrigin = siteUrl ? safeOrigin(siteUrl) : null;
+  const isSameOriginMedia =
+    mediaOrigin != null && siteOrigin != null && mediaOrigin === siteOrigin;
+
+  if (fileUrl.startsWith('/')) {
+    return isSameOriginMedia ? fileUrl : resolveMediaFileUrl(fileUrl, mediaBaseUrl);
+  }
+
+  if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+    try {
+      const parsed = new URL(fileUrl);
+      if (mediaOrigin && parsed.origin === mediaOrigin && isSameOriginMedia) {
+        return parsed.pathname;
+      }
+      return fileUrl;
+    } catch {
+      return fileUrl;
+    }
+  }
+
+  return resolveMediaFileUrl(fileUrl, mediaBaseUrl);
+}

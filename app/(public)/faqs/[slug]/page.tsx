@@ -7,6 +7,7 @@ import {
   getPublishedFaqGroupBySlug,
   listPublishedGeneralFaqGroups,
 } from '@/lib/content/blog-faqs';
+import { htmlToPlainText } from '@/lib/content/html-to-plain-text';
 import { env } from '@/lib/env';
 import {
   buildSiloBreadcrumbListSchema,
@@ -28,7 +29,7 @@ export async function generateStaticParams() {
 }
 
 function buildGroupDescription(groupName: string, firstAnswer: string | undefined): string {
-  const trimmed = firstAnswer?.replace(/\s+/g, ' ').trim();
+  const trimmed = firstAnswer ? htmlToPlainText(firstAnswer).replace(/\s+/g, ' ').trim() : '';
   if (trimmed && trimmed.length > 0) {
     return trimmed.length > 155 ? `${trimmed.slice(0, 152)}…` : trimmed;
   }
@@ -85,7 +86,10 @@ export default async function FaqGroupPage({ params }: PageProps) {
     group.name,
   );
   const faqSchema = buildFaqPageSchema(
-    group.faqs.map((faq) => ({ question: faq.question, answer: faq.answer })),
+    group.faqs.map((faq) => ({
+      question: faq.question,
+      answer: htmlToPlainText(faq.answer),
+    })),
   );
 
   const breadcrumbNav = breadcrumbSegments.map((segment, index) => ({
