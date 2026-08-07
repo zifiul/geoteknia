@@ -11,7 +11,7 @@ export type AdminNavSection = {
 
 /** Secciones del portal ordenadas; permisos alineados con módulos RBAC (GTK-68). */
 export const ADMIN_NAV_SECTIONS: readonly AdminNavSection[] = [
-  { href: '/admin', label: 'Inicio', requiredPermission: null },
+  { href: '/admin', label: 'Dashboard', requiredPermission: null },
   {
     href: '/admin/proyectos',
     label: 'Proyectos',

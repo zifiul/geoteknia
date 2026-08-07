@@ -1,3 +1,6 @@
+import { RichTextContent } from '@/components/molecules/RichTextContent';
+import { sanitizeCmsHtmlClient } from '@/lib/content/sanitize-cms-html-client';
+
 export type IntersectionEditorialBodyProps = {
   body: string;
 };
@@ -6,6 +9,8 @@ export function IntersectionEditorialBody({ body }: IntersectionEditorialBodyPro
   if (!body.trim()) {
     return null;
   }
+
+  const sanitized = sanitizeCmsHtmlClient(body);
 
   return (
     <section
@@ -19,9 +24,7 @@ export function IntersectionEditorialBody({ body }: IntersectionEditorialBodyPro
         >
           Contexto geológico y alcance del servicio
         </h2>
-        <div className="mt-6 max-w-3xl whitespace-pre-line text-base leading-relaxed text-muted">
-          {body}
-        </div>
+        <RichTextContent html={sanitized} className="mt-6 max-w-3xl text-muted" />
       </div>
     </section>
   );

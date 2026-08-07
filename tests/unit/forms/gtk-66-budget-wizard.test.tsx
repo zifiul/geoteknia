@@ -31,8 +31,36 @@ describe('GTK-66 budget wizard', () => {
   it('valida paso 1 con servicio y provincia obligatorios', () => {
     const fail = validateBudgetWizardStep(1, { ...validDraft, servicio: '' });
     expect(fail.success).toBe(false);
+    if (!fail.success) {
+      expect(fail.error.issues.some((i) => i.path[0] === 'servicio')).toBe(true);
+      expect(fail.error.issues.find((i) => i.path[0] === 'servicio')?.message).toBe(
+        'Seleccione un servicio geotécnico',
+      );
+    }
     const ok = validateBudgetWizardStep(1, validDraft);
     expect(ok.success).toBe(true);
+  });
+
+  it('devuelve mensajes de error en español en el paso 3', () => {
+    const fail = validateBudgetWizardStep(3, {
+      ...validDraft,
+      nombre: 'A',
+      email: 'no-es-email',
+      telefono: '123',
+      rol: '',
+      gdprConsent: false,
+    });
+    expect(fail.success).toBe(false);
+    if (!fail.success) {
+      const byField = Object.fromEntries(
+        fail.error.issues.map((issue) => [issue.path[0], issue.message]),
+      );
+      expect(byField.nombre).toBe('Debe indicar un nombre de contacto');
+      expect(byField.email).toBe('Indique un email válido');
+      expect(byField.telefono).toBe('El teléfono debe tener al menos 9 dígitos');
+      expect(byField.rol).toBe('Seleccione su rol en el proyecto');
+      expect(byField.gdprConsent).toBe('Debe aceptar la política de privacidad');
+    }
   });
 
   it('omite opcionales vacíos en buildBudgetPayload', () => {

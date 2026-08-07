@@ -1,5 +1,5 @@
 /**
- * QA GTK-24 — integración con BD real (Neon).
+ * QA GTK-24 — integración con BD real (Docker local / Neon).
  * Ejecutar: npx vitest run tests/qa/gtk24-totp-db.qa.test.ts
  */
 import argon2 from 'argon2';
@@ -9,32 +9,9 @@ import { PrismaClient, RoleName } from '@prisma/client';
 
 vi.mock('server-only', () => ({}));
 
-import { config } from 'dotenv';
+import { loadTestEnv } from '../helpers/test-env';
 
-config();
-
-const QA_ENV_DEFAULTS: Record<string, string> = {
-  NEXTAUTH_SECRET: 'qa-nextauth-secret-min-32-chars-long',
-  NEXTAUTH_URL: 'http://localhost:3000',
-  ANTHROPIC_API_KEY: 'sk-ant-qa-fake',
-  RESEND_API_KEY: 're_qa_fake',
-  EMAIL_FROM: 'QA <qa@test.geoteknia.local>',
-  EMAIL_REPLY_TO: 'qa@test.geoteknia.local',
-  TURNSTILE_SECRET_KEY: 'turnstile-secret-qa',
-  NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'turnstile-site-qa',
-  NODE_ENV: 'test',
-  SESSION_TTL_MINUTES: '480',
-};
-
-for (const [key, value] of Object.entries(QA_ENV_DEFAULTS)) {
-  if (!process.env[key]) {
-    process.env[key] = value;
-  }
-}
-
-if (!process.env.TWOFA_ENCRYPTION_KEY) {
-  throw new Error('TWOFA_ENCRYPTION_KEY requerida en .env para QA GTK-24');
-}
+loadTestEnv();
 
 const TEST_EMAIL = 'gtk24-qa@test.geoteknia.local';
 const TEST_PASSWORD = 'Gtk24QaTest1!';

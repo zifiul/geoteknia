@@ -4,7 +4,8 @@ import type { ReactNode } from 'react';
 import {
   ConsentBanner,
 } from '@/components/analytics/consent-banner';
-import { GtmScript } from '@/components/analytics/gtm';
+import { GtmConsentBootstrap } from '@/components/analytics/gtm-consent-bootstrap';
+import { GtmContainer } from '@/components/analytics/gtm';
 import { SiteFooter } from '@/components/organisms/layout/SiteFooter';
 import { SiteHeader } from '@/components/organisms/layout/SiteHeader';
 import { SiteStickyContactBar } from '@/components/organisms/layout/SiteStickyContactBar';
@@ -29,7 +30,8 @@ export default async function PublicLayout({ children }: { children: ReactNode }
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <GtmScript />
+      <GtmConsentBootstrap />
+      <GtmContainer />
       <Suspense fallback={<div className="min-h-14 border-b border-brand-secondary/15" />}>
         <SiteHeader profile={profile} channels={channels} />
       </Suspense>

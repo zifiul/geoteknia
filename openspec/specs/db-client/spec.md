@@ -4,7 +4,7 @@
 TBD - created by archiving change gtk-21-bootstrap-nextjs-stack. Update Purpose after archive.
 ## Requirements
 ### Requirement: Singleton de PrismaClient en lib/db.ts
-El módulo `lib/db.ts` SHALL exportar una única instancia de `PrismaClient` reutilizada entre hot-reloads en desarrollo mediante el patrón singleton sobre `globalThis`, evitando la proliferación de conexiones en entornos serverless (Neon).
+El módulo `lib/db.ts` SHALL exportar una única instancia de `PrismaClient` reutilizada entre hot-reloads en desarrollo mediante el patrón singleton sobre `globalThis`, evitando la proliferación de conexiones en entornos serverless (Neon) y en desarrollo local con PostgreSQL en contenedor.
 
 #### Scenario: Misma instancia entre imports repetidos
 - **WHEN** el módulo `lib/db.ts` se importa dos veces (simulando hot-reload con reset del registro de módulos)

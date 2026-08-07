@@ -13,7 +13,8 @@
 | **TypeScript** | 7.x (`typescript` en devDependencies) | `ppnpm run typecheck` usa `tsc --noEmit`. Tras `pnpm install`, `postinstall` copia TS 6 bajo `typescript-eslint` para ESLint (hasta soporte oficial de TS 7). |
 | **pnpm** | Versión fijada en `packageManager` de `package.json` | Instalación reproducible con `pnpm install --frozen-lockfile`. |
 | **Git** | Cualquier versión reciente | — |
-| **Cuenta Neon** | Plan gratuito suficiente para MVP | [neon.com](https://neon.com/docs/introduction) — región **EU** obligatoria (RGPD). |
+| **Docker Desktop** | Con WSL2 (Windows) | PostgreSQL local y CI vía `docker compose`. Requerido para el flujo contenedorizado. |
+| **Cuenta Neon** | Plan gratuito suficiente para MVP | Solo **producción** y previews en Vercel — región **EU** obligatoria (RGPD). |
 
 Opcional para E2E: Playwright instala sus browsers con `pnpm exec playwright install` la primera vez que ejecutes `ppnpm run test:e2e`.
 
@@ -46,8 +47,8 @@ El módulo `lib/env.ts` valida al arrancar que existan todas las variables reque
 
 | Variable | Uso |
 |---|---|
-| `DATABASE_URL` | Conexión **pooled** de Neon → runtime de la app (`PrismaClient` en serverless). |
-| `DIRECT_URL` | Conexión **directa** de Neon → migraciones Prisma (`prisma migrate`). |
+| `DATABASE_URL` | Runtime Prisma. **Docker local:** `localhost:5433` con `sslmode=disable`. **Neon:** pooler con `sslmode=require`. |
+| `DIRECT_URL` | Migraciones Prisma. Mismo host que `DATABASE_URL` en Docker; conexión directa en Neon. |
 | `NEXTAUTH_SECRET` | Firma de sesiones Auth.js. Generar con `openssl rand -base64 32`. |
 | `NEXTAUTH_URL` | URL base local: `http://localhost:3000`. |
 | `ANTHROPIC_API_KEY` | SDK de Claude (solo servidor). |
@@ -61,7 +62,56 @@ Referencia completa: [`.env.example`](../../.env.example).
 
 ---
 
-## 4. Configurar Neon (PostgreSQL)
+## 3.5 Entorno Docker (desarrollo local y CI)
+
+Requiere **Docker Desktop** con backend WSL2 en Windows.
+
+### Arranque rápido
+
+```powershell
+# Copiar variables (opción A Docker en .env.example)
+cp .env.example .env
+
+# Levantar solo PostgreSQL (puerto 127.0.0.1:5433)
+pnpm run docker:up
+
+# Migraciones y seed
+pnpm exec prisma migrate deploy
+pnpm db:seed
+
+# Desarrollo habitual en host (recomendado)
+pnpm run dev
+```
+
+### Comandos Docker
+
+| Comando | Acción |
+|---|---|
+| `pnpm run docker:up` | Arranca PostgreSQL en segundo plano |
+| `pnpm run docker:down` | Para contenedores |
+| `pnpm run docker:reset` | Elimina volúmenes (`docker compose down -v`) |
+| `pnpm run docker:web` | Arranca también la app en contenedor (profile `web`, puerto 3000) |
+| `pnpm run docker:web-dev` | App con hot reload en contenedor (profile `web-dev`) |
+| `pnpm run docker:logs` | Logs de Compose |
+
+### Credenciales por defecto (solo desarrollo)
+
+Definidas en `docker-compose.yml`: usuario `geoteknia`, contraseña `geoteknia_dev_only`, base `geoteknia_dev`, puerto host `5433`. **No reutilizar en producción.**
+
+### Verificación
+
+```powershell
+pnpm run typecheck
+pnpm run test
+pnpm run test:qa          # requiere db activa; sin paralelismo entre ficheros QA
+pnpm run test:e2e         # requiere db + build previo (`pnpm build`)
+```
+
+La imagen web se construye con `host.docker.internal:5433` para el paso `next build` (ISR consulta la BD). El servicio `web` en runtime usa el hostname interno `db:5432`.
+
+---
+
+## 4. Configurar Neon (producción y previews)
 
 Geoteknia usa **Neon serverless** en región **EU** (`eu-central-1` o equivalente). No usar regiones US.
 

@@ -188,7 +188,7 @@ export function WorkflowActions({
             type="button"
             disabled={pending}
             data-testid={`cms-workflow-${action.kind}`}
-            className={`min-h-11 rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-50 ${
+            className={`min-h-11 cursor-pointer rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-50 ${
               action.variant === 'primary'
                 ? 'bg-brand-accent text-white'
                 : action.variant === 'danger'

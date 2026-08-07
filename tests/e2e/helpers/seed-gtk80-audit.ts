@@ -2,10 +2,13 @@
  * Seed mínimo de filas audit_logs para E2E GTK-80.
  * Imprime JSON con ids en stdout (última línea).
  */
-import { AuditAction } from '@prisma/client';
+import { AuditAction, PrismaClient } from '@prisma/client';
 
-import { db } from '@/lib/db';
+import { loadTestEnv } from '../../helpers/test-env';
 
+loadTestEnv();
+
+const db = new PrismaClient();
 const PROJECT_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 async function main() {

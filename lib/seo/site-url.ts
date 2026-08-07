@@ -1,6 +1,7 @@
 export type MediaRemotePattern = {
   protocol: 'http' | 'https';
   hostname: string;
+  port?: string;
   pathname?: string;
 };
 
@@ -40,11 +41,14 @@ export function buildMediaRemotePatterns(
   const pathnameBase = parsed.pathname.replace(/\/$/, '') || '';
   const pathname = `${pathnameBase}/**`;
 
-  return [
-    {
-      protocol,
-      hostname: parsed.hostname,
-      pathname,
-    },
-  ];
+  const pattern: MediaRemotePattern = {
+    protocol,
+    hostname: parsed.hostname,
+    pathname,
+  };
+  if (parsed.port) {
+    pattern.port = parsed.port;
+  }
+
+  return [pattern];
 }

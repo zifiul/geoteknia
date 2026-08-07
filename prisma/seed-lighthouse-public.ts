@@ -16,7 +16,7 @@ export const LIGHTHOUSE_PUBLIC_SEED_IDS = {
   caseStudy: 'b7777777-7777-4777-8777-777777770007',
 } as const;
 
-const HERO_FILE_NAME = '/images/lighthouse-seed-hero.svg';
+const HERO_FILE_NAME = '/images/lighthouse-seed-hero.jpg';
 
 /**
  * Contenido mínimo publicado para Lighthouse CI y E2E en BD vacía.

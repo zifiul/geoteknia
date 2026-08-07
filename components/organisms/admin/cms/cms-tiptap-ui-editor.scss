@@ -1,0 +1,26 @@
+.cms-tiptap-ui-editor {
+  --tt-toolbar-height: 44px;
+
+  .simple-editor-wrapper {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    background-color: var(--tt-bg-color, #fff);
+  }
+
+  .simple-editor-content {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .simple-editor-content .tiptap.ProseMirror.simple-editor {
+    flex: none;
+    min-height: 240px;
+    padding: 0.75rem 1rem 1.5rem;
+    outline: none;
+  }
+}

@@ -26,7 +26,7 @@ El proyecto es un **greenfield** B2B de captación de leads para una ingeniería
 |---|---|---|
 | **Frontend público** | Next.js 15 (App Router) + React 19 + TypeScript | SSG + ISR on-demand resuelve CWV y SEO de raíz; `next/image` genera AVIF/WebP automáticamente; Metadata API + componentes JSON-LD integrados |
 | **Backend / API** | Route Handlers + Server Actions (mismo proyecto Next.js) | Un solo despliegue, un solo lenguaje, tipos E2E sin contrato API manual; la clave de Claude vive solo en servidor |
-| **Base de datos** | PostgreSQL gestionado — **Neon** (serverless, scale-to-zero, branching por PR) | Postgres estándar = cero lock-in de motor; Neon cuesta casi nada en idle en MVP; branching de BD por PR encaja con previews de Vercel; **región EU** (RGPD) |
+| **Base de datos** | PostgreSQL gestionado — **Neon** (producción, región EU) + **Docker** `postgres:16-alpine` (local/CI) | Postgres estándar = cero lock-in de motor; Neon en producción con branching por PR; Docker local reproducible sin cuenta cloud |
 | **ORM / migraciones** | **Prisma** (schema, migraciones, seeds) + **Zod** (validación runtime) | Migraciones reproducibles y versionadas; Zod valida formularios multi-paso y la salida estructurada de Claude |
 | **Caché** | CDN/edge de Vercel (páginas ISR) + **Upstash Redis** (opcional, fase 2) | El 90% del tráfico es contenido cacheable en edge; Redis solo cuando se añada cola de generación IA o rate-limiting avanzado |
 | **Auth** | **Auth.js v5 (NextAuth)** — credenciales + TOTP 2FA + RBAC en BD + audit log | Control total, coste cero, cumple RF-17/RNF-ADMIN; hash argon2; sesiones con expiración |

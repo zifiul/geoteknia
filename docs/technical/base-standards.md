@@ -26,12 +26,12 @@ Stack base:
 
 - **Frontend y backend:** Next.js 15 App Router, React 19 y TypeScript estricto.
 - **Backend:** Route Handlers en `app/api/**/route.ts`, Server Actions cuando proceda y lógica de negocio fuera de los handlers.
-- **Base de datos:** PostgreSQL gestionado en Neon, región EU, con Prisma.
+- **Base de datos:** PostgreSQL con Prisma. **Desarrollo local y CI:** PostgreSQL 16 en Docker (`docker compose`). **Producción:** PostgreSQL gestionado en Neon, región EU.
 - **Validación:** Zod para contratos compartidos entre frontend y backend.
 - **Autenticación:** Auth.js v5 con credenciales, TOTP 2FA, RBAC y audit log para `/admin`.
 - **IA:** SDK oficial de Anthropic solo server-side. Nunca exponer claves ni PII al cliente.
 - **Email y anti-spam:** Resend, React Email y Cloudflare Turnstile.
-- **Infraestructura:** Vercel, Neon y Cloudflare.
+- **Infraestructura:** Vercel, Neon (producción), Docker Compose (local/CI) y Cloudflare.
 - **Testing:** Vitest para unidad/integración, Playwright para E2E y Lighthouse CI para Core Web Vitals cuando afecte a plantillas públicas.
 
 Prioridades que deben proteger todas las decisiones:
@@ -145,7 +145,7 @@ El proyecto mantiene integración con varios agentes. Para evitar divergencias:
 ## 9. Seguridad, privacidad y datos
 
 - No enviar PII de contactos, leads o proyectos a prompts de Claude ni guardarla en `ai_generations`.
-- Mantener datos personales y operativos en región EU.
+- Mantener datos personales y operativos en región EU en **producción** (Neon EU). En Docker local solo se usan datos sintéticos de seed y fixtures de test; no importar dumps de producción.
 - Nunca exponer secretos, tokens, claves API ni variables sensibles en cliente, logs públicos, documentación o commits.
 - Aislar `/admin` del frontal público y marcarlo como `noindex`.
 - Proteger acciones administrativas con RBAC, 2FA y auditoría cuando aplique.
@@ -178,3 +178,13 @@ Antes de dar una tarea por completada, el agente debe:
 6. Informar qué se cambió, qué se verificó y qué riesgo o cobertura pendiente queda.
 
 Si una verificación no puede ejecutarse, explicar el motivo y el riesgo residual.
+
+## 12. graphify
+
+Este proyecto tiene un grafo de conocimiento en graphify-out/ con nodos dios, estructura de comunidades y relaciones entre archivos.
+
+Reglas:
+- Para preguntas sobre el código base, ejecutar primero `graphify query "<pregunta>"` cuando graphify-out/graph.json exista. Usar `graphify path "<A>" "<B>"` para relaciones y `graphify explain "<concepto>"` para conceptos focalizados. Estos devuelven un subgrafo acotado, normalmente mucho más pequeño que GRAPH_REPORT.md o salida de grep.
+- Si graphify-out/wiki/index.md existe, usarlo para navegación amplia en lugar de exploración directa del código fuente.
+- Leer graphify-out/GRAPH_REPORT.md solo para revisión arquitectónica amplia o cuando query/path/explain no proporcionen suficiente contexto.
+- Después de modificar código, ejecutar `graphify update .` para mantener el grafo actualizado (solo AST, sin coste de API).

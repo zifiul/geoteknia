@@ -4,13 +4,20 @@ import type {
   RegenerationSection,
 } from '@/lib/ia/output-schema';
 import { mergeRegenerationIntoOutput } from '@/lib/ia/output-schema';
+import { escapeHtml, plainTextToHtml } from '@/lib/content/plaintext-to-html';
 
 export function buildBodyWithHeadings(output: GenerationOutput): string {
   const headings = output.h2h3
-    .map((entry) => `<${entry.level}>${entry.text}</${entry.level}>`)
-    .join('\n');
-  if (!headings) return output.body;
-  return `${headings}\n\n${output.body}`;
+    .map((entry) => `<${entry.level}>${escapeHtml(entry.text)}</${entry.level}>`)
+    .join('');
+  const bodyHtml = plainTextToHtml(output.body);
+  if (!headings) {
+    return bodyHtml;
+  }
+  if (!bodyHtml) {
+    return headings;
+  }
+  return `${headings}${bodyHtml}`;
 }
 
 export function applyAiOutputToServiceForm(
@@ -40,7 +47,7 @@ export function patchServiceFormFromSection(
         name: mergedOutput.h1,
       };
     case 'body':
-      return { ...form, body: mergedOutput.body };
+      return { ...form, body: plainTextToHtml(mergedOutput.body) };
     case 'h2h3':
       return { ...form, body: buildBodyWithHeadings(mergedOutput) };
     case 'metaTitle':

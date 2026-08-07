@@ -13,7 +13,7 @@ El backend no se implementa como una API Express separada. La capa servidor vive
 - **Route Handlers** para endpoints HTTP consumidos por formularios, integraciones y automatizaciones.
 - **Server Actions** para mutaciones internas desde componentes del App Router cuando aporten simplicidad y seguridad.
 - **Módulos de dominio en `/lib`** para encapsular reglas de negocio, acceso a datos, validación y orquestación.
-- **Prisma + PostgreSQL Neon EU** como fuente persistente.
+- **Prisma + PostgreSQL** como fuente persistente (Docker local/CI; Neon EU en producción).
 
 Las decisiones backend deben proteger tres prioridades del producto:
 
@@ -34,7 +34,7 @@ Las decisiones backend deben proteger tres prioridades del producto:
 | Backend HTTP | Route Handlers en `app/api/**/route.ts` |
 | Mutaciones internas | Server Actions en módulos de servidor |
 | ORM | Prisma |
-| Base de datos | PostgreSQL gestionado en Neon, región EU |
+| Base de datos | PostgreSQL 16 en Docker (local/CI) o Neon EU (producción) |
 | Validación runtime | Zod |
 | Autenticación | Auth.js v5 con credenciales, sesiones, 2FA TOTP y RBAC |
 | Email | Resend + React Email |

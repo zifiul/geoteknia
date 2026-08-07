@@ -3,9 +3,18 @@ import { AiModel } from '@prisma/client';
 import { z } from 'zod';
 
 // SEC-1: módulo server-only; importar desde un Client Component rompe el build.
+const postgresConnectionUrl = z
+  .string()
+  .min(1)
+  .refine(
+    (value) =>
+      value.startsWith('postgresql://') || value.startsWith('postgres://'),
+    'debe usar esquema postgresql:// o postgres://',
+  );
+
 const envSchema = z.object({
-  DATABASE_URL: z.string().min(1),
-  DIRECT_URL: z.string().min(1),
+  DATABASE_URL: postgresConnectionUrl,
+  DIRECT_URL: postgresConnectionUrl,
   NEXTAUTH_SECRET: z.string().min(1),
   NEXTAUTH_URL: z.url(),
   ANTHROPIC_API_KEY: z.string().min(1),

@@ -25,7 +25,7 @@ function logUnauthorized(pathname: string, request: NextRequest): void {
   );
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === LOGIN_PATH) {

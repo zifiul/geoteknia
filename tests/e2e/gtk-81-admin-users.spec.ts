@@ -3,11 +3,11 @@
  */
 import { execSync } from 'node:child_process';
 
-import { config } from 'dotenv';
+import { loadTestEnv } from '../helpers/test-env';
 import { generateSync } from 'otplib';
 import { expect, test } from '@playwright/test';
 
-config();
+loadTestEnv();
 
 const TEST_EMAIL_2FA = 'gtk69-2fa-e2e@test.geoteknia.local';
 const TEST_EMAIL_TECNICO = 'gtk68-tecnico-e2e@test.geoteknia.local';

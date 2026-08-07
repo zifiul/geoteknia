@@ -14,14 +14,18 @@ import { listPublishedServices } from '@/lib/content/services';
 import { SITEMAP_CACHE_TAG } from '@/lib/seo/sitemap-config';
 import { buildSiloPath } from '@/lib/seo/silo-urls';
 
+export type HomePersonaIcon = 'calculator' | 'map' | 'verified';
+
 export type HomePersonaPath = {
   id: 'p1' | 'p2' | 'p3';
   title: string;
+  mobileTitle: string;
   description: string;
   ctaLabel: string;
   href: string;
   contentType: string;
   contentId: string;
+  icon: HomePersonaIcon;
 };
 
 export type HomePageData = {
@@ -36,45 +40,43 @@ export type HomePageData = {
 };
 
 function buildPersonaPaths(
-  services: Awaited<ReturnType<typeof listPublishedServices>>,
   zones: Awaited<ReturnType<typeof listPublishedGeoZones>>,
 ): HomePersonaPath[] {
-  const pillar =
-    services.find((service) => service.isPillar) ?? services[0] ?? null;
   const zone = zones[0] ?? null;
 
   return [
     {
       id: 'p1',
-      title: 'Promotor y técnico de proyecto',
-      description:
-        'Estudios geotécnicos, ensayos y memorias para licencias y proyecto de ejecución.',
-      ctaLabel: pillar ? `Ver ${pillar.name}` : 'Explorar servicios',
-      href: pillar
-        ? buildSiloPath('service', { slug: pillar.slug })
-        : '/servicios',
-      contentType: 'service',
-      contentId: pillar?.id ?? 'servicios-index',
+      title: 'Arquitectos',
+      mobileTitle: 'Calculadora de alcance',
+      description: 'Datos precisos para el cálculo estructural.',
+      ctaLabel: 'Calculadora y presupuesto',
+      href: '/calculadora',
+      contentType: 'calculator',
+      contentId: 'calculadora',
+      icon: 'calculator',
     },
     {
       id: 'p2',
-      title: 'Obra en territorio',
-      description:
-        'Cobertura provincial, casos recientes y contacto rápido con el equipo local.',
-      ctaLabel: zone ? `Zona ${zone.name}` : 'Ver zonas',
-      href: zone ? buildSiloPath('geo_zone', { slug: zone.slug }) : '/zonas',
-      contentType: 'geo_zone',
-      contentId: zone?.id ?? 'zonas-index',
+      title: 'Promotores',
+      mobileTitle: 'Zonas y casos de éxito',
+      description: 'Viabilidad y optimización de costes desde el cimiento.',
+      ctaLabel: 'Zonas y casos',
+      href: zone ? buildSiloPath('geo_zone', { slug: zone.slug }) : '/proyectos',
+      contentType: zone ? 'geo_zone' : 'case_study_index',
+      contentId: zone?.id ?? 'proyectos',
+      icon: 'map',
     },
     {
       id: 'p3',
-      title: 'Licitaciones y acreditaciones',
-      description:
-        'Solvencia técnica, ENAC y documentación para concursos públicos.',
-      ctaLabel: 'Acreditaciones',
-      href: '/acreditaciones',
-      contentType: 'accreditation_index',
-      contentId: 'acreditaciones',
+      title: 'Licitaciones',
+      mobileTitle: 'Acreditaciones y solvencia',
+      description: 'Solvencia técnica para concursos públicos.',
+      ctaLabel: 'Acreditaciones y licitaciones',
+      href: '/licitaciones',
+      contentType: 'tender_index',
+      contentId: 'licitaciones',
+      icon: 'verified',
     },
   ];
 }
@@ -102,7 +104,7 @@ const loadHomePageData = unstable_cache(
       services,
       caseStudies,
       accreditations,
-      personaPaths: buildPersonaPaths(services, zones),
+      personaPaths: buildPersonaPaths(zones),
       heroImageUrl: heroSource?.heroImageUrl ?? null,
       heroImageAlt: heroSource?.heroImageAlt ?? null,
     };

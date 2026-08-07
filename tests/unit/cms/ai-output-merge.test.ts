@@ -56,7 +56,7 @@ describe('patchServiceFormFromSection (GTK-74)', () => {
       body: 'Solo cuerpo nuevo',
     });
     const patched = patchServiceFormFromSection(form, merged, 'body');
-    expect(patched.body).toBe('Solo cuerpo nuevo');
+    expect(patched.body).toBe('<p>Solo cuerpo nuevo</p>');
     expect(patched.name).toBe('Nombre manual');
   });
 });

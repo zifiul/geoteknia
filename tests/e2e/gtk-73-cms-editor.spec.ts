@@ -3,11 +3,11 @@
  */
 import { execSync } from 'node:child_process';
 
-import { config } from 'dotenv';
+import { loadTestEnv } from '../helpers/test-env';
 import { generateSync } from 'otplib';
 import { expect, test } from '@playwright/test';
 
-config();
+loadTestEnv();
 
 const TEST_EMAIL_2FA = 'gtk69-2fa-e2e@test.geoteknia.local';
 const TEST_EMAIL_TECNICO = 'gtk68-tecnico-e2e@test.geoteknia.local';
@@ -81,7 +81,9 @@ test.describe('GTK-73 CMS editor de contenido', () => {
     });
     await expect(page.getByTestId('cms-content-editor')).toBeVisible();
     await page.getByLabel(/nombre del servicio/i).fill('Servicio E2E GTK-73');
-    await page.getByLabel(/cuerpo/i).fill('Cuerpo técnico de prueba');
+    const bodyEditor = page.getByTestId('cms-body-editor');
+    await bodyEditor.click();
+    await page.keyboard.type('Cuerpo técnico de prueba');
     await page.getByLabel(/slug url/i).fill(slug);
     await page.getByLabel(/meta título/i).fill('Título SEO prueba');
     await expect(page.getByText(/\/60 caracteres/)).toBeVisible();

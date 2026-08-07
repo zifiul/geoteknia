@@ -105,7 +105,7 @@ export function CrmFilters({ filters, options, pageSize, showTechnicianFilter, v
         <div className="flex flex-wrap items-end gap-2 sm:col-span-2 xl:col-span-6">
           <button
             type="submit"
-            className="min-h-11 rounded-md bg-brand-accent px-4 py-2 text-sm font-semibold text-white hover:bg-brand-accent/90"
+            className="min-h-11 rounded-md bg-brand-accent px-4 py-2 text-sm font-semibold text-white hover:bg-brand-accent/90 cursor-pointer"
           >
             Aplicar filtros
           </button>

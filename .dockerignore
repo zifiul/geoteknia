@@ -1,0 +1,36 @@
+# Dependencias y builds
+node_modules
+.next
+out
+build
+
+# Secretos (SEC-2: nunca copiar a imagen)
+.env
+.env.*
+
+# Testing
+coverage
+playwright-report
+test-results
+
+# Herramientas locales
+tools/gitleaks
+tools/semgrep-venv
+
+# Índices locales
+.codegraph
+graphify-out
+
+# Git y misc
+.git
+.gitignore
+*.md
+!README.md
+.DS_Store
+*.tsbuildinfo
+
+# OpenSpec y docs (no necesarios en runtime)
+openspec
+docs
+tickets
+reports

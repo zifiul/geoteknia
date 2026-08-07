@@ -2,17 +2,22 @@
 
 ## Purpose
 
-Fundación del schema Prisma de Geoteknia: datasource dual Neon, enums transversales y convenciones de bloques reutilizables documentadas en `schema.prisma`.
+Fundación del schema Prisma de Geoteknia: datasource dual (Neon producción / Docker local), enums transversales y convenciones de bloques reutilizables documentadas en `schema.prisma`.
 
 ## Requirements
 
-### Requirement: Datasource PostgreSQL con pooler y conexión directa Neon
+### Requirement: Datasource PostgreSQL con pooler y conexión directa
 
-El fichero `prisma/schema.prisma` SHALL configurar `datasource db` con `provider = "postgresql"`, `url = env("DATABASE_URL")` (pooler Neon EU) y `directUrl = env("DIRECT_URL")` (conexión directa para migraciones).
+El fichero `prisma/schema.prisma` SHALL configurar `datasource db` con `provider = "postgresql"`, `url = env("DATABASE_URL")` (conexión de runtime: pooler Neon EU en producción, o instancia PostgreSQL local/CI en desarrollo) y `directUrl = env("DIRECT_URL")` (conexión directa para migraciones Prisma).
 
 #### Scenario: Schema válido con variables de entorno Neon
 
-- **WHEN** se ejecuta `npx prisma validate` con `DATABASE_URL` y `DIRECT_URL` definidas
+- **WHEN** se ejecuta `npx prisma validate` con `DATABASE_URL` y `DIRECT_URL` apuntando a Neon EU con `sslmode=require`
+- **THEN** la validación completa sin errores
+
+#### Scenario: Schema válido con variables de entorno Docker
+
+- **WHEN** se ejecuta `npx prisma validate` con `DATABASE_URL` y `DIRECT_URL` apuntando a `localhost:5433` con `sslmode=disable`
 - **THEN** la validación completa sin errores
 
 ### Requirement: Enums transversales del modelo de datos

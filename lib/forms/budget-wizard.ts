@@ -26,10 +26,23 @@ export const budgetStep3Schema = budgetLeadSchema.pick({
 
 export const budgetStep2Schema = z
   .object({
-    tipoObra: z.string().trim().min(1).optional(),
-    plantas: z.number().int().positive().optional(),
-    superficie: z.number().positive().optional(),
-    fase: z.string().trim().max(200).optional(),
+    tipoObra: z
+      .string()
+      .trim()
+      .min(1, 'Seleccione una tipología de obra válida')
+      .optional(),
+    plantas: z
+      .number()
+      .positive('El número de plantas debe ser mayor que 0')
+      .optional(),
+    superficie: z
+      .number()
+      .positive('La superficie debe ser mayor que 0')
+      .optional(),
+    fase: z
+      .string()
+      .trim()
+      .optional(),
   })
   .strict();
 

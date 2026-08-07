@@ -23,12 +23,52 @@ export function UsersTable({ items, page, totalPages, pageSize, searchParams }: 
   const baseQuery = new URLSearchParams(searchParams);
 
   return (
-    <section aria-labelledby="users-table-heading" className="mt-6">
+    <section aria-labelledby="users-table-heading" className="mt-6 min-w-0 w-full">
       <h2 id="users-table-heading" className="sr-only">
         Listado de usuarios
       </h2>
-      <div className="overflow-x-auto rounded-xl border border-brand-primary/10 bg-brand-surface shadow-sm">
-        <table className="min-w-full text-left text-sm">
+
+      <ul className="space-y-3 md:hidden">
+        {items.map((user) => (
+          <li
+            key={user.id}
+            className="rounded-xl border border-brand-primary/10 bg-brand-surface p-4 shadow-sm"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <p className="font-medium text-brand-primary">{user.fullName}</p>
+              <UserStatusBadge
+                isActive={user.isActive}
+                twofaEnabled={user.twofaEnabled}
+              />
+            </div>
+            <dl className="mt-3 space-y-2 text-sm">
+              <div>
+                <dt className="text-xs font-medium text-brand-secondary">Email</dt>
+                <dd className="break-all text-brand-on-surface">{user.email}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-brand-secondary">Rol</dt>
+                <dd className="text-brand-on-surface">{user.role.label}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-brand-secondary">Último acceso</dt>
+                <dd className="tabular-nums text-brand-secondary">
+                  {formatDate(user.lastLoginAt)}
+                </dd>
+              </div>
+            </dl>
+            <Link
+              href={`/admin/usuarios/${user.id}`}
+              className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-brand-accent hover:underline"
+            >
+              Editar
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      <div className="hidden w-full min-w-0 max-w-full overflow-x-auto rounded-xl border border-brand-primary/10 bg-brand-surface shadow-sm md:block">
+        <table className="w-full min-w-[48rem] text-left text-sm">
           <thead className="border-b border-brand-primary/10 bg-brand-neutral/40 text-brand-secondary">
             <tr>
               <th scope="col" className="px-4 py-3 font-semibold">

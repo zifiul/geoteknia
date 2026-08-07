@@ -1,0 +1,5 @@
+# .graphifyignore
+# node_modules/ y test-results/ ya están en .gitignore (graphify los respeta automáticamente).
+# Estas rutas sí se versionan en git pero no queremos indexarlas en el grafo.
+openspec/
+tests/

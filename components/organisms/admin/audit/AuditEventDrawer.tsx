@@ -61,7 +61,7 @@ export function AuditEventDrawer({ event, listQueryString }: Props) {
   return (
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent
-        className="fixed inset-y-0 right-0 left-auto top-0 flex h-full max-h-none w-full max-w-lg translate-x-0 translate-y-0 flex-col overflow-y-auto rounded-none border-l border-brand-secondary/20 p-0 shadow-xl"
+        className="fixed inset-y-0 right-0 left-auto top-0 z-50 flex h-full max-h-none w-full max-w-full translate-x-0 translate-y-0 flex-col overflow-x-hidden overflow-y-auto rounded-none border-l border-brand-secondary/20 p-0 shadow-xl sm:max-w-lg"
         aria-describedby="audit-event-description"
       >
         <div className="border-b border-brand-primary/10 px-6 py-5">

@@ -76,6 +76,11 @@ import {
   updateMachinery,
   updateTeamMember,
 } from '@/lib/content/team-machinery';
+import {
+  assertCmsImageUploadCategory,
+  uploadCmsImageFile,
+} from '@/lib/cms/media/cms-image-upload';
+import { ContentValidationError } from '@/lib/content/errors';
 
 function revalidateContenido() {
   revalidatePath('/admin/contenido');
@@ -237,6 +242,27 @@ export const deleteMediaAssetAction = withPermission(
   },
 );
 
+export const uploadCmsImageAction = withPermission(
+  'content.create',
+  async (
+    _user,
+    formData: FormData,
+  ): Promise<ContentActionResult<{ fileUrl: string }>> => {
+    return runContentAction(async () => {
+      const file = formData.get('file');
+      const category = formData.get('category');
+      if (!(file instanceof File)) {
+        throw new ContentValidationError('No se recibió ningún archivo');
+      }
+      if (typeof category !== 'string') {
+        throw new ContentValidationError('Categoría de imagen no válida');
+      }
+      assertCmsImageUploadCategory(category);
+      return uploadCmsImageFile(file, category);
+    });
+  },
+);
+
 export const createCaseStudyAction = withPermission(
   'content.create',
   async (_user, raw: unknown): Promise<ContentActionResult<{ id: string }>> => {
@@ -301,7 +327,10 @@ export const updateMachineryAction = withPermission(
     machineryId: string,
     raw: unknown,
   ): Promise<ContentActionResult> => {
-    return runContentAction(async () => updateMachinery(_user, machineryId, raw));
+    return runContentAction(async () => {
+      await updateMachinery(_user, machineryId, raw);
+      revalidateContenido();
+    });
   },
 );
 

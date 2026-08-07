@@ -19,19 +19,19 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: geoteknia
-          POSTGRES_PASSWORD: geoteknia
-          POSTGRES_DB: geoteknia_ci
+          POSTGRES_PASSWORD: geoteknia_dev_only
+          POSTGRES_DB: geoteknia_dev
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U geoteknia -d geoteknia_ci"
+          --health-cmd "pg_isready -U geoteknia -d geoteknia_dev"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
 
     env:
-      DATABASE_URL: postgresql://geoteknia:geoteknia@localhost:5432/geoteknia_ci
-      DIRECT_URL: postgresql://geoteknia:geoteknia@localhost:5432/geoteknia_ci
+      DATABASE_URL: postgresql://geoteknia:geoteknia_dev_only@localhost:5432/geoteknia_dev?sslmode=disable
+      DIRECT_URL: postgresql://geoteknia:geoteknia_dev_only@localhost:5432/geoteknia_dev?sslmode=disable
       NEXTAUTH_SECRET: ci-lighthouse-nextauth-secret-min-32-chars!!
       NEXTAUTH_URL: http://localhost:3010
       NEXT_PUBLIC_SITE_URL: http://localhost:3010

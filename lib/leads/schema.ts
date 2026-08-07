@@ -1,31 +1,47 @@
 import { z } from 'zod';
 
 /** Roles del formulario de presupuesto (GTK-28). */
-export const professionalRoleSchema = z.enum([
-  'propiedad',
-  'promotor',
-  'constructor',
-  'arquitecto',
-  'ingenieria',
-  'otro',
-]);
+export const professionalRoleSchema = z.enum(
+  [
+    'propiedad',
+    'promotor',
+    'constructor',
+    'arquitecto',
+    'ingenieria',
+    'otro',
+  ],
+  { error: 'Seleccione su rol en el proyecto' },
+);
 
 export const emailField = z
   .string()
   .trim()
   .toLowerCase()
-  .email()
-  .max(254);
+  .email('Indique un email válido')
+  .max(254, 'El email no puede superar 254 caracteres');
 
 export const phoneField = z
   .string()
   .trim()
   .transform((v) => v.replace(/\s+/g, ''))
-  .pipe(z.string().min(9).max(20));
+  .pipe(
+    z
+      .string()
+      .min(9, 'El teléfono debe tener al menos 9 dígitos')
+      .max(20, 'El teléfono no puede superar 20 dígitos'),
+  );
+
+export const contactNameField = z
+  .string()
+  .trim()
+  .min(2, 'Debe indicar un nombre de contacto');
 
 export const contactBaseSchema = z.object({
-  nombre: z.string().trim().min(2).max(200),
-  empresa: z.string().trim().max(200).optional(),
+  nombre: contactNameField,
+  empresa: z
+    .string()
+    .trim()
+    .optional(),
   email: emailField,
   telefono: phoneField,
   rol: professionalRoleSchema,
@@ -33,18 +49,36 @@ export const contactBaseSchema = z.object({
 
 export const budgetLeadSchema = z
   .object({
-    servicio: z.string().trim().min(1),
-    provincia: z.string().trim().min(1),
-    tipoObra: z.string().trim().min(1).optional(),
-    plantas: z.number().int().positive().optional(),
-    superficie: z.number().positive().optional(),
-    fase: z.string().trim().max(200).optional(),
-    nombre: z.string().trim().min(2).max(200),
-    empresa: z.string().trim().max(200).optional(),
+    servicio: z.string().trim().min(1, 'Seleccione un servicio geotécnico'),
+    provincia: z.string().trim().min(1, 'Seleccione una provincia'),
+    tipoObra: z
+      .string()
+      .trim()
+      .min(1, 'Seleccione una tipología de obra válida')
+      .optional(),
+    plantas: z
+      .number()
+      .positive('El número de plantas debe ser mayor que 0')
+      .optional(),
+    superficie: z
+      .number()
+      .positive('La superficie debe ser mayor que 0')
+      .optional(),
+    fase: z
+      .string()
+      .trim()
+      .optional(),
+    nombre: contactNameField,
+    empresa: z
+      .string()
+      .trim()
+      .optional(),
     email: emailField,
     telefono: phoneField,
     rol: professionalRoleSchema,
-    gdprConsent: z.literal(true),
+    gdprConsent: z.literal(true, {
+      error: 'Debe aceptar la política de privacidad',
+    }),
     turnstileToken: z.string().min(1),
     utmSource: z.string().trim().max(200).optional(),
     utmMedium: z.string().trim().max(200).optional(),

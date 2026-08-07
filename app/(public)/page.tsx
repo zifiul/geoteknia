@@ -13,9 +13,9 @@ import { resolveMetadataBase } from '@/lib/seo/site-url';
 
 export const revalidate = 3600;
 
-const HOME_TITLE = 'Geoteknia — Ingeniería geotécnica';
+const HOME_TITLE = 'Geoteknia — Estudios geotécnicos con respuesta en 48 h';
 const HOME_DESCRIPTION =
-  'Estudios geotécnicos, ensayos y soluciones para edificación y obra civil. Recorridos por perfil, servicios y acreditaciones.';
+  'Ingeniería de precisión para edificación, obra civil y rehabilitación. Servicios geotécnicos, zonas, acreditaciones ENAC y presupuesto online.';
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteUrl = env.NEXT_PUBLIC_SITE_URL;
@@ -46,8 +46,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   const data = await getHomePageData();
-  const displayName = data.profile?.displayName ?? 'Geoteknia';
-  const primaryPath = data.personaPaths[0];
 
   const jsonLd =
     data.profile !== null
@@ -58,13 +56,8 @@ export default async function HomePage() {
     <>
       {jsonLd ? <JsonLd data={jsonLd} /> : null}
       <HomeHero
-        displayName={displayName}
         heroImageUrl={data.heroImageUrl}
         heroImageAlt={data.heroImageAlt}
-        primaryHref={primaryPath?.href ?? '/servicios'}
-        primaryLabel={primaryPath?.ctaLabel ?? 'Explorar servicios'}
-        primaryContentType={primaryPath?.contentType ?? 'service'}
-        primaryContentId={primaryPath?.contentId ?? 'servicios-index'}
       />
       <HomePersonaPaths paths={data.personaPaths} />
       <HomeServicesGrid services={data.services} />

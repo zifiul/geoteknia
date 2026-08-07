@@ -27,14 +27,23 @@ export function SeoBlock({ values, onChange, errors }: Props) {
       </h2>
       <label className="mt-3 block text-sm text-brand-secondary">
         Slug URL
+        <span className="text-red-700" aria-hidden="true">
+          {' '}
+          *
+        </span>
+        <span className="sr-only"> (obligatorio)</span>
         <input
           className="mt-1 w-full rounded-md border border-brand-secondary/30 px-3 py-2 text-sm"
           value={values.slug}
+          required
+          aria-required
+          aria-invalid={errors.slug ? true : undefined}
+          aria-describedby={errors.slug ? 'cms-seo-slug-error' : undefined}
           onChange={(e) => onChange({ slug: e.target.value })}
         />
       </label>
       {errors.slug ? (
-        <p role="alert" className="mt-1 text-sm text-red-700">
+        <p id="cms-seo-slug-error" role="alert" className="mt-1 text-sm text-red-700">
           {errors.slug}
         </p>
       ) : null}

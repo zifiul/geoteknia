@@ -2,14 +2,14 @@
  * E2E GTK-69 — /admin/login UI + loginAction.
  */
 import { execSync } from 'node:child_process';
-import { config } from 'dotenv';
+import { loadTestEnv } from '../helpers/test-env';
 import { generateSync } from 'otplib';
 import { expect, test } from '@playwright/test';
 import {
   assertNoCriticalAxeViolations,
 } from './helpers/axe-wcag';
 
-config();
+loadTestEnv();
 
 const TEST_EMAIL = 'gtk69-e2e@test.geoteknia.local';
 const TEST_PASSWORD = 'Gtk69E2eTest1!';

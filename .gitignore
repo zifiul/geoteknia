@@ -31,3 +31,11 @@ next-env.d.ts
 
 # CodeGraph (índice local, se regenera con `codegraph init`)
 /.codegraph/
+
+# Graphify
+/graphify-out/
+
+# Imágenes de producción (no versionar imágenes generadas por el build)
+/public/images/
+
+/.playwright-mcp/

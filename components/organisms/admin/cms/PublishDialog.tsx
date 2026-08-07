@@ -39,7 +39,7 @@ export function PublishDialog({
         <div className="mt-6 flex flex-wrap justify-end gap-2">
           <button
             type="button"
-            className="min-h-11 rounded-md border border-brand-primary/20 px-4 py-2 text-sm font-medium text-brand-accent"
+            className="min-h-11 rounded-md border border-brand-primary/20 px-4 py-2 text-sm font-medium text-brand-accent cursor-pointer"
             onClick={() => onOpenChange(false)}
             disabled={pending}
           >
@@ -47,7 +47,7 @@ export function PublishDialog({
           </button>
           <button
             type="button"
-            className="min-h-11 rounded-md bg-brand-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="min-h-11 rounded-md bg-brand-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 cursor-pointer"
             onClick={onConfirm}
             disabled={pending}
             aria-busy={pending}

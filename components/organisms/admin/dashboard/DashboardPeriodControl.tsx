@@ -3,14 +3,15 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import type { DashboardPeriod } from '@/lib/admin/dashboard-period-schema';
+import { cn } from '@/lib/shared/cn';
 
 type Props = {
   period: DashboardPeriod;
 };
 
-const OPTIONS: { value: DashboardPeriod; label: string }[] = [
-  { value: '7d', label: '7 días' },
-  { value: '30d', label: '30 días' },
+const OPTIONS: { value: DashboardPeriod; label: string; shortLabel: string }[] = [
+  { value: '7d', label: '7 días', shortLabel: '7 días' },
+  { value: '30d', label: '30 días', shortLabel: '30 días' },
 ];
 
 export function DashboardPeriodControl({ period }: Props) {
@@ -18,10 +19,10 @@ export function DashboardPeriodControl({ period }: Props) {
   const searchParams = useSearchParams();
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-sm font-medium text-brand-secondary">Periodo KPI</span>
+    <div className="w-full sm:w-auto">
+      <span className="sr-only">Periodo KPI</span>
       <div
-        className="inline-flex rounded-lg border border-brand-primary/15 bg-brand-surface p-0.5"
+        className="flex w-full items-center rounded-sm border border-brand-primary/15 bg-brand-surface p-1 sm:inline-flex sm:w-auto"
         role="group"
         aria-label="Seleccionar periodo de KPIs"
       >
@@ -31,11 +32,13 @@ export function DashboardPeriodControl({ period }: Props) {
             <button
               key={opt.value}
               type="button"
-              className={`min-h-11 rounded-md px-4 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary ${
+              className={cn(
+                'inline-flex min-h-11 flex-1 items-center justify-center rounded-sm px-4 text-sm font-medium transition-colors sm:flex-none sm:px-5',
+                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-info',
                 active
-                  ? 'bg-brand-primary text-white'
-                  : 'text-brand-primary hover:bg-brand-neutral'
-              }`}
+                  ? 'bg-brand-neutral text-brand-primary shadow-sm'
+                  : 'text-brand-secondary hover:bg-brand-neutral/50',
+              )}
               aria-pressed={active}
               onClick={() => {
                 const params = new URLSearchParams(searchParams.toString());
@@ -43,7 +46,8 @@ export function DashboardPeriodControl({ period }: Props) {
                 router.push(`/admin?${params.toString()}`);
               }}
             >
-              {opt.label}
+              <span className="sm:hidden">{opt.shortLabel}</span>
+              <span className="hidden sm:inline">{opt.label}</span>
             </button>
           );
         })}

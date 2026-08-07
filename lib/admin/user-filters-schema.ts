@@ -22,6 +22,14 @@ function firstSearchParam(
   return Array.isArray(value) ? value[0] : value;
 }
 
+function emptyToUndefined(value: string | undefined): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? undefined : trimmed;
+}
+
 function parseOptionalBoolean(
   value: string | string[] | undefined,
 ): boolean | undefined {
@@ -39,7 +47,7 @@ export function parseUserFiltersFromSearchParams(
   return userFiltersSchema.parse({
     role: roleRaw && roleRaw in RoleName ? roleRaw : undefined,
     active: parseOptionalBoolean(searchParams.active),
-    q: firstSearchParam(searchParams.q),
+    q: emptyToUndefined(firstSearchParam(searchParams.q)),
     page: firstSearchParam(searchParams.page),
     pageSize: firstSearchParam(searchParams.pageSize),
     sort: firstSearchParam(searchParams.sort),

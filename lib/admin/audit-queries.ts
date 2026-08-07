@@ -3,6 +3,7 @@ import 'server-only';
 import type { Prisma } from '@prisma/client';
 
 import type { AuditFilters } from '@/lib/admin/audit-filters-schema';
+import { AUDIT_SYSTEM_ACTOR_ID } from '@/lib/admin/audit-labels';
 import { requirePermission } from '@/lib/auth/rbac';
 import { db } from '@/lib/db';
 
@@ -51,7 +52,9 @@ function buildAuditListWhere(filters: AuditFilters): Prisma.AuditLogWhereInput {
   if (filters.action) {
     where.action = filters.action;
   }
-  if (filters.userId) {
+  if (filters.userId === AUDIT_SYSTEM_ACTOR_ID) {
+    where.userId = null;
+  } else if (filters.userId) {
     where.userId = filters.userId;
   }
   if (filters.entityType) {

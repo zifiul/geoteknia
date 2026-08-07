@@ -5,6 +5,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
+import { loadTestEnv } from '../helpers/test-env';
+
 import { PrismaClient } from '@prisma/client';
 
 import {
@@ -20,21 +22,7 @@ describe('QA GTK-32 — BD conversion_events', () => {
   const createdIds: string[] = [];
 
   beforeAll(async () => {
-    (process.env as NodeJS.ProcessEnv & { NODE_ENV?: string }).NODE_ENV ??=
-      'test';
-    process.env.NEXTAUTH_URL ??= 'http://localhost:3000';
-    process.env.NEXTAUTH_SECRET ??= 'local-qa-nextauth-secret-32chars-min';
-    process.env.ANTHROPIC_API_KEY ??= 'sk-ant-local-qa-placeholder';
-    process.env.TURNSTILE_SECRET_KEY ??=
-      '1x0000000000000000000000000000000AA';
-    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ??=
-      '1x00000000000000000000AA';
-    process.env.RESEND_API_KEY ??= 're_test_qa';
-    process.env.EMAIL_FROM ??= 'Geoteknia <noreply@test.geoteknia.com>';
-    process.env.EMAIL_REPLY_TO ??= 'presupuestos@test.geoteknia.com';
-    process.env.SESSION_TTL_MINUTES ??= '480';
-    process.env.TWOFA_ENCRYPTION_KEY ??=
-      'ffaf4fe2ce037ac6ece4f59cf18e5f5977b8bacdc90aa50ad245465716afbc5f';
+    loadTestEnv();
 
     baseline = await db.conversionEvent.count();
   });

@@ -3,11 +3,11 @@
  */
 import { execSync } from 'node:child_process';
 
-import { config } from 'dotenv';
+import { loadTestEnv } from '../helpers/test-env';
 import { generateSync } from 'otplib';
 import { expect, test } from '@playwright/test';
 
-config();
+loadTestEnv();
 
 const TEST_EMAIL_2FA = 'gtk69-2fa-e2e@test.geoteknia.local';
 const TEST_PASSWORD = 'Gtk69E2eTest1!';
@@ -111,6 +111,22 @@ test.describe('GTK-68 Admin portal layout', () => {
 
     const gtmScript = page.locator('script[src*="gtm.js"]');
     await expect(gtmScript).toHaveCount(0);
+  });
+
+  test('drawer móvil abre y cierra con botón y Escape', async ({ page }) => {
+    test.skip(!canRunDbTests(), 'Requiere DATABASE_URL y TWOFA_ENCRYPTION_KEY');
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loginWith2Fa(page, '/admin');
+
+    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Navegación principal' });
+    await expect(drawer).toBeVisible();
+    await expect(drawer.getByRole('button', { name: 'Cerrar menú' })).toBeVisible();
+    await expect(drawer.getByRole('link', { name: 'Proyectos' })).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(drawer).toBeHidden();
   });
 
   test('logout redirige a login', async ({ page }) => {

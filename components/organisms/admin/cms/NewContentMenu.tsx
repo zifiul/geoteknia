@@ -18,19 +18,21 @@ export function NewContentMenu({ canCreate }: Props) {
   }
 
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+          setOpen(false);
+        }
+      }}
+    >
       <button
         type="button"
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls={menuId}
-        className="inline-flex min-h-11 items-center gap-2 rounded-md bg-brand-accent px-4 py-2 text-sm font-semibold text-white hover:bg-brand-accent/90"
+        className="inline-flex min-h-11 items-center gap-2 rounded-md bg-brand-accent px-4 py-2 text-sm font-semibold text-white hover:bg-brand-accent/90 cursor-pointer"
         onClick={() => setOpen((value) => !value)}
-        onBlur={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget as Node)) {
-            setOpen(false);
-          }
-        }}
       >
         Crear contenido
         <span aria-hidden className="text-xs">
@@ -42,6 +44,7 @@ export function NewContentMenu({ canCreate }: Props) {
           id={menuId}
           role="menu"
           className="absolute right-0 z-20 mt-2 max-h-80 w-64 overflow-y-auto rounded-lg border border-brand-primary/10 bg-brand-surface py-1 shadow-lg"
+          onMouseDown={(event) => event.preventDefault()}
         >
           {CMS_CONTENT_TYPE_CATALOG.map((row) => (
             <li key={row.type} role="none">
