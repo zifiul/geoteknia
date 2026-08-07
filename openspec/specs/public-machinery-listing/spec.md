@@ -1,16 +1,16 @@
 # public-machinery-listing Specification
 
 ## Purpose
-TBD - created by archiving change gtk-57-maquinaria-listing. Update Purpose after archive.
+Listado y fichas públicas de equipamiento geotécnico (maquinaria propia): catálogo en `/maquinaria` y detalle por slug en `/maquinaria/[slug]`.
 ## Requirements
 ### Requirement: Listado publicado de maquinaria
 
-El sistema SHALL exponer la ruta `/maquinaria` como página RSC que lista únicamente equipos con `PUBLISHED_EDITORIAL_WHERE`, ordenados por nombre ascendente.
+El sistema SHALL exponer la ruta `/maquinaria` como página RSC que lista únicamente equipos con `PUBLISHED_EDITORIAL_WHERE`, ordenados por nombre ascendente. Cada ficha del listado SHALL enlazar a su detalle en `/maquinaria/[slug]`.
 
 #### Scenario: Equipos publicados visibles
 
 - **WHEN** existen registros `machinery` en estado `publicado` y no borrados
-- **THEN** la página muestra una ficha por equipo con `equipmentType`, `model`, `maxDepthM`, `diameters`, `inSituTests` parseado, `hasEnacLab`, foto con `alt` y enlaces a servicios publicados vinculados vía `machinery_services`
+- **THEN** la página muestra una ficha por equipo con `equipmentType`, `model`, `maxDepthM`, `diameters`, `inSituTests` parseado, `hasEnacLab`, foto con `alt`, enlaces a servicios publicados vinculados vía `machinery_services`, y el título enlaza a `/maquinaria/{slug}`
 
 #### Scenario: Sin equipos publicados
 

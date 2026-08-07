@@ -1,6 +1,8 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 import type { PublishedMachineryListItem } from '@/lib/content/machinery';
+import { buildSiloPath } from '@/lib/seo/silo-urls';
 
 export type ServiceEquipmentProps = {
   items: PublishedMachineryListItem[];
@@ -39,7 +41,12 @@ export function ServiceEquipment({ items }: ServiceEquipmentProps) {
               ) : null}
               <div className="p-4">
                 <h3 className="font-display text-lg font-semibold text-brand-on-surface">
-                  {item.name}
+                  <Link
+                    href={buildSiloPath('machinery', { slug: item.slug })}
+                    className="hover:text-brand-accent hover:underline"
+                  >
+                    {item.name}
+                  </Link>
                 </h3>
                 {item.model ? (
                   <p className="mt-1 text-sm text-muted">Modelo {item.model}</p>

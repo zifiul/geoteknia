@@ -306,6 +306,52 @@ export type PersonSchemaInput = WithImage & {
   alumniOf?: string | null;
 };
 
+export type ProductAdditionalPropertyInput = {
+  name: string;
+  value: string;
+};
+
+export type ProductSchemaInput = WithImage & {
+  name: string;
+  url: string;
+  category?: string | null;
+  model?: string | null;
+  brand?: string | null;
+  additionalProperty?: ProductAdditionalPropertyInput[] | null;
+};
+
+export function buildProductSchema(input: ProductSchemaInput): Record<string, unknown> {
+  const additionalProperty =
+    input.additionalProperty
+      ?.filter((entry) => entry.name.trim().length > 0 && entry.value.trim().length > 0)
+      .map((entry) =>
+        compact({
+          '@type': 'PropertyValue',
+          name: entry.name,
+          value: entry.value,
+        }),
+      ) ?? undefined;
+
+  const brand = input.brand?.trim()
+    ? compact({
+        '@type': 'Brand',
+        name: input.brand,
+      })
+    : undefined;
+
+  return compact({
+    '@context': SCHEMA_CONTEXT,
+    '@type': 'Product',
+    name: input.name,
+    url: input.url,
+    image: input.imageUrl,
+    category: input.category,
+    model: input.model,
+    brand,
+    additionalProperty: additionalProperty?.length ? additionalProperty : undefined,
+  });
+}
+
 export function buildPersonSchema(input: PersonSchemaInput): Record<string, unknown> {
   const worksFor = input.worksFor
     ? { '@type': 'Organization', name: input.worksFor }

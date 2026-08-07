@@ -8,6 +8,7 @@ import {
   buildLocalBusinessSchema,
   buildOrganizationSchema,
   buildPersonSchema,
+  buildProductSchema,
   buildServiceSchema,
   SCHEMA_TYPE_LABEL,
 } from '@/lib/seo/jsonld';
@@ -201,6 +202,25 @@ describe('jsonld builders', () => {
     expect(first.name).toBe('ENAC');
     expect(first.credentialCategory).toBe('certification');
     expect(first.identifier).toBe('123');
+  });
+
+  it('buildProductSchema incluye additionalProperty y omite vacíos', () => {
+    const json = buildProductSchema({
+      name: 'Sonda',
+      url: 'https://geoteknia.es/maquinaria/sonda',
+      category: 'Sonda de rotación',
+      model: 'HBR 203',
+      brand: 'Geoteknia',
+      additionalProperty: [
+        { name: 'Profundidad máxima', value: '50 m' },
+        { name: '  ', value: 'ignorar' },
+      ],
+    });
+    expect(json['@type']).toBe('Product');
+    expect(json.brand).toEqual({ '@type': 'Brand', name: 'Geoteknia' });
+    const props = json.additionalProperty as Record<string, unknown>[];
+    expect(props).toHaveLength(1);
+    expect(props[0]?.name).toBe('Profundidad máxima');
   });
 
   it('buildFaqPageSchema', () => {
