@@ -37,7 +37,7 @@ Las decisiones backend deben proteger tres prioridades del producto:
 | Base de datos | PostgreSQL 16 en Docker (local/CI) o Neon EU (producción) |
 | Validación runtime | Zod |
 | Autenticación | Auth.js v5 con credenciales, sesiones, 2FA TOTP y RBAC |
-| Email | Resend + React Email |
+| Email | SMTP (Zoho Mail) + React Email |
 | IA | SDK oficial de Anthropic, solo server-side |
 | Anti-spam | Cloudflare Turnstile |
 | Observabilidad | Sentry, Axiom/logs estructurados y auditoría propia |
@@ -45,7 +45,7 @@ Las decisiones backend deben proteger tres prioridades del producto:
 
 ### 2.2 Dependencias server-only
 
-Las dependencias que manejan secretos, PII, base de datos, Auth.js, Anthropic, Resend o tokens deben importarse solo desde módulos de servidor.
+Las dependencias que manejan secretos, PII, base de datos, Auth.js, Anthropic, SMTP o tokens deben importarse solo desde módulos de servidor.
 
 Usar `server-only` en módulos sensibles:
 
@@ -53,7 +53,7 @@ Usar `server-only` en módulos sensibles:
 import 'server-only';
 ```
 
-No importar módulos de `/lib/server`, Prisma, Anthropic, Resend ni utilidades de sesión desde componentes cliente.
+No importar módulos de `/lib/server`, Prisma, Anthropic, SMTP ni utilidades de sesión desde componentes cliente.
 
 ---
 
@@ -83,7 +83,7 @@ lib/
 ├── projects/                    # CRM ligero y pipeline
 ├── content/                     # Contenido publicable, revisiones, ISR
 ├── ai/                          # Claude, prompts, costes, sanitización PII
-├── email/                       # Resend y plantillas transaccionales
+├── email/                       # SMTP (Zoho) y plantillas transaccionales
 ├── audit/                       # Audit log append-only
 ├── analytics/                   # Conversion events y dataLayer server-side
 ├── validations/                 # Schemas Zod compartidos por dominio
@@ -106,7 +106,7 @@ Cada módulo de `/lib` debe separar responsabilidades:
 | Validación | Parsear y validar entradas externas con Zod | `leadInputSchema` |
 | Aplicación | Orquestar casos de uso y transacciones | `createBudgetLead()` |
 | Dominio | Reglas de negocio puras e invariantes | cualificación, estados, permisos |
-| Infraestructura | Prisma, Anthropic, Resend, Turnstile, Sentry | `leadRepository`, `claudeClient` |
+| Infraestructura | Prisma, Anthropic, SMTP, Turnstile, Sentry | `leadRepository`, `claudeClient` |
 | Presentación | Route Handler o Server Action | `POST /api/leads/presupuesto` |
 
 No colocar reglas de negocio complejas directamente en `route.ts` ni en componentes React.
@@ -181,11 +181,11 @@ No crear interfaces por defecto para cada clase. Crear una interfaz cuando haya 
 
 #### Dependency Inversion Principle (DIP)
 
-La lógica de aplicación y dominio no debe depender directamente de Prisma, Anthropic, Resend, Sentry ni APIs de framework cuando eso dificulte testear o cambiar la implementación.
+La lógica de aplicación y dominio no debe depender directamente de Prisma, Anthropic, SMTP, Sentry ni APIs de framework cuando eso dificulte testear o cambiar la implementación.
 
 - Los casos de uso deben recibir dependencias como parámetros o desde factories de servidor.
 - Prisma debe quedar encapsulado en repositorios o helpers de persistencia.
-- Anthropic, Resend y Turnstile deben quedar detrás de clientes propios del proyecto.
+- Anthropic, SMTP y Turnstile deben quedar detrás de clientes propios del proyecto.
 - Los módulos de dominio no deben importar `next/server`, `next/cache`, SDKs externos ni variables de entorno.
 
 Ejemplo:
@@ -217,7 +217,7 @@ Centralizar:
 - Checks de sesión, RBAC y permisos.
 - Normalización de email, teléfono, slugs y referencias.
 - Mapeo de errores de Prisma a errores de aplicación.
-- Clientes de Anthropic, Resend, Turnstile, Sentry y Prisma.
+- Clientes de Anthropic, SMTP, Turnstile, Sentry y Prisma.
 - Escritura de audit log y eventos de conversión.
 
 No centralizar prematuramente:
@@ -485,7 +485,7 @@ await prisma.$transaction(async (tx) => {
 
 - Nunca commitear `.env`, secretos, dumps con PII ni claves de proveedores.
 - Validar variables de entorno al arrancar.
-- Mantener claves de Anthropic, Resend, Auth.js, Neon y Turnstile solo en servidor.
+- Mantener claves de Anthropic, SMTP, Auth.js, Neon y Turnstile solo en servidor.
 - Aplicar rate limiting en endpoints públicos de captación con `checkRateLimit` (`lib/security/rate-limit.ts`; umbrales `RATE_LIMIT_*` en `lib/env.ts`).
 - Proteger formularios públicos con Turnstile cuando sean susceptibles de spam.
 - Sanitizar HTML y contenido generado por IA antes de publicarlo.
@@ -611,15 +611,18 @@ Cada evento debe incluir como mínimo:
 
 ## 11. Email Transaccional
 
-### 11.1 Resend y React Email
+### 11.1 SMTP (Zoho Mail) y React Email
 
 - Las plantillas viven en `lib/email/templates/` (p. ej. `lead-confirmation-email.tsx`; helpers sin JSX en `lead-confirmation.ts`).
-- El wrapper del proveedor está en `lib/email/client.ts` (`sendEmail`).
+- El puerto `EmailSender` (`lib/email/email-sender.ts`) es la interfaz que el dominio usa para enviar correo (DIP/ISP); el adaptador SMTP concreto está en `lib/email/smtp-email-sender.ts` (nodemailer + Zoho Mail).
+- `lib/email/render-react-email.ts` renderiza las plantillas React a HTML y texto plano antes de entregarlas al adaptador.
+- La fachada de composición está en `lib/email/client.ts` (`sendEmail`); ata el render, el `EmailSender` activo y `EMAIL_FROM`/`EMAIL_REPLY_TO`.
 - La función de dominio de confirmación de lead es `sendLeadConfirmation` en `lib/email/send-lead-confirmation.ts` (GTK-27; consumida por GTK-28).
 - Las plantillas deben ser tipadas.
 - No construir HTML de email concatenando strings.
-- Registrar intentos, errores y proveedor cuando el email sea crítico para conversión (solo `referenceNumber` + id Resend en logs, sin PII del cuerpo).
-- Variables de entorno: `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO` (validadas en `lib/env.ts`).
+- Registrar intentos, errores y proveedor cuando el email sea crítico para conversión (solo `referenceNumber` + `messageId` en logs, sin PII del cuerpo).
+- Variables de entorno: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM`, `EMAIL_REPLY_TO` (validadas en `lib/env.ts`). `SMTP_USER` debe coincidir con el remitente autenticado en Zoho.
+- Añadir un proveedor alternativo implica un nuevo adaptador de `EmailSender`, sin tocar el dominio (OCP).
 
 ### 11.2 Casos mínimos
 
@@ -751,7 +754,7 @@ Seguir patrón Arrange, Act, Assert.
 
 ### 14.5 Mocking
 
-- Mockear proveedores externos: Anthropic, Resend, Turnstile, Sentry.
+- Mockear proveedores externos: Anthropic, SMTP, Turnstile, Sentry.
 - Mockear repositorios en tests de servicios.
 - Mockear servicios en tests de Route Handlers.
 - No usar base de datos real en tests unitarios.

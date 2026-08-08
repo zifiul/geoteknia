@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Servicio transaccional de email (Resend + React Email) para confirmaciones de lead y comunicaciones del monolito. Materializa GTK-27 y se integra con captación GTK-28.
+Servicio transaccional de email (SMTP vía Zoho Mail + React Email) para confirmaciones de lead y comunicaciones del monolito. Materializa GTK-27 y se integra con captación GTK-28. El proveedor queda detrás del puerto `EmailSender` (`lib/email/email-sender.ts`); el dominio no depende de un SDK concreto.
 
 ## Requirements
 ### Requirement: sendLeadConfirmation envía confirmación tipada
@@ -11,7 +11,7 @@ The system SHALL expose `sendLeadConfirmation({ to, referenceNumber, technicianN
 
 #### Scenario: Envío exitoso
 
-- **WHEN** input válido y Resend responde OK
+- **WHEN** input válido y el proveedor SMTP responde OK
 - **THEN** retorna `{ ok: true, id }` y registra el envío por `referenceNumber`
 
 #### Scenario: Técnico no asignado
@@ -28,13 +28,13 @@ The system SHALL render subject and body from a typed React Email template witho
 - **WHEN** se invoca `sendLeadConfirmation` con input válido
 - **THEN** el cuerpo se renderiza vía componente React Email, no HTML concatenado en strings
 
-### Requirement: Degradación elegante ante fallo Resend
+### Requirement: Degradación elegante ante fallo del proveedor SMTP
 
-The system SHALL catch Resend errors, log without unnecessary PII, and return `{ ok: false, error }` without throwing.
+The system SHALL catch SMTP provider errors, log without unnecessary PII, and return `{ ok: false, error }` without throwing.
 
-#### Scenario: Fallo Resend
+#### Scenario: Fallo del proveedor SMTP
 
-- **WHEN** Resend devuelve error
+- **WHEN** el proveedor SMTP devuelve error
 - **THEN** la función retorna `{ ok: false, error }` sin lanzar excepción
 
 ### Requirement: Idempotencia por referenceNumber
@@ -44,16 +44,16 @@ The system SHALL skip duplicate sends for the same `referenceNumber` and return 
 #### Scenario: Reenvío duplicado
 
 - **WHEN** `sendLeadConfirmation` se invoca dos veces con el mismo `referenceNumber`
-- **THEN** la segunda llamada retorna `{ ok: true, skipped: true }` sin llamar a Resend de nuevo
+- **THEN** la segunda llamada retorna `{ ok: true, skipped: true }` sin llamar al proveedor SMTP de nuevo
 
 ### Requirement: Validación Zod de entrada
 
-The system SHALL validate all input fields with Zod before calling Resend.
+The system SHALL validate all input fields with Zod before calling the SMTP provider.
 
 #### Scenario: Input inválido
 
 - **WHEN** falta un campo obligatorio del schema de entrada
-- **THEN** se lanza error de validación antes de contactar Resend
+- **THEN** se lanza error de validación antes de contactar al proveedor SMTP
 
 ### Requirement: Confirmación tras alta de presupuesto
 
@@ -61,5 +61,5 @@ Tras un alta exitosa de lead de presupuesto, el sistema SHALL invocar `sendLeadC
 
 #### Scenario: Email fallido tras commit
 
-- **WHEN** Resend devuelve error tras crear lead y proyecto
+- **WHEN** el proveedor SMTP devuelve error tras crear lead y proyecto
 - **THEN** el cliente recibe igualmente `201` con `referenceNumber` y el lead permanece persistido

@@ -51,7 +51,7 @@ Las decisiones frontend deben proteger tres prioridades del producto:
 - Priorizar Server Components por defecto.
 - Organizar componentes UI con metodología **Atomic Design** de forma obligatoria.
 - Marcar un componente con `"use client"` solo si usa estado, eventos, APIs del navegador, formularios interactivos o librerías client-only.
-- No importar Prisma, Auth.js server-side, Anthropic, Resend, secretos ni módulos `server-only` desde componentes cliente.
+- No importar Prisma, Auth.js server-side, Anthropic, el adaptador SMTP, secretos ni módulos `server-only` desde componentes cliente.
 - Mantener la lógica de negocio en `/lib`; el componente debe orquestar presentación, no reglas de dominio.
 - Evitar dependencias UI pesadas si un componente local resuelve el caso con menor coste de bundle.
 

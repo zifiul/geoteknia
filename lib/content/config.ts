@@ -210,7 +210,7 @@ export async function createContactChannel(
   raw: unknown,
 ): Promise<{ id: string }> {
   const input = createContactChannelSchema.parse(raw);
-  return db.contactChannel.create({
+  const created = await db.contactChannel.create({
     data: {
       department: input.department,
       phone: input.phone ?? null,
@@ -223,6 +223,8 @@ export async function createContactChannel(
     },
     select: { id: true },
   });
+  revalidateTag(ORGANIZATION_PROFILE_CACHE_TAG, 'max');
+  return created;
 }
 
 export async function updateContactChannel(
@@ -261,6 +263,7 @@ export async function updateContactChannel(
       entityId: channelId,
     });
   });
+  revalidateTag(ORGANIZATION_PROFILE_CACHE_TAG, 'max');
 }
 
 export async function softDeleteContactChannel(
@@ -284,4 +287,5 @@ export async function softDeleteContactChannel(
       entityId: channelId,
     });
   });
+  revalidateTag(ORGANIZATION_PROFILE_CACHE_TAG, 'max');
 }

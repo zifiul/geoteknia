@@ -52,8 +52,12 @@ El módulo `lib/env.ts` valida al arrancar que existan todas las variables reque
 | `NEXTAUTH_SECRET` | Firma de sesiones Auth.js. Generar con `openssl rand -base64 32`. |
 | `NEXTAUTH_URL` | URL base local: `http://localhost:3000`. |
 | `ANTHROPIC_API_KEY` | SDK de Claude (solo servidor). |
-| `RESEND_API_KEY` | Email transaccional (Resend). |
-| `EMAIL_FROM` | Remitente verificado en Resend (`Nombre <email@dominio.com>`). |
+| `SMTP_HOST` | Host SMTP del proveedor de email transaccional (Zoho Mail). |
+| `SMTP_PORT` | Puerto SMTP (587 con STARTTLS). |
+| `SMTP_SECURE` | `true` para TLS implícito (465); `false` para STARTTLS (587). |
+| `SMTP_USER` | Buzón autenticado; debe coincidir con `EMAIL_FROM`. |
+| `SMTP_PASSWORD` | Contraseña de aplicación del buzón SMTP (no la contraseña de la cuenta). |
+| `EMAIL_FROM` | Remitente (`Nombre <email@dominio.com>`), debe usar el dominio de `SMTP_USER`. |
 | `EMAIL_REPLY_TO` | Dirección de respuesta para emails transaccionales. |
 | `TURNSTILE_SECRET_KEY` / `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile. |
 | `NODE_ENV` | `development` en local. |

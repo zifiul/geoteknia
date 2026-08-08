@@ -4,7 +4,7 @@
 
 ### Requirement: Validación Zod de variables de entorno en lib/env.ts
 
-El módulo `lib/env.ts` SHALL validar con un schema Zod todas las variables de entorno requeridas (`DATABASE_URL`, `DIRECT_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NODE_ENV`) y SHALL exponer un objeto `env` tipado. `DATABASE_URL` y `DIRECT_URL` SHALL aceptar cadenas con esquema `postgresql://` o `postgres://`, incluyendo conexiones Neon con `sslmode=require` y conexiones Docker local con `sslmode=disable`.
+El módulo `lib/env.ts` SHALL validar con un schema Zod todas las variables de entorno requeridas (`DATABASE_URL`, `DIRECT_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `ANTHROPIC_API_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM`, `EMAIL_REPLY_TO`, `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NODE_ENV`) y SHALL exponer un objeto `env` tipado. `DATABASE_URL` y `DIRECT_URL` SHALL aceptar cadenas con esquema `postgresql://` o `postgres://`, incluyendo conexiones Neon con `sslmode=require` y conexiones Docker local con `sslmode=disable`.
 
 #### Scenario: Entorno completo parsea correctamente
 

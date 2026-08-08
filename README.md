@@ -136,7 +136,7 @@ El sistema sigue el patrón de **monolito modular** sobre Next.js 15 (App Router
               ┌─────────────────────────────┼───────────────────┐
               │                             │                   │
     ┌─────────▼─────────┐        ┌───────────▼──────┐  ┌────────▼──────┐
-    │  PostgreSQL Neon  │        │  API de Claude   │  │    Resend     │
+    │  PostgreSQL Neon  │        │  API de Claude   │  │   SMTP Zoho   │
     │  (región EU)      │        │  Sonnet / Opus   │  │  Email trans. │
     │  Prisma ORM       │        │  Prompt caching  │  │  React Email  │
     └───────────────────┘        └──────────────────┘  └───────────────┘
@@ -154,7 +154,7 @@ El sistema sigue el patrón de **monolito modular** sobre Next.js 15 (App Router
 | **Base de datos** | PostgreSQL · Docker 16 (local/CI) · Neon EU (producción) · Prisma | Almacena leads, proyectos, estados del pipeline, contenido editorial, roles/usuarios y log de tokens de IA. Migraciones versionadas con Prisma Migrate; seeds para datos iniciales. |
 | **Auth y control de acceso** | Auth.js v5 (NextAuth) + TOTP 2FA + RBAC en BD | Roles: Administrador, Gestor, Editor, Técnico. Contraseñas hasheadas con argon2. Sesiones con expiración. Audit log de acciones sensibles (publicar, aprobar, eliminar). |
 | **Integración IA** | `@anthropic-ai/sdk` (server-side) | Genera borradores de servicio, geo-landing, casos, blog, FAQs y meta tags. Modelo por defecto `claude-sonnet-4-6`; `claude-opus-4-8` para piezas pillar. Prompt caching para partes estáticas. Log de tokens consumidos + alerta de tope mensual. Retries con backoff y degradación elegante. |
-| **Email transaccional** | Resend + React Email | Confirmación de lead en <2 h con nombre de técnico asignado y plazo (RF-Q3). Plantillas tipadas en React. |
+| **Email transaccional** | SMTP (Zoho Mail) + React Email | Confirmación de lead en <2 h con nombre de técnico asignado y plazo (RF-Q3). Plantillas tipadas en React. |
 | **Anti-spam** | Cloudflare Turnstile | Protección de formularios sin fricción, sin enviar datos de comportamiento a Google (alineado con RGPD/Consent Mode v2). |
 | **Tracking y analítica** | GA4 + GTM + Consent Mode v2 | DataLayer con `servicio`, `provincia`, `lead_type`; eventos `generate_lead`, `click_tel`, `click_whatsapp`, `calculator_use`, `resource_download`. Tags bloqueados hasta consentimiento. |
 | **Observabilidad** | Axiom (logs) | Axiom centraliza logs estructurados de Route Handlers y Server Actions. |
@@ -1507,7 +1507,7 @@ Implementar el Route Handler `POST /api/leads` que materializa el flujo de conve
 - [ ] El campo `reference_number` generado tiene el formato `GTK-YYYY-NNNNNN` (año + secuencia de 6 dígitos con padding de ceros) y es único en la tabla.
 - [ ] Si ya existe un `contact` con el mismo email, se reutiliza su `id` (deduplicación); si no existe, se crea.
 - [ ] El proyecto se crea en el `project_state` marcado como `is_initial = true` en la tabla `project_states`.
-- [ ] El email de confirmación se envía mediante Resend en un plazo < 2 h con el `reference_number` y el plazo de respuesta (≤ 48 h laborables).
+- [ ] El email de confirmación se envía mediante SMTP (Zoho Mail) en un plazo < 2 h con el `reference_number` y el plazo de respuesta (≤ 48 h laborables).
 - [ ] La respuesta de éxito es HTTP 201 con `id`, `referenceNumber`, `contactId` y `projectId`.
 - [ ] El endpoint devuelve HTTP 429 si se superan 10 peticiones por IP en 60 segundos.
 - [ ] Ningún campo PII del lead (nombre, email, teléfono) se loguea en Axiom ni se incluye en prompts futuros de Claude (RNF-IA).
@@ -1519,7 +1519,7 @@ Implementar el Route Handler `POST /api/leads` que materializa el flujo de conve
 3. **Lógica de dominio** (`lib/leads/create-lead.ts`):
    - Generar `reference_number` con formato `GTK-${year}-${padStart(sequenceN, 6, '0')}` usando una secuencia atómica (query `SELECT MAX + 1` dentro de la transacción o campo autoincrement auxiliar).
    - `prisma.$transaction([...])` con: upsert de `contact` por `email`, insert de `lead`, insert de `project` (estado inicial, `lead_id` FK).
-   - Encolar o llamar directamente a Resend tras confirmar la transacción.
+   - Encolar o llamar directamente al proveedor SMTP tras confirmar la transacción.
 4. **Route Handler** (`app/api/leads/route.ts`): parsear body con `LeadInputSchema.safeParse`, devolver 400 si falla, llamar a `validateTurnstile`, devolver 403 si falla, llamar a `createLead`, devolver 201 con el resultado.
 5. **Códigos HTTP**: 201 (éxito), 400 (validación Zod), 403 (Turnstile inválido), 429 (rate limit), 500 (error inesperado — nunca exponer stack trace).
 6. **Audit log**: este endpoint es público (no genera entrada en `audit_logs`; el log se registra a nivel de lead por `created_by_id = null`).
@@ -1528,7 +1528,7 @@ Implementar el Route Handler `POST /api/leads` que materializa el flujo de conve
 
 - **Autenticación requerida:** Pública — protección anti-abuso mediante Cloudflare Turnstile + rate limiting por IP.
 - **Datos de entrada validados con Zod:** Sí — `LeadInputSchema` antes de cualquier lógica de negocio.
-- **PII en logs o prompts de Claude:** No — los campos `fullName`, `email` y `phone` se escriben en BD pero no se loguean en Axiom ni se reenvían a ninguna API externa salvo Resend para el email de confirmación.
+- **PII en logs o prompts de Claude:** No — los campos `fullName`, `email` y `phone` se escriben en BD pero no se loguean en Axiom ni se reenvían a ninguna API externa salvo el proveedor SMTP para el email de confirmación.
 - **Entrada en `audit_log`:** No (endpoint público sin sesión).
 
 ### Tests a escribir
@@ -1544,7 +1544,7 @@ Implementar el Route Handler `POST /api/leads` que materializa el flujo de conve
 ### Dependencias
 
 - Tickets previos necesarios: `DB-01` (schema `leads`, `projects`, `project_states`, `contacts`)
-- Variables de entorno requeridas: `TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`, `DATABASE_URL`
+- Variables de entorno requeridas: `TURNSTILE_SECRET_KEY`, `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `DATABASE_URL`
 
 ### Estimación
 

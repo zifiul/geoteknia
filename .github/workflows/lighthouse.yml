@@ -36,7 +36,11 @@ jobs:
       NEXTAUTH_URL: http://localhost:3010
       NEXT_PUBLIC_SITE_URL: http://localhost:3010
       ANTHROPIC_API_KEY: sk-ant-ci-placeholder-not-used-in-lhci-run
-      RESEND_API_KEY: re_ci_placeholder_not_used
+      SMTP_HOST: smtp.ci-placeholder-not-used.example.com
+      SMTP_PORT: 587
+      SMTP_SECURE: false
+      SMTP_USER: ci@example.com
+      SMTP_PASSWORD: ci_placeholder_not_used
       EMAIL_FROM: Geoteknia CI <ci@example.com>
       EMAIL_REPLY_TO: ci@example.com
       TURNSTILE_SECRET_KEY: 0x4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA

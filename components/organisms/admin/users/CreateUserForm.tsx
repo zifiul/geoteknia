@@ -150,6 +150,22 @@ type DialogProps = {
   onClose: () => void;
 };
 
+function CopyPasswordIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
 export function TemporaryPasswordDialog({
   open,
   password,
@@ -157,15 +173,41 @@ export function TemporaryPasswordDialog({
   description,
   onClose,
 }: DialogProps) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(password);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent aria-describedby="temp-password-desc">
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription id="temp-password-desc">{description}</DialogDescription>
-        <p className="mt-4 rounded-md bg-brand-neutral px-4 py-3 font-mono text-sm break-all">
-          {password}
+        <div className="mt-4 flex items-start gap-2 rounded-md bg-brand-neutral px-3 py-2">
+          <p className="min-w-0 flex-1 font-mono text-sm break-all">{password}</p>
+          <button
+            type="button"
+            onClick={() => void handleCopy()}
+            className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md text-brand-secondary transition-colors hover:bg-brand-surface hover:text-brand-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
+            aria-label={copied ? 'Contraseña copiada' : 'Copiar contraseña'}
+          >
+            <CopyPasswordIcon className="size-5 shrink-0" />
+          </button>
+        </div>
+        <p
+          className="mt-1 min-h-5 text-center text-xs text-brand-secondary"
+          aria-live="polite"
+        >
+          {copied ? 'Contraseña copiada al portapapeles' : null}
         </p>
-        <Button type="button" className="mt-4 w-full" onClick={onClose}>
+        <Button type="button" className="mt-2 w-full" onClick={onClose}>
           Entendido
         </Button>
       </DialogContent>

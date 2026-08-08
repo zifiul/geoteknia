@@ -21,7 +21,7 @@ Regula la fase TDD-RED: se escriben primero los tests que describen el comportam
 |---|---|---|
 | Validación (Zod) | Unit | Payload válido pasa; payload fuera de schema falla con el issue esperado; normalización (trim, lowercase) |
 | Dominio | Unit puro | Invariantes de agregados, value objects, servicios de dominio (cálculo de alcance, transiciones editoriales) |
-| Aplicación (casos de uso) | Unit con mocks | Camino feliz, errores tipados (`AppError`), transacciones, dependencias externas mockeadas (Prisma, Anthropic, Resend, Turnstile) |
+| Aplicación (casos de uso) | Unit con mocks | Camino feliz, errores tipados (`AppError`), transacciones, dependencias externas mockeadas (Prisma, Anthropic, SMTP, Turnstile) |
 | Presentación (Route Handlers) | Integración ligera | Status codes correctos (200/201/400/401/403/404/429), formato `success`/`error`, mapeo de errores |
 | Componentes | Testing Library | Estados idle/submitting/success/error, validación cliente |
 | Flujos E2E | Playwright | Solo se **especifican** en esta fase (escenarios); se ejecutan en la fase 5a |
@@ -30,7 +30,7 @@ Regula la fase TDD-RED: se escriben primero los tests que describen el comportam
 
 1. **Tests conductuales**, patrón **Arrange-Act-Assert**: se testea comportamiento observable, no detalles de implementación. Nada de snapshots amplios.
 2. **Un test por regla de la spec:** cada requisito de las delta specs (incluidos los SEC-N) debe poder rastrearse a al menos un test. Anota el ID del requisito en el nombre o comentario del test.
-3. **Mocks solo en la frontera:** proveedores externos (Anthropic, Resend, Turnstile, Prisma cuando no haya BD de test). La lógica de dominio se testea sin mocks.
+3. **Mocks solo en la frontera:** proveedores externos (Anthropic, SMTP, Turnstile, Prisma cuando no haya BD de test). La lógica de dominio se testea sin mocks.
 4. **Verificación de RED obligatoria:** ejecuta el runner (`npx vitest run <ficheros>` o el script del proyecto) y comprueba que:
    - Los tests nuevos **fallan** (no error de sintaxis/imports: fallo de aserción o módulo de producción inexistente de forma controlada).
    - Los tests preexistentes **siguen pasando**.

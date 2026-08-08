@@ -162,22 +162,22 @@ const CONTACT_CHANNELS: Readonly<
   >
 > = {
   presupuestos: {
-    phone: '+34900000001',
-    whatsappNumber: '+34900000001',
+    phone: '+34678061947',
+    whatsappNumber: '+34678061947',
     email: 'presupuestos@geoteknia.local',
     prefilledMessageTemplate:
       'Hola, solicito presupuesto para {{servicio}} en {{provincia}}.',
   },
   direccion_tecnica: {
-    phone: '+34900000002',
-    whatsappNumber: '+34900000002',
+    phone: '+34678061947',
+    whatsappNumber: '+34678061947',
     email: 'direccion.tecnica@geoteknia.local',
     prefilledMessageTemplate:
       'Consulta técnica sobre {{servicio}} en {{provincia}}.',
   },
   licitaciones: {
-    phone: '+34900000003',
-    whatsappNumber: '+34900000003',
+    phone: '+34678061947',
+    whatsappNumber: '+34678061947',
     email: 'licitaciones@geoteknia.local',
     prefilledMessageTemplate:
       'Información sobre licitación {{servicio}} — {{provincia}}.',
@@ -389,7 +389,7 @@ async function seedOrganizationProfile(db: PrismaClient): Promise<void> {
       legalName: 'Geoteknia Ingeniería Geotécnica S.L.',
       displayName: 'Geoteknia',
       napAddress: 'C/ Pendiente de NAP real, 28001 Madrid, España',
-      napPhone: '+34900000000',
+      napPhone: '+34678061947',
       napEmail: 'info@geoteknia.local',
       areaServed: operationalSlugs,
       aggregateRating: null,
@@ -402,7 +402,7 @@ async function seedOrganizationProfile(db: PrismaClient): Promise<void> {
       legalName: 'Geoteknia Ingeniería Geotécnica S.L.',
       displayName: 'Geoteknia',
       napAddress: 'C/ Pendiente de NAP real, 28001 Madrid, España',
-      napPhone: '+34900000000',
+      napPhone: '+34678061947',
       napEmail: 'info@geoteknia.local',
       areaServed: operationalSlugs,
       socialProfiles: {

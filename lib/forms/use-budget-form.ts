@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { ZodIssue } from 'zod';
 
-import type { BudgetFormDraft } from '@/lib/forms/budget-wizard';
+import type { BudgetFormDraft, BudgetWizardCatalogSlugs } from '@/lib/forms/budget-wizard';
 import { validateBudgetWizardStep } from '@/lib/forms/budget-wizard';
 import { issuesToFieldErrors } from '@/lib/forms/lead-form-shared';
 
@@ -28,15 +28,38 @@ export function createInitialBudgetDraft(
   };
 }
 
-export function useBudgetForm(initial: Partial<BudgetFormDraft> = {}) {
+export function useBudgetForm(
+  initial: Partial<BudgetFormDraft> = {},
+  catalogs?: BudgetWizardCatalogSlugs,
+) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [draft, setDraft] = useState(() => createInitialBudgetDraft(initial));
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const catalogsRef = useRef(catalogs);
+  catalogsRef.current = catalogs;
+
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<BudgetFieldKey, string>>>(
     {},
   );
 
   const patchDraft = useCallback((patch: Partial<BudgetFormDraft>) => {
-    setDraft((prev) => ({ ...prev, ...patch }));
+    setDraft((prev) => {
+      const next = { ...prev, ...patch };
+      draftRef.current = next;
+      return next;
+    });
+    setFieldErrors((prev) => {
+      const touched = (Object.keys(patch) as (keyof BudgetFormDraft)[]).filter(
+        (key) => key in prev,
+      );
+      if (touched.length === 0) return prev;
+      const next = { ...prev };
+      for (const key of touched) {
+        delete next[key];
+      }
+      return next;
+    });
   }, []);
 
   const applyStepIssues = useCallback((issues: ZodIssue[]) => {
@@ -48,14 +71,18 @@ export function useBudgetForm(initial: Partial<BudgetFormDraft> = {}) {
   }, []);
 
   const validateCurrentStep = useCallback(() => {
-    const result = validateBudgetWizardStep(step, draft);
+    const result = validateBudgetWizardStep(
+      step,
+      draftRef.current,
+      catalogsRef.current,
+    );
     if (!result.success) {
       applyStepIssues(result.error.issues);
       return false;
     }
     setFieldErrors({});
     return true;
-  }, [applyStepIssues, draft, step]);
+  }, [applyStepIssues, step]);
 
   const goNext = useCallback(() => {
     if (!validateCurrentStep()) return false;
@@ -72,7 +99,11 @@ export function useBudgetForm(initial: Partial<BudgetFormDraft> = {}) {
 
   const validateFieldOnBlur = useCallback(
     (field: keyof BudgetFormDraft) => {
-      const result = validateBudgetWizardStep(step, draft);
+      const result = validateBudgetWizardStep(
+        step,
+        draftRef.current,
+        catalogsRef.current,
+      );
       if (result.success) {
         setFieldErrors((prev) => {
           const next = { ...prev };
@@ -88,13 +119,14 @@ export function useBudgetForm(initial: Partial<BudgetFormDraft> = {}) {
         setFieldErrors((prev) => ({ ...prev, [field]: related[0]?.message }));
       }
     },
-    [draft, step],
+    [step],
   );
 
   return {
     step,
     setStep,
     draft,
+    draftRef,
     patchDraft,
     fieldErrors,
     setFieldErrors,

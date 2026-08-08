@@ -13,7 +13,7 @@ Guardrails no negociables mientras se implementa. No sustituyen a los estándare
 
 1. **Secretos:** nunca en código, tests, fixtures ni logs. Solo `process.env` leído en módulos server-only; si la US necesita un secreto nuevo, se documenta la variable (nombre y propósito) sin su valor.
 2. **Base de datos:** solo Prisma. Prohibido `$queryRawUnsafe` e interpolación de strings en `$queryRaw`; si hace falta SQL crudo, plantillas parametrizadas y justificación en el PR.
-3. **Frontera server-only:** todo módulo que toque Prisma, Auth.js server-side, Anthropic, Resend o secretos lleva `import 'server-only'`. Nunca se importa desde un componente cliente.
+3. **Frontera server-only:** todo módulo que toque Prisma, Auth.js server-side, Anthropic, SMTP o secretos lleva `import 'server-only'`. Nunca se importa desde un componente cliente.
 4. **Authz en servidor:** cada Route Handler/Server Action valida sesión + permiso atómico ANTES de la lógica, según lo declarado en el contrato congelado. Ocultar UI no es control de acceso.
 5. **Validación primero:** el input externo pasa por el schema Zod del contrato antes de cualquier uso. No se "relaja" un schema para que pase un test: eso es reabrir el contrato (fase 2).
 6. **Errores sin fuga:** los errores devueltos siguen el formato unificado y no exponen stack traces, SQL, rutas internas ni existencia de recursos ajenos. Los errores de Prisma se traducen a `AppError` tipados.
