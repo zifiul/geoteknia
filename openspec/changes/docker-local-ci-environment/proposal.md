@@ -41,7 +41,7 @@ El desarrollo local y los pipelines de CI dependen hoy de una base de datos Neon
 - Cambios de esquema Prisma o modelo de datos.
 - Migración de datos desde Neon.
 - Despliegue self-hosted de producción.
-- Sustitución de Cloudflare, Resend, Turnstile o Anthropic.
+- Sustitución de Cloudflare, el proveedor SMTP, Turnstile o Anthropic.
 - Sustituir `pnpm dev` en host como flujo diario de desarrollo.
 
 ## Linear

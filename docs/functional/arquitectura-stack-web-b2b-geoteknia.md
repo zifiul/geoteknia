@@ -31,7 +31,7 @@ El proyecto es un **greenfield** B2B de captación de leads para una ingeniería
 | **Caché** | CDN/edge de Vercel (páginas ISR) + **Upstash Redis** (opcional, fase 2) | El 90% del tráfico es contenido cacheable en edge; Redis solo cuando se añada cola de generación IA o rate-limiting avanzado |
 | **Auth** | **Auth.js v5 (NextAuth)** — credenciales + TOTP 2FA + RBAC en BD + audit log | Control total, coste cero, cumple RF-17/RNF-ADMIN; hash argon2; sesiones con expiración |
 | **Integración IA** | SDK oficial `@anthropic-ai/sdk` server-side | Modelo por defecto `claude-sonnet-4-6`; `claude-opus-4-8` para piezas pillar; prompt caching; retries con backoff; log de tokens en BD + tope mensual + alerta |
-| **Email transaccional** | **Resend** + React Email | Plantillas tipadas en React; confirmación <2 h con técnico asignado (RF-Q3) |
+| **Email transaccional** | **SMTP (Zoho Mail)** + React Email | Plantillas tipadas en React; confirmación <2 h con técnico asignado (RF-Q3) |
 | **Anti-spam** | **Cloudflare Turnstile** | Sin fricción, sin datos de comportamiento a Google → mejor para Consent Mode v2 / RGPD |
 | **Infraestructura** | **Vercel** (front + funciones) + **Neon** (DB) + **Cloudflare** (DNS/WAF) | Cero servidores que mantener; preview por PR; escalado automático; WAF de CF protege `/admin` |
 | **CI/CD** | GitHub Actions: lint + typecheck + test + **Lighthouse CI (gate CWV)** + `prisma migrate deploy` | Lighthouse CI como *quality gate* es requisito explícito del PRD (RNF-PERF) |
@@ -102,7 +102,7 @@ El proyecto es un **greenfield** B2B de captación de leads para una ingeniería
               ┌─────────────────────────────┼────────────────────┐
               │                             │                    │
     ┌─────────▼────────┐        ┌───────────▼──────┐  ┌────────▼──────┐
-    │  PostgreSQL Neon  │        │  API de Claude   │  │    Resend     │
+    │  PostgreSQL Neon  │        │  API de Claude   │  │   SMTP Zoho   │
     │  (región EU)      │        │  Sonnet / Opus   │  │  Email trans. │
     │  Prisma ORM       │        │  Prompt caching  │  │  React Email  │
     └──────────────────┘        └──────────────────┘  └───────────────┘

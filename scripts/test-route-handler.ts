@@ -4,7 +4,11 @@ import { NextRequest } from 'next/server';
 async function run() {
   process.env.TURNSTILE_SECRET_KEY = '1x0000000000000000000000000000000AA';
   process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = '1x00000000000000000000AA';
-  process.env.RESEND_API_KEY = 're_test';
+  process.env.SMTP_HOST = 'smtp.test.com';
+  process.env.SMTP_PORT = '587';
+  process.env.SMTP_SECURE = 'false';
+  process.env.SMTP_USER = 'info@test.com';
+  process.env.SMTP_PASSWORD = 'test-password';
   process.env.EMAIL_FROM = 'Geoteknia <noreply@test.com>';
   process.env.EMAIL_REPLY_TO = 'presupuestos@test.com';
 

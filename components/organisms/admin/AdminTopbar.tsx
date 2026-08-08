@@ -78,6 +78,7 @@ export function AdminTopbar({
             className={cn(
               'inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm p-1 text-brand-secondary transition-colors',
               'hover:text-brand-error focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-info',
+              'cursor-pointer'
             )}
             title="Cerrar sesión"
           >

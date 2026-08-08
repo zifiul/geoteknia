@@ -25,7 +25,8 @@ describe('lib/auth/crypto (GTK-24)', () => {
       'NEXTAUTH_SECRET',
       'NEXTAUTH_URL',
       'ANTHROPIC_API_KEY',
-      'RESEND_API_KEY',
+      'SMTP_HOST',
+      'SMTP_PASSWORD',
       'EMAIL_FROM',
       'EMAIL_REPLY_TO',
       'TURNSTILE_SECRET_KEY',
@@ -48,6 +49,9 @@ describe('lib/auth/crypto (GTK-24)', () => {
     }
     process.env.NEXTAUTH_URL = 'http://localhost:3000';
     process.env.EMAIL_REPLY_TO = 'a@b.co';
+    process.env.SMTP_PORT ||= '587';
+    process.env.SMTP_SECURE ||= 'false';
+    process.env.SMTP_USER ||= 'info@test.geoteknia.com';
     process.env.MEDIA_STORAGE_BASE_URL = 'https://cdn.test.geoteknia.com/media';
     return import('@/lib/auth/crypto');
   }

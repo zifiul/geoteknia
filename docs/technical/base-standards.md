@@ -30,7 +30,7 @@ Stack base:
 - **Validación:** Zod para contratos compartidos entre frontend y backend.
 - **Autenticación:** Auth.js v5 con credenciales, TOTP 2FA, RBAC y audit log para `/admin`.
 - **IA:** SDK oficial de Anthropic solo server-side. Nunca exponer claves ni PII al cliente.
-- **Email y anti-spam:** Resend, React Email y Cloudflare Turnstile.
+- **Email y anti-spam:** SMTP (Zoho Mail), React Email y Cloudflare Turnstile.
 - **Infraestructura:** Vercel, Neon (producción), Docker Compose (local/CI) y Cloudflare.
 - **Testing:** Vitest para unidad/integración, Playwright para E2E y Lighthouse CI para Core Web Vitals cuando afecte a plantillas públicas.
 

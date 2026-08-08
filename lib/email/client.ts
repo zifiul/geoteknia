@@ -1,9 +1,10 @@
 import 'server-only';
 
 import type { ReactElement } from 'react';
-import { Resend } from 'resend';
 
-import { env } from '@/lib/env';
+import type { EmailSender } from './email-sender';
+import { renderReactEmail } from './render-react-email';
+import { createSmtpEmailSender } from './smtp-email-sender';
 
 export type SendEmailInput = {
   to: string;
@@ -15,40 +16,31 @@ export type SendEmailResult =
   | { ok: true; id: string }
   | { ok: false; error: string };
 
-let resendClient: Resend | null = null;
+let emailSender: EmailSender | null = null;
 
-function getResendClient(): Resend {
-  if (resendClient === null) {
-    resendClient = new Resend(env.RESEND_API_KEY);
+function getEmailSender(): EmailSender {
+  if (emailSender === null) {
+    emailSender = createSmtpEmailSender();
   }
-  return resendClient;
+  return emailSender;
 }
 
-/** Expuesto para tests: sustituir la instancia singleton de Resend. */
-export function setResendClientForTests(client: Resend | null): void {
-  resendClient = client;
+/** Expuesto para tests: sustituir el EmailSender activo. */
+export function setEmailSenderForTests(sender: EmailSender | null): void {
+  emailSender = sender;
 }
 
 /**
- * Envía un email transaccional vía Resend con plantilla React.
+ * Envía un email transaccional con plantilla React.
  * Retorno tipado; no lanza ante fallo del proveedor.
  */
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
-  const { data, error } = await getResendClient().emails.send({
-    from: env.EMAIL_FROM,
+  const { html, text } = await renderReactEmail(input.react);
+
+  return getEmailSender().send({
     to: input.to,
-    replyTo: env.EMAIL_REPLY_TO,
     subject: input.subject,
-    react: input.react,
+    html,
+    text,
   });
-
-  if (error) {
-    return { ok: false, error: error.message };
-  }
-
-  if (!data?.id) {
-    return { ok: false, error: 'Respuesta de Resend sin id de envío' };
-  }
-
-  return { ok: true, id: data.id };
 }

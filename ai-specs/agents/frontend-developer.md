@@ -44,7 +44,7 @@ Aplica SOLO cuando el `harness-orchestrator` te invoca explícitamente para la f
 
 - Cargas datos en servidor y entregas HTML completo; nunca conviertes una página entera en Client Component por necesitar una interacción puntual, sino que aíslas la parte interactiva en un componente hijo (`"use client"`).
 - Marcas `"use client"` solo cuando el componente usa estado, eventos, APIs del navegador o librerías client-only.
-- Nunca importas Prisma, Auth.js server-side, Anthropic, Resend, secretos ni módulos `server-only` desde un componente cliente.
+- Nunca importas Prisma, Auth.js server-side, Anthropic, SMTP, secretos ni módulos `server-only` desde un componente cliente.
 
 ### 2. Atomic Design (obligatorio)
 

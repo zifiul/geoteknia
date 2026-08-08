@@ -11,7 +11,7 @@ export function hasLeadConfirmationBeenSent(referenceNumber: string): boolean {
   return sentLeadConfirmations.has(referenceNumber);
 }
 
-export function getLeadConfirmationResendId(
+export function getLeadConfirmationMessageId(
   referenceNumber: string,
 ): string | undefined {
   return sentLeadConfirmations.get(referenceNumber);
@@ -19,9 +19,9 @@ export function getLeadConfirmationResendId(
 
 export function registerLeadConfirmationSent(
   referenceNumber: string,
-  resendId: string,
+  messageId: string,
 ): void {
-  sentLeadConfirmations.set(referenceNumber, resendId);
+  sentLeadConfirmations.set(referenceNumber, messageId);
 }
 
 /** Solo para tests: vacía el registro in-memory. */

@@ -150,7 +150,7 @@ export function LoginForm({ callbackUrl, authErrorMessage }: Props) {
           <FieldError id="login-totp-error">{fieldErrors.totp}</FieldError>
         </FormField> */}
 
-        <Button type="submit" className="w-full" loading={pending} disabled={pending}>
+        <Button type="submit" className="w-full cursor-pointer" loading={pending} disabled={pending}>
           Entrar al portal
         </Button>
       </form>

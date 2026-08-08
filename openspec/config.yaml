@@ -13,7 +13,7 @@ context: |
   - Validación runtime: Zod, compartida entre frontend y backend.
   - Auth: Auth.js v5 (credenciales + TOTP 2FA + RBAC + audit log) para /admin.
   - IA: SDK oficial de Anthropic (Claude) solo server-side; clave nunca en cliente.
-  - Email: Resend + React Email. Anti-spam: Cloudflare Turnstile.
+  - Email: SMTP (Zoho Mail, nodemailer) + React Email. Anti-spam: Cloudflare Turnstile.
   - Infra: Vercel + Neon (producción) + Docker Compose (local/CI) + Cloudflare. Gestor de paquetes: pnpm (lockfile pnpm-lock.yaml). Testing: Vitest (unidad/integración) + Playwright (E2E) + Lighthouse CI (gate CWV).
 
   Prioridades de producto que toda decisión debe proteger:

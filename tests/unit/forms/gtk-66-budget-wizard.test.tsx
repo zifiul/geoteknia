@@ -1,9 +1,10 @@
 /**
  * @vitest-environment jsdom
  */
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { BudgetFormWizard } from '@/components/organisms/forms/budget-form/BudgetFormWizard';
 import { StepIndicator } from '@/components/molecules/StepIndicator';
 import {
   buildBudgetPayload,
@@ -11,6 +12,15 @@ import {
   validateFullBudgetLead,
   type BudgetFormDraft,
 } from '@/lib/forms/budget-wizard';
+import { issuesToFieldErrors } from '@/lib/forms/lead-form-shared';
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
+afterEach(() => {
+  cleanup();
+});
 
 const validDraft: BudgetFormDraft = {
   servicio: 'ensayos',
@@ -28,6 +38,105 @@ const validDraft: BudgetFormDraft = {
 };
 
 describe('GTK-66 budget wizard', () => {
+  it('issuesToFieldErrors mapea errores del paso 1', () => {
+    const fail = validateBudgetWizardStep(1, { ...validDraft, servicio: '', provincia: '' });
+    expect(fail.success).toBe(false);
+    if (!fail.success) {
+      expect(issuesToFieldErrors(fail.error.issues)).toEqual({
+        servicio: 'Seleccione un servicio geotécnico',
+        provincia: 'Seleccione una provincia',
+      });
+    }
+  });
+
+  it('rechaza paso 1 con servicio válido pero sin provincia', () => {
+    const fail = validateBudgetWizardStep(1, { ...validDraft, provincia: '' });
+    expect(fail.success).toBe(false);
+    if (!fail.success) {
+      expect(issuesToFieldErrors(fail.error.issues)).toEqual({
+        provincia: 'Seleccione una provincia',
+      });
+    }
+  });
+
+  it('bloquea avance al paso 2 si falta provincia', () => {
+    render(
+      <BudgetFormWizard
+        services={[{ slug: 'ensayos', name: 'Ensayos' }]}
+        provinces={[{ slug: 'madrid', name: 'Madrid' }]}
+        workTypologies={[]}
+        prefill={{}}
+      />,
+    );
+
+    const form = screen.getByTestId('budget-form');
+    fireEvent.change(form.querySelector('select[name="servicio"]')!, {
+      target: { value: 'ensayos' },
+    });
+    fireEvent.click(screen.getByTestId('budget-form-next'));
+
+    expect(screen.getByText('Seleccione una provincia')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
+      'Servicio y ubicación del estudio',
+    );
+  });
+
+  it('ignora prefill de provincia que no está en el catálogo', () => {
+    render(
+      <BudgetFormWizard
+        services={[{ slug: 'ensayos', name: 'Ensayos' }]}
+        provinces={[{ slug: 'madrid', name: 'Madrid' }]}
+        workTypologies={[]}
+        prefill={{ servicio: 'ensayos', provincia: 'slug-inexistente' }}
+      />,
+    );
+
+    const form = screen.getByTestId('budget-form');
+    expect(form.querySelector('select[name="provincia"]')).toHaveValue('');
+    fireEvent.click(screen.getByTestId('budget-form-next'));
+    expect(screen.getByText('Seleccione una provincia')).toBeInTheDocument();
+  });
+
+  it('avanza al paso 2 tras seleccionar servicio y provincia', () => {
+    render(
+      <BudgetFormWizard
+        services={[{ slug: 'ensayos', name: 'Ensayos' }]}
+        provinces={[{ slug: 'madrid', name: 'Madrid' }]}
+        workTypologies={[]}
+        prefill={{}}
+      />,
+    );
+
+    const form = screen.getByTestId('budget-form');
+    fireEvent.change(form.querySelector('select[name="servicio"]')!, {
+      target: { value: 'ensayos' },
+    });
+    fireEvent.change(form.querySelector('select[name="provincia"]')!, {
+      target: { value: 'madrid' },
+    });
+    fireEvent.click(screen.getByTestId('budget-form-next'));
+
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
+      'Datos del proyecto',
+    );
+  });
+
+  it('muestra errores al pulsar Continuar en paso 1 sin datos', () => {
+    render(
+      <BudgetFormWizard
+        services={[{ slug: 'ensayos', name: 'Ensayos' }]}
+        provinces={[{ slug: 'madrid', name: 'Madrid' }]}
+        workTypologies={[]}
+        prefill={{}}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('budget-form-next'));
+
+    expect(screen.getByText('Seleccione un servicio geotécnico')).toBeInTheDocument();
+    expect(screen.getByText('Seleccione una provincia')).toBeInTheDocument();
+  });
+
   it('valida paso 1 con servicio y provincia obligatorios', () => {
     const fail = validateBudgetWizardStep(1, { ...validDraft, servicio: '' });
     expect(fail.success).toBe(false);
@@ -86,6 +195,27 @@ describe('GTK-66 budget wizard', () => {
       landingUrl: 'https://www.geoteknia.com/presupuesto',
     });
     expect(parsed.success).toBe(true);
+  });
+
+  it('oculta el error de provincia al seleccionar un valor válido', () => {
+    render(
+      <BudgetFormWizard
+        services={[{ slug: 'ensayos', name: 'Ensayos' }]}
+        provinces={[{ slug: 'madrid', name: 'Madrid' }]}
+        workTypologies={[]}
+        prefill={{}}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('budget-form-next'));
+    expect(screen.getByText('Seleccione una provincia')).toBeInTheDocument();
+
+    const form = screen.getByTestId('budget-form');
+    fireEvent.change(form.querySelector('select[name="provincia"]')!, {
+      target: { value: 'madrid' },
+    });
+
+    expect(screen.queryByText('Seleccione una provincia')).not.toBeInTheDocument();
   });
 
   it('StepIndicator marca aria-current en el paso activo', () => {

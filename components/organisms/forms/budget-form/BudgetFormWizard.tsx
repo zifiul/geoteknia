@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
   type FormEvent,
@@ -25,8 +26,10 @@ import {
   BUDGET_API_PATH,
   BUDGET_FORM_NAME,
   BUDGET_WIZARD_STEP_LABELS,
+  createBudgetWizardInitialDraft,
   PROFESSIONAL_ROLE_OPTIONS,
   validateFullBudgetLead,
+  type BudgetFormPrefill,
 } from '@/lib/forms/budget-wizard';
 import {
   interpretLeadSubmitResponse,
@@ -34,7 +37,7 @@ import {
   readUtmParams,
   type LeadApiJson,
 } from '@/lib/forms/lead-form-shared';
-import { createInitialBudgetDraft, useBudgetForm } from '@/lib/forms/use-budget-form';
+import { useBudgetForm } from '@/lib/forms/use-budget-form';
 
 export type BudgetFormCatalogs = {
   services: { slug: string; name: string }[];
@@ -42,13 +45,7 @@ export type BudgetFormCatalogs = {
   workTypologies: { slug: string; name: string }[];
 };
 
-export type BudgetFormPrefill = {
-  servicio?: string;
-  provincia?: string;
-  tipoObra?: string;
-  plantas?: string;
-  superficie?: string;
-};
+export type { BudgetFormPrefill } from '@/lib/forms/budget-wizard';
 
 type BudgetFormWizardProps = BudgetFormCatalogs & {
   prefill: BudgetFormPrefill;
@@ -67,25 +64,36 @@ export function BudgetFormWizard({
   const formStartedRef = useRef(false);
   const shouldFocusInvalidRef = useRef(false);
 
-  const initial = createInitialBudgetDraft({
-    servicio: prefill.servicio ?? '',
-    provincia: prefill.provincia ?? '',
-    tipoObra: prefill.tipoObra ?? '',
-    plantas: prefill.plantas ?? '',
-    superficie: prefill.superficie ?? '',
-  });
+  const catalogSlugs = useMemo(
+    () => ({
+      serviceSlugs: new Set(services.map((service) => service.slug)),
+      provinceSlugs: new Set(provinces.map((province) => province.slug)),
+    }),
+    [provinces, services],
+  );
+
+  const initial = useMemo(
+    () =>
+      createBudgetWizardInitialDraft(prefill, {
+        services,
+        provinces,
+        workTypologies,
+      }),
+    [prefill, provinces, services, workTypologies],
+  );
 
   const {
     step,
+    setStep,
     draft,
+    draftRef,
     patchDraft,
     fieldErrors,
     setFieldErrors,
-    goNext,
     goBack,
     validateFieldOnBlur,
     validateCurrentStep,
-  } = useBudgetForm(initial);
+  } = useBudgetForm(initial, catalogSlugs);
 
   const [turnstileToken, setTurnstileToken] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -129,10 +137,10 @@ export function BudgetFormWizard({
     if (step < 3) {
       const next = (step + 1) as 1 | 2 | 3;
       pushFormStep(next);
-      goNext();
+      setStep(next);
       requestAnimationFrame(focusStepHeading);
     }
-  }, [focusStepHeading, goNext, markFormStart, pushFormStep, step, validateCurrentStep]);
+  }, [focusStepHeading, markFormStart, pushFormStep, setStep, step, validateCurrentStep]);
 
   const handleBack = useCallback(() => {
     goBack();
@@ -151,7 +159,7 @@ export function BudgetFormWizard({
 
     const attribution = readUtmParams();
     const parsed = validateFullBudgetLead(
-      draft,
+      draftRef.current,
       turnstileToken || 'pending',
       attribution,
     );
@@ -529,7 +537,9 @@ export function BudgetFormWizard({
             id={`${formId}-gdpr`}
             name="gdprConsent"
             checked={draft.gdprConsent}
-            onChange={(e) => patchDraft({ gdprConsent: e.target.checked })}
+            onChange={(e) => {
+              patchDraft({ gdprConsent: e.target.checked });
+            }}
             aria-invalid={!!fieldErrors.gdprConsent}
             label={
               <>

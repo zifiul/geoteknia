@@ -1,7 +1,6 @@
-import { z } from 'zod';
+import { z, type ZodIssue } from 'zod';
 
 import { budgetLeadSchema, professionalRoleSchema } from '@/lib/leads/schema';
-
 export const BUDGET_FORM_NAME = 'presupuesto';
 export const BUDGET_API_PATH = '/api/leads/presupuesto';
 
@@ -45,6 +44,73 @@ export const budgetStep2Schema = z
       .optional(),
   })
   .strict();
+
+export type BudgetFormPrefill = {
+  servicio?: string;
+  provincia?: string;
+  tipoObra?: string;
+  plantas?: string;
+  superficie?: string;
+};
+
+export type BudgetWizardCatalogSlugs = {
+  serviceSlugs: ReadonlySet<string>;
+  provinceSlugs: ReadonlySet<string>;
+};
+
+export function resolveCatalogSlug(
+  slug: string | undefined,
+  options: { slug: string }[],
+): string {
+  const value = slug?.trim() ?? '';
+  return options.some((option) => option.slug === value) ? value : '';
+}
+
+export function createBudgetWizardInitialDraft(
+  prefill: BudgetFormPrefill,
+  catalogs: {
+    services: { slug: string }[];
+    provinces: { slug: string }[];
+    workTypologies: { slug: string }[];
+  },
+): BudgetFormDraft {
+  return {
+    servicio: resolveCatalogSlug(prefill.servicio, catalogs.services),
+    provincia: resolveCatalogSlug(prefill.provincia, catalogs.provinces),
+    tipoObra: resolveCatalogSlug(prefill.tipoObra, catalogs.workTypologies),
+    plantas: prefill.plantas ?? '',
+    superficie: prefill.superficie ?? '',
+    fase: '',
+    nombre: '',
+    empresa: '',
+    email: '',
+    telefono: '',
+    rol: '',
+    gdprConsent: false,
+  };
+}
+
+function step1CatalogIssues(
+  draft: BudgetFormDraft,
+  catalogs: BudgetWizardCatalogSlugs,
+): ZodIssue[] {
+  const issues: ZodIssue[] = [];
+  if (!catalogs.serviceSlugs.has(draft.servicio)) {
+    issues.push({
+      code: 'custom',
+      path: ['servicio'],
+      message: 'Seleccione un servicio geotécnico',
+    });
+  }
+  if (!catalogs.provinceSlugs.has(draft.provincia)) {
+    issues.push({
+      code: 'custom',
+      path: ['provincia'],
+      message: 'Seleccione una provincia',
+    });
+  }
+  return issues;
+}
 
 export type BudgetFormDraft = {
   servicio: string;
@@ -109,12 +175,26 @@ export function buildBudgetPayload(
   };
 }
 
-export function validateBudgetWizardStep(step: 1 | 2 | 3, draft: BudgetFormDraft) {
+export function validateBudgetWizardStep(
+  step: 1 | 2 | 3,
+  draft: BudgetFormDraft,
+  catalogs?: BudgetWizardCatalogSlugs,
+) {
   if (step === 1) {
-    return budgetStep1Schema.safeParse({
+    const parsed = budgetStep1Schema.safeParse({
       servicio: draft.servicio,
       provincia: draft.provincia,
     });
+    if (!parsed.success) return parsed;
+    if (!catalogs) return parsed;
+
+    const catalogIssues = step1CatalogIssues(draft, catalogs);
+    if (catalogIssues.length === 0) return parsed;
+
+    return {
+      success: false as const,
+      error: new z.ZodError(catalogIssues),
+    };
   }
 
   if (step === 2) {

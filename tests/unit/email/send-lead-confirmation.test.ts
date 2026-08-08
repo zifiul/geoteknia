@@ -19,7 +19,11 @@ vi.mock('@/lib/email/templates/lead-confirmation-email', () => ({
 
 vi.mock('@/lib/env', () => ({
   env: {
-    RESEND_API_KEY: 're_test_key',
+    SMTP_HOST: 'smtp.test.geoteknia.com',
+    SMTP_PORT: 587,
+    SMTP_SECURE: false,
+    SMTP_USER: 'info@test.geoteknia.com',
+    SMTP_PASSWORD: 'test-password',
     EMAIL_FROM: 'Geoteknia <noreply@test.geoteknia.com>',
     EMAIL_REPLY_TO: 'presupuestos@test.geoteknia.com',
   },
@@ -52,7 +56,7 @@ describe('lib/email/send-lead-confirmation — sendLeadConfirmation (GTK-27)', (
   };
 
   it('compone asunto y props de plantilla y envía con éxito', async () => {
-    sendEmailMock.mockResolvedValue({ ok: true, id: 'resend-abc123' });
+    sendEmailMock.mockResolvedValue({ ok: true, id: 'smtp-abc123' });
 
     const { sendLeadConfirmation } = await import(
       '@/lib/email/send-lead-confirmation'
@@ -66,7 +70,7 @@ describe('lib/email/send-lead-confirmation — sendLeadConfirmation (GTK-27)', (
 
     const result = await sendLeadConfirmation(validInput);
 
-    expect(result).toEqual({ ok: true, id: 'resend-abc123' });
+    expect(result).toEqual({ ok: true, id: 'smtp-abc123' });
     expect(sendEmailMock).toHaveBeenCalledOnce();
 
     const [call] = sendEmailMock.mock.calls;
@@ -86,7 +90,7 @@ describe('lib/email/send-lead-confirmation — sendLeadConfirmation (GTK-27)', (
   });
 
   it('usa fallback de técnico cuando technicianName es null', async () => {
-    sendEmailMock.mockResolvedValue({ ok: true, id: 'resend-fallback' });
+    sendEmailMock.mockResolvedValue({ ok: true, id: 'smtp-fallback' });
 
     const { sendLeadConfirmation } = await import(
       '@/lib/email/send-lead-confirmation'
@@ -113,7 +117,7 @@ describe('lib/email/send-lead-confirmation — sendLeadConfirmation (GTK-27)', (
     );
   });
 
-  it('gestiona error de Resend sin lanzar excepción', async () => {
+  it('gestiona error del proveedor SMTP sin lanzar excepción', async () => {
     sendEmailMock.mockResolvedValue({
       ok: false,
       error: 'Rate limit exceeded',
@@ -133,7 +137,7 @@ describe('lib/email/send-lead-confirmation — sendLeadConfirmation (GTK-27)', (
   });
 
   it('es idempotente por referenceNumber ante reintentos', async () => {
-    sendEmailMock.mockResolvedValue({ ok: true, id: 'resend-first' });
+    sendEmailMock.mockResolvedValue({ ok: true, id: 'smtp-first' });
 
     const { sendLeadConfirmation } = await import(
       '@/lib/email/send-lead-confirmation'
@@ -142,11 +146,11 @@ describe('lib/email/send-lead-confirmation — sendLeadConfirmation (GTK-27)', (
     const first = await sendLeadConfirmation(validInput);
     const second = await sendLeadConfirmation(validInput);
 
-    expect(first).toEqual({ ok: true, id: 'resend-first' });
+    expect(first).toEqual({ ok: true, id: 'smtp-first' });
     expect(second).toEqual({
       ok: true,
       skipped: true,
-      id: 'resend-first',
+      id: 'smtp-first',
     });
     expect(sendEmailMock).toHaveBeenCalledOnce();
   });

@@ -49,7 +49,7 @@ Aplica SOLO cuando el `harness-orchestrator` te invoca explícitamente para la f
 ### 2. Capa de aplicación
 
 - Orquestas casos de uso en `/lib/<dominio>` (por ejemplo `createBudgetLead()`), coordinando repositorios, dominio e infraestructura.
-- Aplicas inyección de dependencias explícita (parámetros o factories de servidor) para no acoplar la lógica a Prisma, Anthropic, Resend o Sentry directamente — ver el patrón `CreateBudgetLeadDeps` de `backend-standards.md` §3.4 (DIP).
+- Aplicas inyección de dependencias explícita (parámetros o factories de servidor) para no acoplar la lógica a Prisma, Anthropic, SMTP o Sentry directamente — ver el patrón `CreateBudgetLeadDeps` de `backend-standards.md` §3.4 (DIP).
 - Aplicas SRP: un caso de uso no conoce detalles de HTTP ni de React; un Route Handler no contiene reglas de negocio.
 - Encapsulas transacciones Prisma (`prisma.$transaction`) cuando el caso de uso toca varias entidades relacionadas (por ejemplo, crear un lead y su entrada de audit log en la misma transacción).
 
@@ -63,7 +63,7 @@ Aplica SOLO cuando el `harness-orchestrator` te invoca explícitamente para la f
 ### 4. Capa de infraestructura
 
 - Encapsulas Prisma en repositorios o helpers server-only (`lib/db/prisma.ts`), nunca instanciado por función.
-- Encapsulas Anthropic, Resend y Turnstile detrás de clientes propios del proyecto, nunca importados directamente en servicios de aplicación.
+- Encapsulas Anthropic, SMTP y Turnstile detrás de clientes propios del proyecto, nunca importados directamente en servicios de aplicación.
 - Traduces errores de Prisma (`P2002`, `P2025`, etc.) a errores de aplicación tipados (`AppError`) antes de que lleguen a la capa de presentación.
 - Marcas todo módulo sensible con `import 'server-only'` y nunca permites que `/lib/server`, Prisma, Anthropic o utilidades de sesión se importen desde un componente cliente.
 
@@ -103,7 +103,7 @@ Cuando revises código backend existente, verifica en este orden:
 4. Errores: ¿se usan errores tipados (`AppError`) y se mapean a status codes consistentes?
 5. Seguridad y PII: ¿hay fugas de PII a logs, analítica o Claude? ¿RBAC/2FA están aplicados en servidor?
 6. Auditoría: ¿las acciones críticas generan audit log?
-7. Tests: ¿cubren camino feliz, validación, permisos y errores externos con mocks apropiados (Anthropic, Resend, Turnstile, Prisma)?
+7. Tests: ¿cubren camino feliz, validación, permisos y errores externos con mocks apropiados (Anthropic, SMTP, Turnstile, Prisma)?
 8. TypeScript estricto: ¿se evita `any` y se derivan tipos de Zod/Prisma en vez de duplicarlos?
 
 ## Estilo de comunicación

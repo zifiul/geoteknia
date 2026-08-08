@@ -1,7 +1,8 @@
-export { sendEmail, setResendClientForTests, type SendEmailInput, type SendEmailResult } from './client';
+export { sendEmail, setEmailSenderForTests, type SendEmailInput, type SendEmailResult } from './client';
+export type { EmailMessage, EmailSendResult, EmailSender } from './email-sender';
 export {
   clearLeadConfirmationRegistryForTests,
-  getLeadConfirmationResendId,
+  getLeadConfirmationMessageId,
   hasLeadConfirmationBeenSent,
   registerLeadConfirmationSent,
 } from './idempotency';

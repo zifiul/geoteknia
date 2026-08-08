@@ -15,7 +15,11 @@ const REQUIRED_VARS = {
   NEXTAUTH_SECRET: 'secreto-de-prueba-nextauth',
   NEXTAUTH_URL: 'http://localhost:3000',
   ANTHROPIC_API_KEY: 'sk-ant-fake-key',
-  RESEND_API_KEY: 're_fake_key',
+  SMTP_HOST: 'smtp.test.geoteknia.com',
+  SMTP_PORT: '587',
+  SMTP_SECURE: 'false',
+  SMTP_USER: 'info@test.geoteknia.com',
+  SMTP_PASSWORD: 'fake-smtp-password',
   EMAIL_FROM: 'Geoteknia <noreply@test.geoteknia.com>',
   EMAIL_REPLY_TO: 'presupuestos@test.geoteknia.com',
   TURNSTILE_SECRET_KEY: 'turnstile-secret-fake',
@@ -99,6 +103,22 @@ describe('lib/env.ts — validación de variables de entorno', () => {
     expect(env.DATABASE_URL).toContain('sslmode=require');
   });
 
+  it('SMTP_SECURE="false" resuelve a boolean false (no coerción por truthy string)', async () => {
+    setEnv({ ...REQUIRED_VARS, SMTP_SECURE: 'false' });
+
+    const { env } = await import('@/lib/env');
+
+    expect(env.SMTP_SECURE).toBe(false);
+  });
+
+  it('SMTP_SECURE="true" resuelve a boolean true', async () => {
+    setEnv({ ...REQUIRED_VARS, SMTP_SECURE: 'true' });
+
+    const { env } = await import('@/lib/env');
+
+    expect(env.SMTP_SECURE).toBe(true);
+  });
+
   it('acepta cadena Docker local con sslmode=disable', async () => {
     setEnv({
       ...REQUIRED_VARS,
@@ -134,7 +154,7 @@ describe('lib/env.ts — validación de variables de entorno', () => {
     expect(error?.message).toMatch(/DATABASE_URL/);
     expect(error?.message).not.toContain(REQUIRED_VARS.NEXTAUTH_SECRET);
     expect(error?.message).not.toContain(REQUIRED_VARS.ANTHROPIC_API_KEY);
-    expect(error?.message).not.toContain(REQUIRED_VARS.RESEND_API_KEY);
+    expect(error?.message).not.toContain(REQUIRED_VARS.SMTP_PASSWORD);
     expect(error?.message).not.toContain(REQUIRED_VARS.TURNSTILE_SECRET_KEY);
   });
 });

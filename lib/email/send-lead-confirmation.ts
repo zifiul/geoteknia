@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 import { sendEmail } from './client';
 import {
-  getLeadConfirmationResendId,
+  getLeadConfirmationMessageId,
   hasLeadConfirmationBeenSent,
   registerLeadConfirmationSent,
 } from './idempotency';
@@ -43,9 +43,9 @@ export type SendLeadConfirmationResult =
 /**
  * Envía la confirmación transaccional de lead (RF-Q3 / US-12).
  *
- * - Degradación elegante: no lanza ante fallo de Resend.
+ * - Degradación elegante: no lanza ante fallo del proveedor SMTP.
  * - Idempotente por referenceNumber (registro in-memory MVP).
- * - Logs: solo referenceNumber + id Resend, sin PII del cuerpo.
+ * - Logs: solo referenceNumber + messageId, sin PII del cuerpo.
  */
 export async function sendLeadConfirmation(
   input: SendLeadConfirmationInput,
@@ -59,7 +59,7 @@ export async function sendLeadConfirmation(
     parsed.data;
 
   if (hasLeadConfirmationBeenSent(referenceNumber)) {
-    const existingId = getLeadConfirmationResendId(referenceNumber)!;
+    const existingId = getLeadConfirmationMessageId(referenceNumber)!;
     return { ok: true, skipped: true, id: existingId };
   }
 
@@ -89,7 +89,7 @@ export async function sendLeadConfirmation(
 
   console.info('[email] lead confirmation sent', {
     referenceNumber,
-    resendId: result.id,
+    messageId: result.id,
   });
 
   return result;

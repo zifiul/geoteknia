@@ -179,10 +179,22 @@ describe('createBudgetLead (GTK-28)', () => {
   });
 
   it('fallo de email no impide resultado del caso de uso', async () => {
-    sendLeadConfirmationMock.mockResolvedValue({ ok: false, error: 'resend down' });
+    sendLeadConfirmationMock.mockResolvedValue({ ok: false, error: 'smtp down' });
 
     const { createBudgetLead } = await import('@/lib/leads/create-lead');
     const result = await createBudgetLead(baseInput);
     expect(result.leadId).toBe('lead-1');
+  });
+
+  it('el destinatario de la confirmación es siempre el email indicado en el formulario', async () => {
+    const { createBudgetLead } = await import('@/lib/leads/create-lead');
+    await createBudgetLead({
+      ...baseInput,
+      email: 'otro-cliente@dominio-distinto.es',
+    });
+
+    expect(sendLeadConfirmationMock).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'otro-cliente@dominio-distinto.es' }),
+    );
   });
 });

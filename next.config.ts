@@ -40,6 +40,9 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: buildImageRemotePatterns(),
+    // Solo en local: MEDIA_STORAGE_BASE_URL puede apuntar a localhost (seed sin CDN real).
+    // Next bloquea por defecto imágenes remotas resueltas a IP privada/loopback (SSRF).
+    dangerouslyAllowLocalIP: process.env.NODE_ENV !== 'production',
   },
 };
 

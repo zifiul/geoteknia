@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { createElement } from 'react';
+
 import { AuditAction, type AiBudgetConfig, Prisma } from '@prisma/client';
 
 import { recordAudit } from '@/lib/audit/log';
@@ -172,7 +174,7 @@ export async function checkThresholdAndNotify(period?: string): Promise<void> {
     const result = await sendEmail({
       to,
       subject,
-      react: BudgetAlertEmail(emailProps),
+      react: createElement(BudgetAlertEmail, emailProps),
     });
     if (!result.ok) {
       console.error(

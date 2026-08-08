@@ -18,7 +18,15 @@ const envSchema = z.object({
   NEXTAUTH_SECRET: z.string().min(1),
   NEXTAUTH_URL: z.url(),
   ANTHROPIC_API_KEY: z.string().min(1),
-  RESEND_API_KEY: z.string().min(1),
+  SMTP_HOST: z.string().min(1).default('smtp.zoho.eu'),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  /** 'true' fuerza TLS implícito (puerto 465); en 587 se usa STARTTLS y debe quedar en 'false'. */
+  SMTP_SECURE: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
+  SMTP_USER: z.email(),
+  SMTP_PASSWORD: z.string().min(1),
   EMAIL_FROM: z.string().min(1),
   EMAIL_REPLY_TO: z.email(),
   TURNSTILE_SECRET_KEY: z.string().min(1),

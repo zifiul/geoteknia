@@ -38,7 +38,7 @@ export function HomeServicesGrid({ services }: HomeServicesGridProps) {
                     src={service.heroImageUrl}
                     alt={service.heroImageAlt ?? service.name}
                     fill
-                    sizes="(max-width: 768px) 80vw, 33vw"
+                    sizes="(max-width: 767px) 260px, (max-width: 1023px) 564px, 368px"
                     className="object-cover"
                   />
                   <div className="absolute inset-0 bg-brand-primary/30" />
