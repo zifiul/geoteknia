@@ -56,7 +56,7 @@ Proyecto web B2B para una empresa de ingeniería geotécnica en España, diseña
 
 ### **0.4. URL del proyecto:**
 
-https://github.com/zifiul/finalproject-alp
+https://github.com/zifiul/geoteknia
 
 ### 0.5. URL o archivo comprimido del repositorio
 
@@ -1892,9 +1892,300 @@ Puntos de historia: **3**
 
 > Documenta 3 de las Pull Requests realizadas durante la ejecución del proyecto
 
-**Pull Request 1**
+**[GTK-7] RBAC, usuarios, sesiones y registro de auditoría**
+```markdown
+## Summary
 
-**Pull Request 2**
+- Añade el núcleo de identidad y control de acceso del portal `/admin` en Prisma: `roles`, `permissions`, `role_permissions`, `users`, `sessions` y `audit_logs`.
+- Introduce enums `RoleName` y `AuditAction`, con migración `20260722160230_rbac_users_sessions_audit` aplicable vía `prisma migrate deploy`.
+- Incluye change OpenSpec `gtk-7-rbac-users-sessions-audit` (proposal, design, delta spec, tasks y reports QA/security/code-review).
 
-**Pull Request 3**
+**Linear:** [GTK-7](https://linear.app/geoteknia/issue/GTK-7/rbac-usuarios-sesiones-y-registro-de-auditoria)  
+**Variante:** Harness DB (sin API, frontend ni seed)
+
+## Cambios principales
+
+| Área | Detalle |
+|------|---------|
+| Schema | 6 modelos + 2 enums en `prisma/schema.prisma` |
+| Migración | DDL con índices únicos, compuestos y FKs (RESTRICT / CASCADE / SET NULL) |
+| Append-only | `sessions` y `audit_logs` sin `updated_at`/`deleted_at` |
+| OpenSpec | `openspec/changes/gtk-7-rbac-users-sessions-audit/` |
+
+## Fuera de alcance
+
+- Seed de roles/permisos → **DB-14**
+- Auth.js, login, 2FA → US funcional posterior
+- Índices BRIN avanzados en `audit_logs` → **DB-15**
+
+## Test plan
+
+- [x] `npx prisma validate`
+- [x] `npx prisma migrate dev` (Neon EU)
+- [x] `npx prisma migrate deploy` (sin migraciones pendientes)
+- [x] `npm run test` (6/6)
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] Revisión humana Gate 2 (Harness DB)
+- [x] Archive OpenSpec tras merge (`/opsx:archive`)
+
+## Criterios de aceptación GTK-7
+
+- [x] `users.email`, `roles.name`, `permissions.code`, `sessions.token_hash` únicos
+- [x] `role_permissions` PK compuesta `(role_id, permission_id)` con cascade
+- [x] `sessions`/`audit_logs` append-only
+- [x] `audit_logs.user_id` ON DELETE SET NULL
+```
+
+**[GTK-31]: API de captación de leads de licitación**
+```markdown
+## 🎯 Descripción
+
+Implementa el endpoint público `POST /api/leads/licitacion` para captar leads del segmento de licitaciones y obra pública. Este es el tercer hermano del pipeline de captación tras presupuesto (GTK-28) y ubicación (GTK-29), reutilizando toda su infraestructura DRY.
+
+El endpoint captura contacto corporativo + referencia de expediente de contratación (o enlace a plataforma) y crea un lead diferenciado de alto valor (`lead_type='licitacion'`) con su ficha de proyecto, permitiendo priorizar por importe estimado en el CRM.
+
+**Ticket:** [GTK-31](https://linear.app/geoteknia/issue/GTK-31) — POST /api/licitaciones: lead de licitación con referencia de expediente
+
+## 🔄 Tipo de cambio
+
+- [x] ✨ Nueva funcionalidad (feature)
+- [x] 📝 Actualización de documentación
+- [x] ✅ Tests (unitarios, QA, E2E)
+
+## 📦 Cambios incluidos
+
+### Backend
+
+- **Route Handler** `app/api/leads/licitacion/route.ts`
+  - Validación con `tenderLeadSchema` (Zod)
+  - Protección Turnstile anti-spam
+  - Rate limiting público (`RATE_LIMIT_PUBLIC_PER_MIN`, clave `leads-licitacion:{ip}`)
+  - Envelope HTTP estándar (201/400/403/429/500/502)
+
+- **Caso de uso** `lib/leads/create-tender-lead.ts`
+  - Orquesta `upsertContact` (dedupe corporativo)
+  - Genera referencia única `LIC-XXXX`
+  - Crea lead + proyecto en transacción atómica
+  - Persiste `expediente_ref`, `estimated_value` en proyectos
+  - Email de confirmación con fallbacks (servicio/provincia indeterminados)
+  - Registro best-effort de evento `generate_lead` / `licitacion`
+
+- **Schema** `lib/leads/schema.ts`
+  - Nuevo `tenderLeadSchema` con validación `superRefine`: exige `expedienteRef` O `plataformaUrl`
+  - Contacto corporativo: `nombre`, `empresa`, `email` obligatorios; `telefono` opcional
+  - Campos específicos: `organismo`, `importeEstimado`, `esUte`, `provincia`
+  - Atribución UTM y GDPR consent obligatorio
+
+- **Extensión de helper** `lib/projects/create-project-from-lead.ts`
+  - Acepta opcionalmente `expedienteRef` y `estimatedValue`
+  - Retrocompatible (GTK-28/29 no los pasan)
+
+### Contrato API
+
+- Actualizado `docs/technical/api-spec.yml`:
+  - Path `/api/leads/licitacion` con operación `createTenderLead`
+  - Schema `TenderLeadInput` con todas las propiedades y restricciones
+  - Metadatos `x-geoteknia-authz` con política de seguridad (público, Turnstile, rate limit, manejo PII)
+  - Respuestas documentadas (201/400/403/429/500/502)
+
+### Especificaciones vivas
+
+- `openspec/specs/conversion-events/spec.md`: nuevo escenario `generate_lead` tras licitación
+- `openspec/specs/crm-contacts-leads-projects-pipeline/spec.md`: requisitos para expediente e importe en proyecto
+
+### Tests
+
+- ✅ Tests unitarios de schema (`tests/unit/leads/tender-lead-schema.test.ts`)
+- ✅ Tests unitarios del caso de uso (`tests/unit/leads/create-tender-lead.test.ts`)
+- ✅ Tests unitarios del Route Handler (`tests/unit/api/leads-licitacion.test.ts`)
+- ✅ Test QA de verificación de estado de BD (`tests/qa/gtk-31-db.qa.test.ts`)
+
+### Documentación
+
+- Documento técnico completo `docs/GTK-31-lead-licitacion-expediente.md` con análisis de hallazgos y decisiones de diseño
+- Change archivado en `openspec/changes/archive/2026-07-24-gtk-31-lead-licitacion-api/`
+- Nueva spec `openspec/specs/public-lead-licitacion-api/`
+
+## ✅ Criterios de aceptación cumplidos
+
+- [x] POST válido crea lead tipo `licitacion` y proyecto con `expediente_ref` y `estimated_value`, devolviendo 201 con `referenceNumber`
+- [x] Validación Zod del contacto corporativo y requisito de expediente o plataforma (400 si inválido)
+- [x] Token Turnstile inválido → 403; siteverify no disponible → 502
+- [x] Lead + proyecto en transacción atómica (sin huérfanos)
+- [x] Evento de conversión diferenciado con `lead_type='licitacion'` y valor del importe
+- [x] Rate limiting con 429 y header `Retry-After`
+
+## 🔧 Infraestructura reutilizada (sin cambios)
+
+Esta implementación reutiliza toda la base DRY de GTK-28 y GTK-29:
+
+- `lib/http/api-envelope.ts` — envelopes HTTP estándar
+- `lib/security/turnstile.ts`, `lib/security/rate-limit.ts` — protecciones
+- `lib/leads/upsert-contact.ts` — deduplicación de contactos
+- `lib/leads/reference.ts` — generación de referencias únicas
+- `lib/leads/attribution.ts` — derivación de fuente
+- `lib/analytics/record-event.ts` — eventos de conversión
+- Email transaccional con fallbacks
+
+## 🎨 Decisiones de diseño
+
+1. **Ruta:** Usamos `/api/leads/licitacion` (no `/api/licitaciones`) por consistencia con los endpoints shipped (`/api/leads/presupuesto`, `/api/leads/ubicacion`)
+
+2. **Schema:** Contacto corporativo específico (sin forzar `rol` de profesional individual) con empresa como campo principal
+
+3. **Validación:** `superRefine` exige expediente O plataforma (al menos uno); GDPR consent obligatorio
+
+4. **Proyecto:** Extensión retrocompatible de `createProjectFromLead` permite persistir datos de expediente sin afectar casos de uso existentes
+
+5. **Email:** Fallbacks a "Solicitud de licitación" / "Por determinar" cuando servicio/provincia no estén definidos
+
+## 🔒 Seguridad
+
+- ✅ Validación Turnstile anti-spam
+- ✅ Rate limiting por IP
+- ✅ Schemas Zod strict con validación de campos
+- ✅ PII solo en HTTPS, sin PII en respuesta 201
+- ✅ Transacción atómica (integridad)
+- ✅ Consentimiento GDPR obligatorio
+
+## 🧪 Testing
+
+Todos los tests en verde:
+- Validación de schema con casos válidos e inválidos
+- Caso de uso con mocks de dependencias (DB, email, eventos)
+- Route Handler con todos los códigos de respuesta
+- Verificación de estado de BD post-commit
+
+## 📚 Documentación técnica
+
+- Documentación completa en `docs/GTK-31-lead-licitacion-expediente.md`
+- Especificaciones vivas actualizadas
+- Contrato API con metadatos de seguridad y ejemplos
+- Change OpenSpec archivado para trazabilidad
+```
+
+**[GTK-66]: implementar formulario de presupuesto multipaso**
+```markdown
+# 🎯 Formulario de Presupuesto Multipaso
+
+## Resumen
+Implementación completa del formulario de solicitud de presupuestos como wizard de 3 pasos en la ruta `/presupuesto`, con refactorización de lógica común entre formularios de leads y mejoras en accesibilidad y experiencia de usuario.
+
+## 🎨 Funcionalidad Principal
+
+### Nueva Página `/presupuesto`
+- ✅ Página SSR con metadata SEO optimizada (título, descripción, canonical, Open Graph)
+- ✅ Breadcrumbs estructurados con JSON-LD
+- ✅ Precarga de datos maestros (servicios, provincias, tipologías)
+- ✅ Soporte de parámetros de prefill (utm_source, utm_medium, utm_campaign)
+- ✅ Revalidación cada hora (revalidate: 3600)
+
+### Formulario Wizard Multipaso
+**Paso 1: Servicio y Zona**
+- Selección de servicio geotécnico
+- Selección de provincia
+
+**Paso 2: Tu Proyecto**
+- Tipo de obra (opcional)
+- Número de plantas (opcional)
+- Ubicación específica (opcional)
+- Descripción del proyecto (opcional)
+
+**Paso 3: Contacto**
+- Nombre, email, teléfono
+- Rol profesional
+- Consentimiento GDPR
+- Verificación Turnstile
+
+### Componentes Nuevos
+
+#### `BudgetFormWizard`
+- Navegación entre pasos con botones Anterior/Siguiente
+- Validación progresiva por paso con Zod
+- Gestión de estado con hook personalizado
+- Integración con API `/api/leads/presupuesto`
+- Manejo robusto de errores (validación, rate limit, Turnstile)
+- Redirección a página de agradecimiento con número de referencia
+
+#### `StepIndicator`
+- Indicador visual de progreso en formularios multipaso
+- Accesible con ARIA labels y live regions
+- Responsive (vertical en móvil, horizontal en desktop)
+- Estados: completado, actual, pendiente
+
+## 🔧 Refactorización y Lógica Compartida
+
+### `lib/forms/lead-form-shared.ts`
+Extrae lógica duplicada de formularios de leads en funciones reutilizables:
+
+- **`sanitizePrefill`**: Limpieza y truncado de valores de prefill
+- **`readUtmParams`**: Lectura de parámetros UTM de la URL
+- **`issuesToFieldErrors<T>`**: Conversión genérica de errores Zod a errores de campo
+- **`interpretLeadSubmitResponse`**: Interpretación consistente de respuestas de API
+  - ✅ `success`: Lead creado (status 201)
+  - ⚠️ `turnstile_invalid`: Verificación anti-spam fallida (status 403)
+  - 🚫 `rate_limited`: Límite de peticiones excedido (status 429)
+  - ❌ `validation`: Error de validación (status 400)
+  - ❌ `error`: Error genérico con mensaje fallback
+
+### Actualización de `TenderForm`
+- ✅ Migra `sanitizePrefill`, `issuesToFieldErrors`, `readUtmParams` a módulo compartido
+- ✅ Adopta `interpretLeadSubmitResponse` para manejo de respuestas
+- ✅ Elimina código duplicado (reducción de ~40 líneas)
+- ✅ Mejora consistencia en manejo de errores HTTP
+
+## 🧪 Testing
+
+### Tests E2E (Playwright)
+`tests/e2e/gtk-66-formulario-presupuesto.spec.ts`
+- ✅ Navegación completa del wizard (3 pasos)
+- ✅ Validación por paso
+- ✅ Validación de campos obligatorios
+- ✅ Envío exitoso y redirección
+- ✅ Accesibilidad del StepIndicator
+
+### Tests Unitarios (Vitest)
+`tests/unit/forms/gtk-66-budget-wizard.test.tsx`
+- ✅ Renderizado del wizard
+- ✅ Navegación entre pasos
+- ✅ Lógica de validación
+
+## 📚 Documentación
+- **Especificaciones técnicas**: `openspec/specs/public-budget-form-page/`
+- **Change archivado**: `openspec/changes/archive/2026-07-26-gtk-66-formulario-presupuesto/`
+  - Diseño detallado
+  - Tareas de implementación
+  - Decisiones técnicas y trade-offs
+
+## 🔍 Archivos Modificados
+- `components/organisms/forms/TenderForm.tsx` (refactorización)
+
+## ✨ Archivos Nuevos
+```
+app/(public)/presupuesto/page.tsx
+StepIndicator.tsx
+BudgetFormWizard.tsx
+page-config.ts
+lead-form-shared.ts
+budget-wizard.ts
+use-budget-form.ts
+gtk-66-formulario-presupuesto.spec.ts
+gtk-66-budget-wizard.test.tsx
+openspec/specs/public-budget-form-page/
+openspec/changes/archive/2026-07-26-gtk-66-formulario-presupuesto/
+```
+
+## ✅ Checklist de Calidad
+- [x] Implementación completa según especificaciones
+- [x] Tests E2E pasando
+- [x] Tests unitarios pasando
+- [x] SEO optimizado (metadata, JSON-LD, breadcrumbs)
+- [x] Accesibilidad (ARIA, navegación por teclado)
+- [x] Responsive (mobile-first)
+- [x] Integración con Turnstile
+- [x] Integración con tracking de conversiones
+- [x] Manejo de errores robusto
+- [x] Código refactorizado y DRY
+```
 
