@@ -1,26 +1,152 @@
 .cms-tiptap-ui-editor {
-  --tt-toolbar-height: 44px;
+  --tt-toolbar-height: 2.75rem;
+  --tt-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 
+  /* Mobile-first: toolbar al pie del editor, contenido arriba */
   .simple-editor-wrapper {
+    display: flex;
+    flex-direction: column-reverse;
+    position: relative;
+    box-sizing: border-box;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     height: auto;
-    overflow: visible;
+    overflow: hidden;
     background-color: var(--tt-bg-color, #fff);
   }
 
+  .tiptap-toolbar[data-variant='fixed'] {
+    position: sticky;
+    top: auto;
+    bottom: 0;
+    z-index: 10;
+    flex: 0 0 auto;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: var(--tt-toolbar-height);
+    border-top: 1px solid var(--tt-toolbar-border-color, rgba(20, 32, 44, 0.12));
+    border-bottom: none;
+    padding: 0 0.25rem var(--tt-safe-area-bottom);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .tiptap-toolbar-group {
+    flex: 0 0 auto;
+  }
+
   .simple-editor-content {
-    max-width: none;
+    box-sizing: border-box;
+    max-width: 100%;
     width: 100%;
     margin: 0;
     height: auto;
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
   }
 
   .simple-editor-content .tiptap.ProseMirror.simple-editor {
-    flex: none;
-    min-height: 240px;
-    padding: 0.75rem 1rem 1.5rem;
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    min-height: 12rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0.75rem 1rem;
     outline: none;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+
+    table {
+      display: block;
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    pre {
+      max-width: 100%;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+  }
+
+  /* Botones táctiles en móvil (≥44px) */
+  .tiptap-button {
+    height: 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  @media (max-width: 767px) {
+    .tiptap-link-input {
+      min-width: 0;
+      flex: 1 1 0;
+      width: 0;
+      max-width: 100%;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .simple-editor-wrapper {
+      flex-direction: column;
+    }
+
+    .tiptap-toolbar[data-variant='fixed'] {
+      top: 0;
+      bottom: auto;
+      border-top: none;
+      border-bottom: 1px solid var(--tt-toolbar-border-color, rgba(20, 32, 44, 0.12));
+      padding: 0 0.5rem;
+    }
+
+    .simple-editor-content .tiptap.ProseMirror.simple-editor {
+      min-height: 15rem;
+      padding: 0.75rem 1rem 1.5rem;
+    }
+
+    .tiptap-button {
+      height: 2rem;
+      min-width: 2rem;
+    }
+  }
+}
+
+/* Anula reglas globales de toolbar.scss en ≤480px (position:absolute) */
+@media (max-width: 480px) {
+  .cms-tiptap-ui-editor .tiptap-toolbar[data-variant='fixed'] {
+    position: sticky;
+    top: auto;
+    bottom: 0;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: var(--tt-toolbar-height);
+    flex-wrap: nowrap;
+    justify-content: flex-start;
   }
 }

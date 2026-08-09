@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { EditorContent, EditorContext, useEditor } from '@tiptap/react';
 import { Image } from '@tiptap/extension-image';
 import { StarterKit } from '@tiptap/starter-kit';
@@ -12,7 +12,10 @@ import TableHeader from '@tiptap/extension-table-header';
 import TableRow from '@tiptap/extension-table-row';
 import { Selection } from '@tiptap/extensions';
 
+import { ArrowLeftIcon } from '@/components/tiptap-icons/arrow-left-icon';
+import { LinkIcon } from '@/components/tiptap-icons/link-icon';
 import { Spacer } from '@/components/tiptap-ui-primitive/spacer';
+import { Button } from '@/components/tiptap-ui-primitive/button';
 import {
   Toolbar,
   ToolbarGroup,
@@ -28,9 +31,15 @@ import { HeadingDropdownMenu } from '@/components/tiptap-ui/heading-dropdown-men
 import { ListDropdownMenu } from '@/components/tiptap-ui/list-dropdown-menu';
 import { BlockquoteButton } from '@/components/tiptap-ui/blockquote-button';
 import { CodeBlockButton } from '@/components/tiptap-ui/code-block-button';
-import { LinkPopover } from '@/components/tiptap-ui/link-popover';
+import {
+  LinkButton,
+  LinkContent,
+  LinkPopover,
+} from '@/components/tiptap-ui/link-popover';
 import { MarkButton } from '@/components/tiptap-ui/mark-button';
 import { UndoRedoButton } from '@/components/tiptap-ui/undo-redo-button';
+import { useCursorVisibility } from '@/hooks/use-cursor-visibility';
+import { useIsBreakpoint } from '@/hooks/use-is-breakpoint';
 import { plainTextToHtml } from '@/lib/content/plaintext-to-html';
 import { cn } from '@/lib/shared/cn';
 
@@ -61,7 +70,13 @@ function normalizeIncomingHtml(value: string): string {
   return plainTextToHtml(trimmed) || EMPTY_EDITOR_HTML;
 }
 
-function CmsToolbar() {
+function CmsMainToolbar({
+  isMobile,
+  onLinkClick,
+}: {
+  isMobile: boolean;
+  onLinkClick: () => void;
+}) {
   return (
     <>
       <Spacer />
@@ -83,9 +98,24 @@ function CmsToolbar() {
         <MarkButton type="strike" />
         <MarkButton type="underline" />
         <MarkButton type="code" />
-        <LinkPopover />
+        {!isMobile ? <LinkPopover /> : <LinkButton onClick={onLinkClick} />}
       </ToolbarGroup>
       <Spacer />
+    </>
+  );
+}
+
+function CmsMobileLinkToolbar({ onBack }: { onBack: () => void }) {
+  return (
+    <>
+      <ToolbarGroup>
+        <Button variant="ghost" onClick={onBack}>
+          <ArrowLeftIcon className="tiptap-button-icon" />
+          <LinkIcon className="tiptap-button-icon" />
+        </Button>
+      </ToolbarGroup>
+      <ToolbarSeparator />
+      <LinkContent />
     </>
   );
 }
@@ -93,6 +123,9 @@ function CmsToolbar() {
 export function CmsTiptapUiEditor({ label, value, onChange, error }: Props) {
   const labelId = useId();
   const skipExternalSync = useRef(false);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsBreakpoint('max', 768);
+  const [mobileView, setMobileView] = useState<'main' | 'link'>('main');
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -133,6 +166,17 @@ export function CmsTiptapUiEditor({ label, value, onChange, error }: Props) {
     },
   });
 
+  useCursorVisibility({
+    editor,
+    overlayHeight: toolbarRef.current?.getBoundingClientRect().height ?? 0,
+  });
+
+  useEffect(() => {
+    if (!isMobile && mobileView !== 'main') {
+      setMobileView('main');
+    }
+  }, [isMobile, mobileView]);
+
   useEffect(() => {
     if (!editor) {
       return;
@@ -149,21 +193,32 @@ export function CmsTiptapUiEditor({ label, value, onChange, error }: Props) {
   }, [editor, value]);
 
   return (
-    <div className="cms-tiptap-ui-editor mt-3 block text-sm text-brand-secondary">
+    <div className="cms-tiptap-ui-editor mt-3 block w-full max-w-full min-w-0 text-sm text-brand-secondary">
       <span id={labelId} className="font-medium">
         {label}
       </span>
       <div
         className={cn(
-          'simple-editor-wrapper mt-1 overflow-hidden rounded-md border bg-brand-surface',
+          'simple-editor-wrapper mt-1 w-full max-w-full min-w-0 rounded-md border bg-brand-surface',
           error ? 'border-brand-error' : 'border-brand-secondary/30',
         )}
       >
         <EditorContext.Provider value={{ editor }}>
-          <Toolbar>
-            <CmsToolbar />
+          <Toolbar ref={toolbarRef}>
+            {mobileView === 'main' ? (
+              <CmsMainToolbar
+                isMobile={isMobile}
+                onLinkClick={() => setMobileView('link')}
+              />
+            ) : (
+              <CmsMobileLinkToolbar onBack={() => setMobileView('main')} />
+            )}
           </Toolbar>
-          <EditorContent editor={editor} role="presentation" className="simple-editor-content" />
+          <EditorContent
+            editor={editor}
+            role="presentation"
+            className="simple-editor-content"
+          />
         </EditorContext.Provider>
       </div>
       {error ? (

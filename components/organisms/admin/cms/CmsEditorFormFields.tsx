@@ -622,7 +622,7 @@ export function CmsEditorFormFields({
 }: Props) {
   return (
     <>
-      <section className="rounded-xl border border-brand-primary/10 bg-brand-surface p-4 shadow-sm">
+      <section className="min-w-0 max-w-full rounded-xl border border-brand-primary/10 bg-brand-surface p-4 shadow-sm">
         <h2 className="font-semibold text-brand-primary">Contenido</h2>
         {renderTypeFields(
           page,

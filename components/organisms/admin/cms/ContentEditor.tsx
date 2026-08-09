@@ -111,7 +111,7 @@ export function ContentEditor({ page }: Props) {
   );
 
   return (
-    <div data-testid="cms-content-editor">
+    <div data-testid="cms-content-editor" className="w-full max-w-full min-w-0">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-semibold text-brand-primary">
@@ -212,9 +212,9 @@ export function ContentEditor({ page }: Props) {
           onApplyToForm={(partial) => patch(partial)}
         />
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-6 lg:grid-cols-2">
           <form
-            className={`space-y-6 ${mobileTab === 'preview' ? 'hidden lg:block' : ''}`}
+            className={`min-w-0 space-y-6 ${mobileTab === 'preview' ? 'hidden lg:block' : ''}`}
             onSubmit={onSubmit}
             noValidate
             aria-busy={pending}
@@ -239,7 +239,7 @@ export function ContentEditor({ page }: Props) {
             </div>
           </form>
 
-          <div className={mobileTab === 'edit' ? 'hidden lg:block' : ''}>
+          <div className={`min-w-0 ${mobileTab === 'edit' ? 'hidden lg:block' : ''}`}>
             <PreviewPane
               contentType={page.contentType}
               formValues={values}

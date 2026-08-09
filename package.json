@@ -118,9 +118,6 @@
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },
-  "prisma": {
-    "seed": "pnpm exec tsx prisma/seed.ts"
-  },
   "pnpm": {
     "overrides": {
       "next-auth>next": "$next"
