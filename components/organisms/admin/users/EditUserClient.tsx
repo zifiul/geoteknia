@@ -147,7 +147,7 @@ export function EditUserClient({ user, roles }: Props) {
             {message}
           </p>
         ) : null}
-        <Button type="submit" loading={pending}>
+        <Button type="submit" loading={pending} className="cursor-pointer">
           Guardar cambios
         </Button>
       </form>
@@ -166,6 +166,7 @@ export function EditUserClient({ user, roles }: Props) {
               variant="outline"
               disabled={pending}
               onClick={() => setConfirmDeactivate(true)}
+              className="cursor-pointer"
             >
               {user.isActive ? 'Desactivar usuario' : 'Reactivar usuario'}
             </Button>
@@ -176,6 +177,7 @@ export function EditUserClient({ user, roles }: Props) {
               variant="outline"
               disabled={pending}
               onClick={() => setConfirmResetPwd(true)}
+              className="cursor-pointer"
             >
               Restablecer contraseña
             </Button>
