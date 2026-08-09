@@ -54,6 +54,7 @@ describe('uploadCmsImageFile', () => {
 
   afterEach(() => {
     process.env = originalEnv;
+    vi.unstubAllEnvs();
   });
 
   it('sube a Vercel Blob cuando hay BLOB_READ_WRITE_TOKEN', async () => {
@@ -107,7 +108,7 @@ describe('uploadCmsImageFile', () => {
   });
 
   it('usa disco local si Blob falla en development', async () => {
-    process.env.NODE_ENV = 'development';
+    vi.stubEnv('NODE_ENV', 'development');
     process.env.BLOB_READ_WRITE_TOKEN = 'test-token';
     mockedPut.mockRejectedValue(new Error('Vercel Blob: This store does not exist.'));
 
