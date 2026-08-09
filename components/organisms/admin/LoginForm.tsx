@@ -25,6 +25,7 @@ const initialActionState: LoginActionResult | null = null;
 export function LoginForm({ callbackUrl, authErrorMessage }: Props) {
   const router = useRouter();
   const [fieldErrors, setFieldErrors] = useState<LoginFormFieldErrors>({});
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [state, formAction, pending] = useActionState(
     async (_prev: LoginActionResult | null, formData: FormData) => {
       const validation = validateLoginFormFields({
@@ -55,10 +56,16 @@ export function LoginForm({ callbackUrl, authErrorMessage }: Props) {
 
   useEffect(() => {
     if (state?.ok) {
+      setIsRedirecting(true);
       router.replace(resolveLoginCallbackUrl(callbackUrl));
       router.refresh();
     }
   }, [state, callbackUrl, router]);
+
+  const isBusy = pending || isRedirecting;
+  const loadingMessage = isRedirecting
+    ? 'Accediendo al portal…'
+    : 'Verificando credenciales…';
 
   const bannerMessage =
     state && !state.ok
@@ -69,7 +76,10 @@ export function LoginForm({ callbackUrl, authErrorMessage }: Props) {
     state && !state.ok && state.error.code === 'RATE_LIMITED';
 
   return (
-    <section aria-labelledby="login-heading" className="rounded-lg bg-brand-surface p-6 shadow-card sm:p-8">
+    <section
+      aria-labelledby="login-heading"
+      className="relative rounded-lg bg-brand-surface p-6 shadow-card sm:p-8"
+    >
       <header className="mb-6 space-y-2">
         <h1 id="login-heading" className="text-headline-sm font-semibold text-brand-primary">
           Iniciar sesión
@@ -92,7 +102,7 @@ export function LoginForm({ callbackUrl, authErrorMessage }: Props) {
         </div>
       ) : null}
 
-      <form action={formAction} className="space-y-4" aria-busy={pending}>
+      <form action={formAction} className="space-y-4" aria-busy={isBusy}>
         <input type="hidden" name="callbackUrl" value={callbackUrl} />
 
         <FormField id="login-email" label="Email" required>
@@ -102,7 +112,7 @@ export function LoginForm({ callbackUrl, authErrorMessage }: Props) {
             type="email"
             autoComplete="email"
             required
-            disabled={pending}
+            disabled={isBusy}
             aria-invalid={fieldErrors.email ? true : undefined}
             aria-describedby={
               fieldErrors.email ? 'login-email-error' : undefined
@@ -119,7 +129,7 @@ export function LoginForm({ callbackUrl, authErrorMessage }: Props) {
             autoComplete="current-password"
             required
             minLength={8}
-            disabled={pending}
+            disabled={isBusy}
             aria-invalid={fieldErrors.password ? true : undefined}
             aria-describedby={
               fieldErrors.password ? 'login-password-error' : undefined
@@ -150,10 +160,32 @@ export function LoginForm({ callbackUrl, authErrorMessage }: Props) {
           <FieldError id="login-totp-error">{fieldErrors.totp}</FieldError>
         </FormField> */}
 
-        <Button type="submit" className="w-full cursor-pointer" loading={pending} disabled={pending}>
-          Entrar al portal
+        <Button
+          type="submit"
+          className="w-full cursor-pointer"
+          loading={isBusy}
+          disabled={isBusy}
+        >
+          {isBusy ? loadingMessage : 'Entrar al portal'}
         </Button>
       </form>
+
+      {isBusy ? (
+        <div
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 rounded-lg bg-brand-surface/90 p-6 backdrop-blur-sm"
+          aria-busy="true"
+          aria-live="polite"
+          data-testid="login-loading-overlay"
+        >
+          <span
+            className="size-10 animate-spin rounded-full border-[3px] border-brand-accent border-t-transparent"
+            aria-hidden
+          />
+          <p className="text-center text-sm font-medium text-brand-primary" role="status">
+            {loadingMessage}
+          </p>
+        </div>
+      ) : null}
 
       <p className="mt-6 text-xs text-brand-secondary">
         Si no reconoces este acceso, contacta con el administrador del sistema.
