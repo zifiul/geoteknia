@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { Suspense } from 'react';
+
+import { AdminNavigationPendingOverlay } from '@/components/organisms/admin/AdminNavigationPendingOverlay';
 
 export const metadata: Metadata = {
   robots: {
@@ -9,5 +12,12 @@ export const metadata: Metadata = {
 };
 
 export default function AdminGroupLayout({ children }: { children: ReactNode }) {
-  return children;
+  return (
+    <>
+      <Suspense fallback={null}>
+        <AdminNavigationPendingOverlay />
+      </Suspense>
+      {children}
+    </>
+  );
 }

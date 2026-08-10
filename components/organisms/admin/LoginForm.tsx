@@ -10,6 +10,7 @@ import { FormField } from '@/components/molecules/FormField';
 import { loginAction } from '@/lib/auth/login-action';
 import { resolveLoginCallbackUrl } from '@/lib/auth/login-callback-url';
 import { type LoginActionResult } from '@/lib/auth/login-schemas';
+import { markAdminPortalNavigationPending } from '@/lib/admin/portal-navigation-pending';
 import {
   validateLoginFormFields,
   type LoginFormFieldErrors,
@@ -57,6 +58,7 @@ export function LoginForm({ callbackUrl, authErrorMessage }: Props) {
   useEffect(() => {
     if (state?.ok) {
       setIsRedirecting(true);
+      markAdminPortalNavigationPending();
       router.replace(resolveLoginCallbackUrl(callbackUrl));
       router.refresh();
     }
