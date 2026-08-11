@@ -1898,3 +1898,17 @@ Puntos de historia: **3**
 
 **Pull Request 3**
 
+---
+
+## 8. Entorno de pruebas
+
+Se puede hacer la revisión con el siguiente enlace de pruebas
+
+https://geoteknia.vercel.app/
+
+Aparte se puede revisar el portal de administración con
+
+https://geoteknia.vercel.app/admin
+
+Email: **lidr@test.com**
+Contraseña: **LCwCYHPP_NZk9pLf**
