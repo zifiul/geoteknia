@@ -2189,3 +2189,17 @@ openspec/changes/archive/2026-07-26-gtk-66-formulario-presupuesto/
 - [x] Código refactorizado y DRY
 ```
 
+---
+
+## 8. Entorno de pruebas
+
+Se puede hacer la revisión con el siguiente enlace de pruebas
+
+https://geoteknia.vercel.app/
+
+Aparte se puede revisar el portal de administración con
+
+https://geoteknia.vercel.app/admin
+
+Email: **lidr@test.com**
+Contraseña: **LCwCYHPP_NZk9pLf**
